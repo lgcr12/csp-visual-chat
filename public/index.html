@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CSP Visual Chat</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <aside class="rail">
+        <div class="brand">
+          <div class="brand-mark">C</div>
+          <div>
+            <strong>CSP Chat</strong>
+            <span>角色技能聊天平台</span>
+          </div>
+        </div>
+
+        <button class="select-target" id="openCharacterModal">
+          <span class="mini-portrait"><img id="currentThumb" alt="" /></span>
+          <span>
+            <b id="currentName">选择角色</b>
+            <small id="currentWork">点击打开角色卡片</small>
+          </span>
+        </button>
+
+        <div class="panel compact">
+          <label>聊天 API</label>
+          <select id="provider">
+            <option value="mock">本地预览</option>
+            <option value="openai-compatible">OpenAI Compatible</option>
+            <option value="claude">Claude Messages API</option>
+          </select>
+          <input id="baseUrl" placeholder="Base URL，可选" />
+          <input id="model" placeholder="Model，可选" />
+          <input id="apiKey" placeholder="API Key，可选，仅保存在本机浏览器" type="password" />
+        </div>
+
+        <div class="panel compact muted">
+          <p>新建角色会分开处理头像、角色卡图和桌宠立绘。上传桌宠图后会自动抠白底并显示在右侧区域。</p>
+        </div>
+      </aside>
+
+      <main class="chat">
+        <header class="chat-head">
+          <div class="chat-character">
+            <span class="active-avatar"><img id="activeAvatar" alt="" /></span>
+            <div>
+            <span class="eyebrow">ACTIVE CHARACTER</span>
+            <h1 id="chatTitle">请选择聊天对象</h1>
+            </div>
+          </div>
+          <button class="ghost" id="resetChat">清空对话</button>
+        </header>
+
+        <section class="messages" id="messages"></section>
+
+        <form class="composer" id="composer">
+          <textarea id="messageInput" rows="1" placeholder="输入消息，按 Enter 发送，Shift + Enter 换行"></textarea>
+          <button type="submit">发送</button>
+        </form>
+      </main>
+
+      <aside class="stage">
+        <div class="stage-light"></div>
+        <section class="pet-surface" id="petSurface" aria-label="桌宠区域">
+          <div class="pet-bubble" id="petBubble" hidden></div>
+          <div class="pet-empty" id="petEmpty" hidden>
+            <strong>暂无桌宠立绘</strong>
+            <span>上传透明全身立绘后会显示在这里</span>
+          </div>
+          <div class="pet-actor" id="petActor" role="button" tabindex="0" aria-label="桌宠" hidden>
+            <img id="petAvatar" class="pet-avatar" alt="桌宠形象" draggable="false" />
+            <div class="pet-shadow"></div>
+          </div>
+          <div class="pet-toolbar" id="petToolbar" hidden>
+            <button type="button" data-pet-action="touch">摸头</button>
+            <button type="button" data-pet-action="feed">投喂</button>
+            <button type="button" data-pet-action="play">玩耍</button>
+            <button type="button" data-pet-action="rest">休息</button>
+          </div>
+        </section>
+
+        <div class="character-sheet">
+          <span id="sheetWork"></span>
+          <h2 id="sheetName">未选择</h2>
+          <p id="sheetSubtitle">从左侧角色列表选择对象开始。</p>
+          <div id="sheetTags" class="tags"></div>
+          <a id="sourceLink" target="_blank" rel="noreferrer">来源资料</a>
+        </div>
+      </aside>
+    </div>
+
+    <dialog id="characterModal" class="modal">
+      <div class="modal-head">
+        <div>
+          <span class="eyebrow">CHARACTER LIBRARY</span>
+          <h2>选择聊天对象</h2>
+        </div>
+        <button class="icon-button" id="closeCharacterModal" aria-label="关闭">x</button>
+      </div>
+
+      <div class="modal-body">
+        <section>
+          <div class="tools-row">
+            <input id="characterSearch" placeholder="搜索角色或作品" />
+            <button id="showCreate">新建角色</button>
+          </div>
+          <div id="characterGrid" class="character-grid"></div>
+        </section>
+
+        <form id="createForm" class="create-form">
+          <h3>用 CSP 新建角色</h3>
+          <input name="name" required placeholder="角色名，例如 要乐奈" />
+          <input name="work" placeholder="作品名，例如 BanG Dream! It's MyGO!!!!!" />
+          <input name="subtitle" placeholder="角色短描述，可选" />
+          <input name="avatarUrl" placeholder="头像图片 URL，可选" />
+          <input name="imageUrl" placeholder="全身立绘 URL，可选" />
+          <input name="petImageUrl" placeholder="Q版桌宠图片 URL，可选" />
+
+          <label class="file-line">
+            <span>上传全身立绘</span>
+            <input id="imageUpload" type="file" accept="image/*" />
+          </label>
+          <label class="file-line">
+            <span>上传桌宠图片</span>
+            <input id="petUpload" type="file" accept="image/*" />
+          </label>
+
+          <label class="check-line">
+            <input name="useFetchedImage" type="checkbox" checked />
+            <span>没有上传或填写图片时，使用自动抓取到的图片</span>
+          </label>
+          <label class="check-line">
+            <input name="makePet" type="checkbox" checked />
+            <span>使用全身立绘作为桌宠</span>
+          </label>
+          <label class="check-line">
+            <input name="useChibiPet" type="checkbox" />
+            <span>改用 Q版桌宠（需要填写或上传 Q版图）</span>
+          </label>
+
+          <textarea name="notes" rows="5" placeholder="补充设定边界、时间线、口吻要求，可选"></textarea>
+          <button type="submit">生成角色卡</button>
+          <p id="createStatus"></p>
+        </form>
+      </div>
+    </dialog>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

@@ -1,0 +1,228 @@
+[
+  {
+    "id": "刀剑神域-亚丝娜",
+    "name": "亚丝娜",
+    "work": "刀剑神域",
+    "subtitle": "刀剑神域 角色",
+    "avatarUrl": "/assets/uploads/avatar-1780671743225.jpg",
+    "imageUrl": "/assets/uploads/pet-1780671742781-auto-cutout.png",
+    "petImageUrl": "/assets/uploads/pet-1780671742781-auto-cutout.png",
+    "petStyle": "standee",
+    "accent": "#ff83ad",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E7%BB%93%E5%9F%8E%E6%98%8E%E6%97%A5%E5%A5%88",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：亚丝娜\n作品：刀剑神域\n资料页：结城明日奈\n来源：https://zh.moegirl.org.cn/%E7%BB%93%E5%9F%8E%E6%98%8E%E6%97%A5%E5%A5%88",
+    "csp": {
+      "ok": true,
+      "query": "亚丝娜",
+      "work": "刀剑神域",
+      "mode": "discover",
+      "retrieved_at": "2026-06-05",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-结城明日奈",
+          "source": "moegirl",
+          "title": "结城明日奈",
+          "resolved_title": "结城明日奈",
+          "url": "https://zh.moegirl.org.cn/%E7%BB%93%E5%9F%8E%E6%98%8E%E6%97%A5%E5%A5%88",
+          "query": "亚丝娜",
+          "work": "刀剑神域",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-05",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 亚丝娜 --timeout 12",
+          "pageid": 13990,
+          "extract_chars": 36,
+          "content_hash": "sha256:c28efaddfb23d5a44a4b97f67a5e32b7d450b307c76655ce91837c00b256557e",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "createdAt": "2026-06-05T15:02:23.226Z"
+  },
+  {
+    "id": "我推的孩子-星野爱",
+    "name": "星野爱",
+    "work": "我推的孩子",
+    "subtitle": "我推的孩子 角色",
+    "avatarUrl": "https://storage.moegirl.org.cn/moegirl/commons/1/14/%E5%BD%A9%E5%9B%BE%E6%98%9F%E9%87%8E%E7%88%B1.jpg!/fw/480/watermark/url/L21vZWdpcmwvd2F0ZXJtYXJrLnBuZw==/align/southeast/margin/10x10/opacity/50?v=20230403151451",
+    "imageUrl": "https://storage.moegirl.org.cn/moegirl/commons/1/14/%E5%BD%A9%E5%9B%BE%E6%98%9F%E9%87%8E%E7%88%B1.jpg!/fw/480/watermark/url/L21vZWdpcmwvd2F0ZXJtYXJrLnBuZw==/align/southeast/margin/10x10/opacity/50?v=20230403151451",
+    "accent": "#47d6b6",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E6%98%9F%E9%87%8E%E7%88%B1",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：星野爱\n作品：我推的孩子\n资料页：星野爱\n来源：https://zh.moegirl.org.cn/%E6%98%9F%E9%87%8E%E7%88%B1",
+    "csp": {
+      "ok": true,
+      "query": "星野爱",
+      "work": "我推的孩子",
+      "mode": "discover",
+      "retrieved_at": "2026-06-05",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-星野爱",
+          "source": "moegirl",
+          "title": "星野爱",
+          "resolved_title": "星野爱",
+          "url": "https://zh.moegirl.org.cn/%E6%98%9F%E9%87%8E%E7%88%B1",
+          "query": "星野爱",
+          "work": "我推的孩子",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-05",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 星野爱 --timeout 12",
+          "pageid": 440094,
+          "extract_chars": 36,
+          "content_hash": "sha256:6584beece79c4036a8ff7fe585d8bb3904284f47b288a238635f591a6f114fc0",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "createdAt": "2026-06-05T14:30:27.921Z"
+  },
+  {
+    "id": "千恋万花-常陆茉子",
+    "name": "常陆茉子",
+    "work": "千恋万花",
+    "subtitle": "千恋万花 角色",
+    "avatarUrl": "https://storage.moegirl.org.cn/moegirl/commons/c/cb/%E5%B8%B8%E9%99%B8%E8%8C%89%E5%AD%90.JPG",
+    "imageUrl": "/assets/uploads/pet-1780669707102-auto-cutout.png",
+    "petImageUrl": "/assets/uploads/pet-1780669707102-auto-cutout.png",
+    "petStyle": "standee",
+    "accent": "#f2bf5e",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E5%B8%B8%E9%99%86%E8%8C%89%E5%AD%90",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：常陆茉子\n作品：千恋万花\n资料页：常陆茉子\n来源：https://zh.moegirl.org.cn/%E5%B8%B8%E9%99%86%E8%8C%89%E5%AD%90",
+    "csp": {
+      "ok": true,
+      "query": "常陆茉子",
+      "work": "千恋万花",
+      "mode": "discover",
+      "retrieved_at": "2026-06-05",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-常陆茉子",
+          "source": "moegirl",
+          "title": "常陆茉子",
+          "resolved_title": "常陆茉子",
+          "url": "https://zh.moegirl.org.cn/%E5%B8%B8%E9%99%86%E8%8C%89%E5%AD%90",
+          "query": "常陆茉子",
+          "work": "千恋万花",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-05",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 常陆茉子 --timeout 12",
+          "pageid": 172540,
+          "extract_chars": 54,
+          "content_hash": "sha256:6ea64d0c7f65f9615ff15a466bc0856dfe5575b287a335ea054bb7a58040c345",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "createdAt": "2026-06-05T14:28:27.103Z"
+  },
+  {
+    "id": "eva-明日香",
+    "name": "明日香",
+    "work": "eva",
+    "subtitle": "eva 角色",
+    "avatarUrl": "/assets/pets/asuka-deskpet.png",
+    "imageUrl": "/assets/pets/asuka-deskpet.png",
+    "accent": "#47d6b6",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E6%83%A3%E6%B5%81%C2%B7%E6%98%8E%E6%97%A5%E9%A6%99%C2%B7%E5%85%B0%E6%A0%BC%E9%9B%B7",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：明日香\n作品：eva\n资料页：明日香\n来源：https://zh.moegirl.org.cn/%E6%98%8E%E6%97%A5%E9%A6%99",
+    "csp": {
+      "ok": true,
+      "query": "明日香",
+      "work": "eva",
+      "mode": "discover",
+      "retrieved_at": "2026-06-05",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-明日香",
+          "source": "moegirl",
+          "title": "明日香",
+          "resolved_title": "明日香",
+          "url": "https://zh.moegirl.org.cn/%E6%98%8E%E6%97%A5%E9%A6%99",
+          "query": "明日香",
+          "work": "eva",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-05",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 明日香 --timeout 12",
+          "pageid": 26607,
+          "extract_chars": 59,
+          "content_hash": "sha256:e23c30f202efda7b99c60259dd5e677e18a383298e18fdaa4822cc95144f9cd0",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "createdAt": "2026-06-05T12:09:19.054Z",
+    "petImageUrl": "/assets/pets/asuka-deskpet.png",
+    "petStyle": "chibi"
+  }
+]

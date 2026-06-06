@@ -285,32 +285,39 @@ h1 {
   aspect-ratio: 1;
 }
 
-.pet-actor:focus-visible {
+.pet-actor:focus-visible,
+.live2d-stage:focus-visible {
   filter: drop-shadow(0 0 0.7rem color-mix(in srgb, var(--accent), white 25%));
 }
 
-.pet-actor[data-dragging="true"] {
+.pet-actor[data-dragging="true"],
+.live2d-stage[data-dragging="true"] {
   cursor: grabbing;
   animation: none;
 }
 
-.pet-actor[data-motion="happy"] {
+.pet-actor[data-motion="happy"],
+.live2d-stage[data-motion="happy"] {
   animation: pet-happy 0.85s ease both;
 }
 
-.pet-actor[data-motion="feed"] {
+.pet-actor[data-motion="feed"],
+.live2d-stage[data-motion="feed"] {
   animation: pet-feed 0.85s ease both;
 }
 
-.pet-actor[data-motion="jump"] {
+.pet-actor[data-motion="jump"],
+.live2d-stage[data-motion="jump"] {
   animation: pet-jump 0.85s cubic-bezier(.18, .89, .32, 1.28) both;
 }
 
-.pet-actor[data-motion="rest"] {
+.pet-actor[data-motion="rest"],
+.live2d-stage[data-motion="rest"] {
   animation: pet-rest 0.9s ease both;
 }
 
-.pet-actor[data-motion="land"] {
+.pet-actor[data-motion="land"],
+.live2d-stage[data-motion="land"] {
   animation: pet-land 0.55s ease both;
 }
 
@@ -354,6 +361,46 @@ h1 {
 
 .pet-empty span {
   max-width: 220px;
+  line-height: 1.6;
+}
+
+.live2d-stage {
+  --pet-x: 0px;
+  --pet-y: 0px;
+  position: absolute;
+  left: 50%;
+  bottom: 26px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  width: min(340px, 88%);
+  aspect-ratio: 0.78;
+  transform: translate(calc(-50% + var(--pet-x)), var(--pet-y));
+  cursor: grab;
+  touch-action: none;
+  outline: 0;
+  color: var(--text);
+  text-align: center;
+}
+
+.live2d-stage canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.live2d-stage[hidden] {
+  display: none;
+}
+
+.live2d-stage strong {
+  font-size: 28px;
+}
+
+.live2d-stage span {
+  max-width: 230px;
+  color: var(--muted);
   line-height: 1.6;
 }
 
@@ -739,6 +786,118 @@ a {
   margin-bottom: 4px;
 }
 
+.candidate-tools {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.candidate-tools button {
+  padding: 10px 12px;
+}
+
+#candidateStatus {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.candidate-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  max-height: 330px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.candidate-card {
+  position: relative;
+  min-height: 172px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #151924;
+}
+
+.candidate-card img {
+  width: 100%;
+  height: 126px;
+  display: block;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.candidate-copy {
+  padding: 8px 9px 42px;
+}
+
+.candidate-copy b,
+.candidate-copy small {
+  display: block;
+}
+
+.candidate-copy small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.candidate-actions {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+
+.candidate-actions button {
+  min-height: 30px;
+  padding: 0 4px;
+  border-radius: 8px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pet-style-control {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pet-style-control label {
+  position: relative;
+}
+
+.pet-style-control input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pet-style-control span {
+  display: grid;
+  place-items: center;
+  min-height: 36px;
+  border-radius: 10px;
+  color: var(--soft);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.pet-style-control input:checked + span {
+  color: #071015;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
 #createStatus {
   min-height: 22px;
   color: var(--muted);
@@ -795,7 +954,9 @@ a {
 
 @media (prefers-reduced-motion: reduce) {
   .pet-actor,
-  .pet-actor[data-motion] {
+  .pet-actor[data-motion],
+  .live2d-stage,
+  .live2d-stage[data-motion] {
     animation: none;
   }
 }

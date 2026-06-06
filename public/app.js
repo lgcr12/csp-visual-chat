@@ -1,6 +1,8 @@
 const state = {
   characters: [],
   current: null,
+  candidates: [],
+  candidateQuery: "",
   messages: [],
   sessionId: null,
   pet: {
@@ -24,6 +26,9 @@ const els = {
   apiKey: $("#apiKey"),
   createForm: $("#createForm"),
   createStatus: $("#createStatus"),
+  fetchCandidates: $("#fetchCandidates"),
+  candidateStatus: $("#candidateStatus"),
+  candidateGrid: $("#candidateGrid"),
   search: $("#characterSearch"),
   activeAvatar: $("#activeAvatar"),
   imageUpload: $("#imageUpload"),
@@ -32,10 +37,17 @@ const els = {
   petActor: $("#petActor"),
   petAvatar: $("#petAvatar"),
   petBubble: $("#petBubble"),
-  petToolbar: $("#petToolbar")
+  petToolbar: $("#petToolbar"),
+  live2dStage: $("#live2dStage"),
+  live2dStatus: $("#live2dStatus")
 };
 
 const SETTINGS_KEY = "csp-visual-chat-settings";
+const LIVE2D_SCRIPTS = [
+  "https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js",
+  "https://cdn.jsdelivr.net/npm/pixi.js@6.5.10/dist/browser/pixi.min.js",
+  "https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism4.js"
+];
 
 const interactionLines = {
   "chihaya-anon": {
@@ -123,6 +135,67 @@ function petImageFor(character) {
   return character?.petImageUrl || "";
 }
 
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[src="${CSS.escape(src)}"]`);
+    if (existing?.dataset.loaded === "true") {
+      resolve();
+      return;
+    }
+    const script = existing || document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.onload = () => {
+      script.dataset.loaded = "true";
+      resolve();
+    };
+    script.onerror = () => reject(new Error(`加载失败：${src}`));
+    if (!existing) document.head.appendChild(script);
+  });
+}
+
+async function ensureLive2DLibs() {
+  if (window.PIXI && window.PIXI.live2d?.Live2DModel) return true;
+  for (const src of LIVE2D_SCRIPTS) await loadScript(src);
+  return Boolean(window.PIXI && window.PIXI.live2d?.Live2DModel);
+}
+
+async function renderLive2D(character) {
+  els.live2dStage.innerHTML = `<strong>Live2D</strong><span id="live2dStatus">正在加载模型...</span>`;
+  els.live2dStatus = $("#live2dStatus");
+  const modelUrl = String(character.live2dModelUrl || "").trim();
+  if (!modelUrl) {
+    els.live2dStatus.textContent = "需要填写 model3.json 地址";
+    return;
+  }
+
+  try {
+    const ok = await ensureLive2DLibs();
+    if (!ok) throw new Error("Live2D 运行库不可用");
+
+    const app = new PIXI.Application({
+      width: Math.max(260, els.live2dStage.clientWidth),
+      height: Math.max(360, els.live2dStage.clientHeight),
+      transparent: true,
+      autoDensity: true
+    });
+    els.live2dStage.innerHTML = "";
+    els.live2dStage.appendChild(app.view);
+
+    const model = await PIXI.live2d.Live2DModel.from(modelUrl);
+    app.stage.addChild(model);
+    const scale = Math.min(app.view.width / model.width, app.view.height / model.height) * 0.9;
+    model.scale.set(scale);
+    model.x = (app.view.width - model.width * scale) / 2;
+    model.y = app.view.height - model.height * scale;
+    state.live2d = { app, model };
+  } catch (error) {
+    els.live2dStage.innerHTML = `<strong>Live2D</strong><span id="live2dStatus">${escapeHtml(error.message)}，已保留模型绑定</span>`;
+    els.live2dStatus = $("#live2dStatus");
+    state.live2d = null;
+  }
+}
+
 function applyCharacter(character) {
   if (!character) {
     clearCharacter();
@@ -157,11 +230,21 @@ function applyCharacter(character) {
 
   els.petActor.style.setProperty("--pet-x", "0px");
   els.petActor.style.setProperty("--pet-y", "0px");
+  els.live2dStage.style.setProperty("--pet-x", "0px");
+  els.live2dStage.style.setProperty("--pet-y", "0px");
   els.petToolbar.hidden = true;
   els.petBubble.hidden = true;
+  state.live2d?.app?.destroy?.(true);
+  state.live2d = null;
 
-  if (petImageUrl) {
+  if (character.petStyle === "live2d") {
     els.petEmpty.hidden = true;
+    els.petActor.hidden = true;
+    els.live2dStage.hidden = false;
+    renderLive2D(character);
+  } else if (petImageUrl) {
+    els.petEmpty.hidden = true;
+    els.live2dStage.hidden = true;
     els.petActor.hidden = false;
     els.petActor.classList.toggle("chibi-pet", character.petStyle === "chibi");
     els.petAvatar.classList.toggle("opaque-pet", /\.(jpe?g|webp)(?:[?#].*)?$/i.test(petImageUrl));
@@ -171,6 +254,7 @@ function applyCharacter(character) {
     };
     els.petAvatar.src = petImageUrl;
   } else {
+    els.live2dStage.hidden = true;
     els.petActor.classList.remove("chibi-pet");
     els.petAvatar.classList.remove("opaque-pet");
     els.petActor.hidden = true;
@@ -197,6 +281,9 @@ function clearCharacter() {
   $("#sourceLink").style.display = "none";
   els.petEmpty.hidden = true;
   els.petActor.hidden = true;
+  els.live2dStage.hidden = true;
+  state.live2d?.app?.destroy?.(true);
+  state.live2d = null;
   els.petBubble.hidden = true;
   els.petToolbar.hidden = true;
   renderMessages();
@@ -221,6 +308,75 @@ function renderCharacters() {
       </div>
     </article>
   `).join("");
+}
+
+function candidateKindLabel(kind) {
+  return {
+    avatar: "头像",
+    standee: "立绘",
+    chibi: "Q版"
+  }[kind] || "候选";
+}
+
+function renderCandidateGrid(candidates) {
+  if (!candidates.length) {
+    els.candidateGrid.hidden = true;
+    els.candidateGrid.innerHTML = "";
+    return;
+  }
+
+  els.candidateGrid.hidden = false;
+  els.candidateGrid.innerHTML = candidates.map((item, index) => `
+    <article class="candidate-card">
+      <img src="${escapeAttr(item.thumbUrl || item.url)}" alt="${escapeAttr(item.title)}" loading="lazy" />
+      <div class="candidate-copy">
+        <b>${candidateKindLabel(item.best)}</b>
+        <small>${escapeHtml(item.width && item.height ? `${item.width}x${item.height}` : item.title)}</small>
+      </div>
+      <div class="candidate-actions">
+        <button type="button" data-candidate="${index}" data-target-field="avatarUrl">头像</button>
+        <button type="button" data-candidate="${index}" data-target-field="imageUrl">角色卡</button>
+        <button type="button" data-candidate="${index}" data-target-field="petImageUrl">桌宠</button>
+      </div>
+    </article>
+  `).join("");
+}
+
+async function fetchImageCandidates() {
+  const name = els.createForm.elements.name.value.trim();
+  if (!name) {
+    els.candidateStatus.textContent = "先填写角色名";
+    return;
+  }
+  if (state.candidateQuery === name && state.candidates.length) return;
+
+  els.fetchCandidates.disabled = true;
+  els.candidateStatus.textContent = "正在抓取候选图...";
+  try {
+    const result = await api(`/api/image-candidates?name=${encodeURIComponent(name)}`);
+    if (els.createForm.elements.name.value.trim() !== name) return;
+    state.candidates = result.candidates || [];
+    state.candidateQuery = name;
+    renderCandidateGrid(state.candidates);
+    els.candidateStatus.textContent = state.candidates.length ? `已抓取 ${state.candidates.length} 张` : "没有找到候选图";
+  } catch (error) {
+    els.candidateStatus.textContent = `抓取失败：${error.message}`;
+  } finally {
+    els.fetchCandidates.disabled = false;
+  }
+}
+
+let candidateTimer = null;
+function scheduleCandidateFetch() {
+  clearTimeout(candidateTimer);
+  const name = els.createForm.elements.name.value.trim();
+  if (name.length < 2) {
+    els.candidateStatus.textContent = "";
+    return;
+  }
+  if (state.candidateQuery === name) return;
+  els.candidateStatus.textContent = "将自动抓取候选图...";
+  candidateTimer = setTimeout(fetchImageCandidates, 900);
 }
 
 function renderMessages() {
@@ -296,7 +452,7 @@ function autosize() {
 }
 
 function petSpeak(text, duration = 3600) {
-  if (els.petActor.hidden) return;
+  if (els.petActor.hidden && els.live2dStage.hidden) return;
   const content = String(text || "").trim();
   if (!content) return;
   els.petBubble.textContent = content.length > 90 ? `${content.slice(0, 90)}...` : content;
@@ -308,11 +464,12 @@ function petSpeak(text, duration = 3600) {
 }
 
 function playPetMotion(name) {
-  if (els.petActor.hidden) return;
-  els.petActor.dataset.motion = name;
+  const target = els.petActor.hidden ? els.live2dStage : els.petActor;
+  if (target.hidden) return;
+  target.dataset.motion = name;
   clearTimeout(playPetMotion.timer);
   playPetMotion.timer = setTimeout(() => {
-    delete els.petActor.dataset.motion;
+    delete target.dataset.motion;
   }, 900);
 }
 
@@ -388,6 +545,7 @@ $("#openCharacterModal").addEventListener("click", () => els.modal.showModal());
 $("#closeCharacterModal").addEventListener("click", () => els.modal.close());
 $("#showCreate").addEventListener("click", () => els.createForm.querySelector("input").focus());
 els.search.addEventListener("input", renderCharacters);
+els.createForm.elements.name.addEventListener("input", scheduleCandidateFetch);
 
 [els.provider, els.baseUrl, els.model, els.apiKey].forEach((input) => {
   input.addEventListener("change", saveSettings);
@@ -399,60 +557,73 @@ els.petToolbar.addEventListener("click", (event) => {
   if (button) handlePetAction(button.dataset.petAction);
 });
 
-els.petActor.addEventListener("click", () => {
+function handlePetClick(target) {
   if (state.pet.suppressClick) {
     state.pet.suppressClick = false;
     return;
   }
-  if (!state.current || els.petActor.hidden) return;
+  if (!state.current || target.hidden) return;
   els.petToolbar.hidden = !els.petToolbar.hidden;
   playPetMotion("happy");
-});
+}
 
-els.petActor.addEventListener("keydown", (event) => {
+function handlePetKeydown(event, target) {
   if (event.key === "Enter" || event.key === " ") {
     event.preventDefault();
-    els.petActor.click();
+    handlePetClick(target);
   }
-});
+}
 
 let dragState = null;
-els.petActor.addEventListener("pointerdown", (event) => {
-  if (!state.current || els.petActor.hidden || event.button !== 0) return;
+function startPetDrag(event, target) {
+  if (!state.current || target.hidden || event.button !== 0) return;
   dragState = {
     pointerId: event.pointerId,
+    target,
     startX: event.clientX,
     startY: event.clientY,
     originX: state.pet.x,
     originY: state.pet.y,
     moved: false
   };
-  els.petActor.setPointerCapture(event.pointerId);
-  els.petActor.dataset.dragging = "true";
-});
+  target.setPointerCapture(event.pointerId);
+  target.dataset.dragging = "true";
+}
 
-els.petActor.addEventListener("pointermove", (event) => {
+function movePetDrag(event) {
   if (!dragState || dragState.pointerId !== event.pointerId) return;
   const dx = event.clientX - dragState.startX;
   const dy = event.clientY - dragState.startY;
   if (Math.abs(dx) + Math.abs(dy) > 6) dragState.moved = true;
   state.pet.x = dragState.originX + dx;
   state.pet.y = dragState.originY + dy;
-  els.petActor.style.setProperty("--pet-x", `${state.pet.x}px`);
-  els.petActor.style.setProperty("--pet-y", `${state.pet.y}px`);
-});
+  dragState.target.style.setProperty("--pet-x", `${state.pet.x}px`);
+  dragState.target.style.setProperty("--pet-y", `${state.pet.y}px`);
+}
 
-els.petActor.addEventListener("pointerup", (event) => {
+function endPetDrag(event) {
   if (!dragState || dragState.pointerId !== event.pointerId) return;
-  els.petActor.releasePointerCapture(event.pointerId);
-  delete els.petActor.dataset.dragging;
+  dragState.target.releasePointerCapture(event.pointerId);
+  delete dragState.target.dataset.dragging;
   if (dragState.moved) {
     event.preventDefault();
     state.pet.suppressClick = true;
     playPetMotion("land");
   }
   dragState = null;
-});
+}
+
+function bindPetInteractions(target) {
+  target.addEventListener("click", () => handlePetClick(target));
+  target.addEventListener("keydown", (event) => handlePetKeydown(event, target));
+  target.addEventListener("pointerdown", (event) => startPetDrag(event, target));
+  target.addEventListener("pointermove", movePetDrag);
+  target.addEventListener("pointerup", endPetDrag);
+  target.addEventListener("pointercancel", endPetDrag);
+}
+
+bindPetInteractions(els.petActor);
+bindPetInteractions(els.live2dStage);
 
 els.grid.addEventListener("click", (event) => {
   const action = event.target.closest("[data-action]");
@@ -490,18 +661,37 @@ $("#resetChat").addEventListener("click", () => {
   renderMessages();
 });
 
+els.fetchCandidates.addEventListener("click", fetchImageCandidates);
+
+els.candidateGrid.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-candidate][data-target-field]");
+  if (!button) return;
+  const candidate = state.candidates[Number(button.dataset.candidate)];
+  const field = els.createForm.elements[button.dataset.targetField];
+  if (!candidate || !field) return;
+  field.value = candidate.url;
+  if (button.dataset.targetField === "petImageUrl") {
+    const mode = candidate.best === "chibi" ? "chibi" : "standee";
+    const modeInput = els.createForm.querySelector(`input[name="petStyle"][value="${mode}"]`);
+    if (modeInput) modeInput.checked = true;
+  }
+  els.candidateStatus.textContent = `已设置${button.textContent}图`;
+});
+
 els.createForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const form = new FormData(els.createForm);
   const payload = Object.fromEntries(form.entries());
   payload.useFetchedImage = form.get("useFetchedImage") === "on";
-  payload.makePet = form.get("makePet") === "on";
-  payload.useChibiPet = form.get("useChibiPet") === "on";
+  payload.petStyle = form.get("petStyle") || "standee";
+  payload.makePet = payload.petStyle !== "live2d";
+  payload.useChibiPet = payload.petStyle === "chibi";
   payload.uploadedImageData = await readFileAsDataUrl(els.imageUpload.files?.[0]);
   payload.uploadedPetData = await readFileAsDataUrl(els.petUpload.files?.[0]);
 
+  const submitButton = els.createForm.querySelector('button[type="submit"]');
   els.createStatus.textContent = "正在调用 CSP 生成角色卡...";
-  els.createForm.querySelector("button").disabled = true;
+  submitButton.disabled = true;
   try {
     const character = await api("/api/characters", {
       method: "POST",
@@ -511,12 +701,16 @@ els.createForm.addEventListener("submit", async (event) => {
     renderCharacters();
     applyCharacter(character);
     els.createForm.reset();
+    state.candidates = [];
+    state.candidateQuery = "";
+    renderCandidateGrid([]);
+    els.candidateStatus.textContent = "";
     els.createStatus.textContent = "角色卡已生成。";
     setTimeout(() => els.modal.close(), 350);
   } catch (error) {
     els.createStatus.textContent = `生成失败：${error.message}`;
   } finally {
-    els.createForm.querySelector("button").disabled = false;
+    submitButton.disabled = false;
   }
 });
 

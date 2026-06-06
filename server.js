@@ -314,10 +314,15 @@ function scoreImageCandidate(candidate, kind) {
   const text = `${candidate.title || ""} ${info.url || ""}`.toLowerCase();
   const fullBodyTerms = /(立绘|立ち絵|全身|人设|設定|公式|角色|stand|standing|standee|full|body|render|sprite|character|chara)/i;
   const chibiTerms = /(q版|q版|sd|chibi|ぷち|mini|deform|deformed|小人|二头身|三头身)/i;
+  const avatarTerms = /(头像|icon|face|profile|head|portrait|表情)/i;
   const badTerms = /(logo|banner|bg|background|wallpaper|icon|头像|表情|stamp|封面|海报|截图|screenshot|watermark|cd|bd|dvd)/i;
   let score = 0;
 
-  if (kind === "chibi") {
+  if (kind === "avatar") {
+    if (avatarTerms.test(text)) score += 65;
+    if (ratio > 0.7 && ratio < 1.35) score += 38;
+    if (ratio >= 1.35 && ratio < 2.1) score += 12;
+  } else if (kind === "chibi") {
     if (chibiTerms.test(text)) score += 90;
     if (fullBodyTerms.test(text)) score += 20;
     if (ratio > 0.8 && ratio < 1.8) score += 25;
@@ -330,8 +335,57 @@ function scoreImageCandidate(candidate, kind) {
 
   if (height >= 600) score += 12;
   if (/\.png(?:$|\?)/i.test(info.url || "")) score += 8;
-  if (badTerms.test(text)) score -= 120;
+  if (kind !== "avatar" && badTerms.test(text)) score -= 120;
   return score;
+}
+
+function decodeHtml(text) {
+  return String(text || "")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function imageUrlKey(url) {
+  return String(url || "")
+    .replace(/^https?:/, "")
+    .replace(/([?&])v=\d+.*/, "")
+    .replace(/!\/.*$/, "");
+}
+
+function normalizeMoegirlImageUrl(url) {
+  const text = decodeHtml(url).trim();
+  if (!text || text.startsWith("data:")) return "";
+  if (text.startsWith("//")) return `https:${text}`;
+  if (text.startsWith("/")) return `https://zh.moegirl.org.cn${text}`;
+  return text;
+}
+
+function originalMoegirlImageUrl(url) {
+  return normalizeMoegirlImageUrl(url).replace(/!\/.*$/, "");
+}
+
+function parseImageAttrs(tag) {
+  const attrs = {};
+  for (const match of tag.matchAll(/([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g)) {
+    attrs[match[1].toLowerCase()] = decodeHtml(match[2] || match[3] || match[4] || "");
+  }
+  return attrs;
+}
+
+function bestSrcsetUrl(srcset) {
+  const candidates = String(srcset || "")
+    .split(",")
+    .map((part) => {
+      const [url, size] = part.trim().split(/\s+/);
+      const width = Number(String(size || "").replace(/[^\d]/g, "")) || 0;
+      return { url, width };
+    })
+    .filter((item) => item.url)
+    .sort((a, b) => b.width - a.width);
+  return candidates[0]?.url || "";
 }
 
 async function fetchMoegirlPageImages(title) {
@@ -365,26 +419,140 @@ async function fetchMoegirlPageImages(title) {
   return Object.values(infoData.query?.pages || {}).filter((page) => page.imageinfo?.[0]?.url);
 }
 
-async function fetchMoegirlImages(name) {
+async function fetchMoegirlHtmlImages(page) {
+  const url = page?.fullurl || (page?.title ? `https://zh.moegirl.org.cn/${encodeURIComponent(page.title)}` : "");
+  if (!url) return [];
+  const response = await fetch(url, {
+    headers: { "user-agent": "CSP-Visual-Chat/0.1" },
+    signal: AbortSignal.timeout(12000)
+  });
+  if (!response.ok) return [];
+  const html = await response.text();
+  const found = [];
+  for (const match of html.matchAll(/<img\b[^>]*>/gi)) {
+    const attrs = parseImageAttrs(match[0]);
+    const src = bestSrcsetUrl(attrs.srcset || attrs["data-srcset"])
+      || attrs["data-src"]
+      || attrs["data-lazy-src"]
+      || attrs.src;
+    const imageUrl = normalizeMoegirlImageUrl(src);
+    const originalUrl = originalMoegirlImageUrl(imageUrl);
+    if (!imageUrl || !/^https?:\/\//i.test(imageUrl)) continue;
+    if (!/\.(png|jpe?g|webp|gif)(?:[!?/#]|$)/i.test(imageUrl)) continue;
+    const width = Number(attrs["data-file-width"] || attrs.width || 0);
+    const height = Number(attrs["data-file-height"] || attrs.height || 0);
+    found.push({
+      title: attrs.alt || attrs.title || page.title || "页面图片",
+      imageinfo: [{
+        url: originalUrl || imageUrl,
+        thumburl: normalizeMoegirlImageUrl(attrs.src) || imageUrl,
+        width,
+        height
+      }]
+    });
+  }
+  return found;
+}
+
+function formatImageCandidate(item) {
+  const info = item.imageinfo?.[0] || {};
+  const width = Number(info.width || 0);
+  const height = Number(info.height || 0);
+  const avatarScore = scoreImageCandidate(item, "avatar");
+  const standeeScore = scoreImageCandidate(item, "standee");
+  const chibiScore = scoreImageCandidate(item, "chibi");
+  const best = [
+    ["avatar", avatarScore],
+    ["standee", standeeScore],
+    ["chibi", chibiScore]
+  ].sort((a, b) => b[1] - a[1])[0]?.[0] || "standee";
+
+  return {
+    title: item.title || "候选图",
+    url: info.url || "",
+    thumbUrl: info.thumburl || info.url || "",
+    width,
+    height,
+    best,
+    scores: {
+      avatar: avatarScore,
+      standee: standeeScore,
+      chibi: chibiScore
+    }
+  };
+}
+
+async function fetchMoegirlImageCandidates(name) {
   const page = await fetchMoegirlPage(name);
-  const pageImages = await fetchMoegirlPageImages(page?.title);
-  const pick = (kind) => pageImages
-    .map((item) => ({ item, score: scoreImageCandidate(item, kind) }))
+  const [pageImages, htmlImages] = await Promise.allSettled([
+    fetchMoegirlPageImages(page?.title),
+    fetchMoegirlHtmlImages(page)
+  ]);
+  const rawImages = [
+    ...(pageImages.status === "fulfilled" ? pageImages.value : []),
+    ...(htmlImages.status === "fulfilled" ? htmlImages.value : [])
+  ];
+  const seen = new Set();
+  const candidates = rawImages
+    .map(formatImageCandidate)
+    .filter((item) => item.url)
+    .filter((item) => {
+      const key = imageUrlKey(item.url);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => {
+      const displayScore = (item) => {
+        const scores = item.scores || {};
+        const typeBias = item.best === "standee" ? 140 : item.best === "chibi" ? 120 : 40;
+        return typeBias + Math.max(scores.standee || 0, scores.chibi || 0, scores.avatar || 0);
+      };
+      return displayScore(b) - displayScore(a);
+    });
+
+  const standees = candidates.filter((item) => item.best === "standee").slice(0, 10);
+  const chibis = candidates.filter((item) => item.best === "chibi").slice(0, 4);
+  const avatars = candidates.filter((item) => item.best === "avatar").slice(0, 4);
+  const ordered = [...standees, ...chibis, ...avatars].slice(0, 18);
+
+  if (page?.thumbnail?.source) {
+    ordered.unshift({
+      title: `${page.title || name} 头像`,
+      url: page.thumbnail.source,
+      thumbUrl: page.thumbnail.source,
+      width: 0,
+      height: 0,
+      best: "avatar",
+      scores: { avatar: 120, standee: 10, chibi: 0 }
+    });
+  }
+
+  return {
+    sourceUrl: page?.fullurl || (page?.title ? `https://zh.moegirl.org.cn/${encodeURIComponent(page.title)}` : ""),
+    candidates: ordered
+  };
+}
+
+async function fetchMoegirlImages(name) {
+  const result = await fetchMoegirlImageCandidates(name);
+  const pick = (kind) => result.candidates
+    .map((item) => ({ item, score: item.scores?.[kind] ?? 0 }))
     .sort((a, b) => b.score - a.score)[0];
   const standee = pick("standee");
   const chibi = pick("chibi");
-  const standeeInfo = standee?.score > 35 ? standee.item.imageinfo?.[0] : null;
-  const chibiInfo = chibi?.score > 65 ? chibi.item.imageinfo?.[0] : null;
-  const avatarUrl = page?.thumbnail?.source || "";
-  const fullBodyUrl = standeeInfo?.thumburl || standeeInfo?.url || "";
-  const chibiUrl = chibiInfo?.thumburl || chibiInfo?.url || "";
+  const avatar = pick("avatar");
+  const avatarUrl = avatar?.score > 0 ? avatar.item.url : "";
+  const fullBodyUrl = standee?.score > 35 ? standee.item.url : "";
+  const chibiUrl = chibi?.score > 65 ? chibi.item.url : "";
 
   return {
     avatarUrl,
     fullBodyUrl,
     chibiUrl,
     imageUrl: fullBodyUrl || avatarUrl,
-    sourceUrl: page?.fullurl || (page?.title ? `https://zh.moegirl.org.cn/${encodeURIComponent(page.title)}` : "")
+    candidates: result.candidates,
+    sourceUrl: result.sourceUrl
   };
 }
 
@@ -423,11 +591,16 @@ async function createCharacter(body) {
   const uploadedImageUrl = await saveDataUrlAsset(body.uploadedImageData, `${id}-card`);
   const uploadedPetUrl = await saveDataUrlAsset(body.uploadedPetData, `${id}-pet`);
   const useFetchedImage = body.useFetchedImage !== false;
-  const makePet = body.makePet !== false;
-  const useChibiPet = body.useChibiPet === true;
+  const petStyle = ["standee", "chibi", "live2d"].includes(body.petStyle)
+    ? body.petStyle
+    : body.useChibiPet === true
+      ? "chibi"
+      : "standee";
+  const makePet = body.makePet !== false && petStyle !== "live2d";
   const fetchedAvatarUrl = useFetchedImage ? imageValue.avatarUrl || "" : "";
   const fetchedFullBodyUrl = useFetchedImage ? imageValue.fullBodyUrl || "" : "";
   const fetchedChibiUrl = useFetchedImage ? imageValue.chibiUrl || "" : "";
+  const live2dModelUrl = String(body.live2dModelUrl || "").trim();
   const avatarSourceUrl = body.avatarUrl || fetchedAvatarUrl || "";
   const avatarUrl = avatarSourceUrl
     ? await saveRemoteImageAsset(avatarSourceUrl, `${id}-avatar`)
@@ -437,8 +610,8 @@ async function createCharacter(body) {
     ? await saveStandeeImageAsset(cardSourceUrl, `${id}-standee`)
     : makeFallbackPortrait(name, body.accent);
   const petSourceUrl = makePet
-    ? (useChibiPet
-      ? (body.petImageUrl || uploadedPetUrl || fetchedChibiUrl || "")
+    ? (petStyle === "chibi"
+      ? (body.petImageUrl || uploadedPetUrl || fetchedChibiUrl || cardSourceUrl || "")
       : (body.petImageUrl || uploadedPetUrl || cardSourceUrl || ""))
     : "";
   const petImageUrl = petSourceUrl ? await saveStandeeImageAsset(petSourceUrl, `${id}-pet`) : "";
@@ -451,7 +624,8 @@ async function createCharacter(body) {
     avatarUrl,
     imageUrl: cardImageUrl,
     petImageUrl,
-    petStyle: useChibiPet && petImageUrl ? "chibi" : "standee",
+    petStyle: petStyle === "live2d" ? "live2d" : petStyle === "chibi" && petImageUrl ? "chibi" : "standee",
+    live2dModelUrl: petStyle === "live2d" ? live2dModelUrl : "",
     accent: body.accent || pickAccent(name),
     tags: body.tags || ["CSP", "新建角色"],
     sourceUrl: imageValue.sourceUrl || cspValue.records?.find((item) => item.url)?.url || "",
@@ -568,6 +742,21 @@ async function callPetActionAdapter({ provider, apiKey, baseUrl, model, action, 
 }
 
 async function routeApi(req, res, pathname) {
+  if (req.method === "GET" && pathname === "/api/image-candidates") {
+    try {
+      const url = new URL(req.url || "/", `http://${req.headers.host}`);
+      const name = String(url.searchParams.get("name") || "").trim();
+      if (!name) {
+        json(res, 400, { error: "角色名不能为空" });
+        return;
+      }
+      json(res, 200, await fetchMoegirlImageCandidates(name));
+    } catch (error) {
+      json(res, 500, { error: error.message, candidates: [] });
+    }
+    return;
+  }
+
   if (req.method === "GET" && pathname === "/api/characters") {
     json(res, 200, await readJson(CHARACTER_FILE, []));
     return;

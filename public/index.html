@@ -74,6 +74,10 @@
             <img id="petAvatar" class="pet-avatar" alt="桌宠形象" draggable="false" />
             <div class="pet-shadow"></div>
           </div>
+          <div class="live2d-stage" id="live2dStage" role="button" tabindex="0" aria-label="Live2D 桌宠" hidden>
+            <strong>Live2D</strong>
+            <span id="live2dStatus">模型已绑定</span>
+          </div>
           <div class="pet-toolbar" id="petToolbar" hidden>
             <button type="button" data-pet-action="touch">摸头</button>
             <button type="button" data-pet-action="feed">投喂</button>
@@ -118,6 +122,13 @@
           <input name="avatarUrl" placeholder="头像图片 URL，可选" />
           <input name="imageUrl" placeholder="全身立绘 URL，可选" />
           <input name="petImageUrl" placeholder="Q版桌宠图片 URL，可选" />
+          <input name="live2dModelUrl" placeholder="Live2D model3.json URL，可选" />
+
+          <div class="candidate-tools">
+            <button id="fetchCandidates" type="button">抓取候选图</button>
+            <span id="candidateStatus"></span>
+          </div>
+          <div id="candidateGrid" class="candidate-grid" hidden></div>
 
           <label class="file-line">
             <span>上传全身立绘</span>
@@ -132,14 +143,20 @@
             <input name="useFetchedImage" type="checkbox" checked />
             <span>没有上传或填写图片时，使用自动抓取到的图片</span>
           </label>
-          <label class="check-line">
-            <input name="makePet" type="checkbox" checked />
-            <span>使用全身立绘作为桌宠</span>
-          </label>
-          <label class="check-line">
-            <input name="useChibiPet" type="checkbox" />
-            <span>改用 Q版桌宠（需要填写或上传 Q版图）</span>
-          </label>
+          <div class="pet-style-control" role="radiogroup" aria-label="桌宠模式">
+            <label>
+              <input name="petStyle" type="radio" value="standee" checked />
+              <span>普通立绘</span>
+            </label>
+            <label>
+              <input name="petStyle" type="radio" value="chibi" />
+              <span>Q版</span>
+            </label>
+            <label>
+              <input name="petStyle" type="radio" value="live2d" />
+              <span>Live2D</span>
+            </label>
+          </div>
 
           <textarea name="notes" rows="5" placeholder="补充设定边界、时间线、口吻要求，可选"></textarea>
           <button type="submit">生成角色卡</button>

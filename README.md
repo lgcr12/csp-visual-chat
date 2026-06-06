@@ -31,7 +31,13 @@
 
 ## 基于的 Skill
 
-核心角色资料与提示词生成基于本地 Codex Skill：
+核心角色资料与提示词生成基于：
+
+- [qian-gugugaga/Character_Skill_Producer](https://github.com/qian-gugugaga/Character_Skill_Producer)
+
+本项目以这个 CSP Skill 仓库为核心能力来源，用它完成角色资料检索、证据整理和角色提示词生成。
+
+本地 Codex Skill 名称：
 
 - `csp` / `character-skill-producer`: 二次元角色技能蒸馏器，用于检索萌娘百科等资料并生成角色行为提示词。
 

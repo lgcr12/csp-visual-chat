@@ -328,15 +328,19 @@ function renderCandidateGrid(candidates) {
   els.candidateGrid.hidden = false;
   els.candidateGrid.innerHTML = candidates.map((item, index) => `
     <article class="candidate-card">
-      <img src="${escapeAttr(item.thumbUrl || item.url)}" alt="${escapeAttr(item.title)}" loading="lazy" />
-      <div class="candidate-copy">
-        <b>${candidateKindLabel(item.best)}</b>
-        <small>${escapeHtml(item.width && item.height ? `${item.width}x${item.height}` : item.title)}</small>
+      <div class="candidate-thumb">
+        <img src="${escapeAttr(item.thumbUrl || item.url)}" alt="${escapeAttr(item.title)}" loading="lazy" />
       </div>
-      <div class="candidate-actions">
-        <button type="button" data-candidate="${index}" data-target-field="avatarUrl">头像</button>
-        <button type="button" data-candidate="${index}" data-target-field="imageUrl">角色卡</button>
-        <button type="button" data-candidate="${index}" data-target-field="petImageUrl">桌宠</button>
+      <div class="candidate-copy">
+        <div class="candidate-meta">
+          <b>${candidateKindLabel(item.best)}</b>
+          <small>${escapeHtml(item.width && item.height ? `${item.width} x ${item.height}` : item.title)}</small>
+        </div>
+        <div class="candidate-actions">
+          <button type="button" data-candidate="${index}" data-target-field="avatarUrl">头像</button>
+          <button type="button" data-candidate="${index}" data-target-field="imageUrl">卡片</button>
+          <button type="button" data-candidate="${index}" data-target-field="petImageUrl">桌宠</button>
+        </div>
       </div>
     </article>
   `).join("");
@@ -670,6 +674,10 @@ els.candidateGrid.addEventListener("click", (event) => {
   const field = els.createForm.elements[button.dataset.targetField];
   if (!candidate || !field) return;
   field.value = candidate.url;
+  els.candidateGrid
+    .querySelectorAll(`[data-target-field="${button.dataset.targetField}"]`)
+    .forEach((item) => item.removeAttribute("data-selected"));
+  button.dataset.selected = "true";
   if (button.dataset.targetField === "petImageUrl") {
     const mode = candidate.best === "chibi" ? "chibi" : "standee";
     const modeInput = els.createForm.querySelector(`input[name="petStyle"][value="${mode}"]`);

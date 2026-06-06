@@ -681,7 +681,7 @@ a {
 
 .modal-body {
   display: grid;
-  grid-template-columns: 1fr 340px;
+  grid-template-columns: minmax(0, 1fr) minmax(380px, 440px);
   gap: 22px;
   padding: 22px;
 }
@@ -804,63 +804,92 @@ a {
 
 .candidate-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  max-height: 330px;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  max-height: 390px;
   overflow: auto;
-  padding-right: 4px;
+  padding: 2px 4px 2px 0;
 }
 
 .candidate-card {
-  position: relative;
-  min-height: 172px;
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  min-height: 132px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: #151924;
 }
 
-.candidate-card img {
+.candidate-thumb {
+  min-height: 132px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent),
+    #0d1119;
+}
+
+.candidate-thumb img {
   width: 100%;
-  height: 126px;
+  height: 100%;
   display: block;
-  object-fit: cover;
-  object-position: center top;
+  object-fit: contain;
+  object-position: center;
 }
 
 .candidate-copy {
-  padding: 8px 9px 42px;
+  display: grid;
+  align-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
 }
 
-.candidate-copy b,
-.candidate-copy small {
+.candidate-meta b,
+.candidate-meta small {
   display: block;
 }
 
-.candidate-copy small {
+.candidate-meta b {
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #071015;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  font-size: 12px;
+}
+
+.candidate-meta small {
+  margin-top: 7px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .candidate-actions {
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 8px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 5px;
+  gap: 8px;
 }
 
 .candidate-actions button {
-  min-height: 30px;
-  padding: 0 4px;
-  border-radius: 8px;
+  min-height: 36px;
+  padding: 0 8px;
+  border-radius: 10px;
   color: var(--text);
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.12);
   font-size: 12px;
   font-weight: 800;
+}
+
+.candidate-actions button:hover,
+.candidate-actions button[data-selected="true"] {
+  color: #071015;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border-color: transparent;
 }
 
 .pet-style-control {
@@ -912,6 +941,10 @@ a {
   .stage {
     display: none;
   }
+
+  .modal-body {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 760px) {
@@ -937,8 +970,12 @@ a {
     flex-direction: column;
   }
 
-  .modal-body {
-    grid-template-columns: 1fr;
+  .candidate-card {
+    grid-template-columns: 88px minmax(0, 1fr);
+  }
+
+  .candidate-thumb {
+    min-height: 124px;
   }
 
   .bubble {

@@ -50,7 +50,7 @@ UI 和交互打磨参考：
 Windows PowerShell:
 
 ```powershell
-git clone <your-repo-url>
+git clone https://github.com/lgcr12/csp-visual-chat.git
 cd csp-visual-chat
 powershell -ExecutionPolicy Bypass -File .\deploy.ps1
 ```
@@ -92,11 +92,11 @@ http://localhost:4173
 ### 方式一：Git clone
 
 ```powershell
-git clone <your-repo-url>
+git clone https://github.com/lgcr12/csp-visual-chat.git
 cd csp-visual-chat
 ```
 
-如果你 fork 了仓库，请把 `<your-repo-url>` 换成自己的仓库地址。
+如果你 fork 了仓库，请把上面的地址换成自己的仓库地址。
 
 ### 方式二：Download ZIP
 

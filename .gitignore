@@ -1,0 +1,10 @@
+node_modules/
+npm-debug.log*
+
+outputs/
+public/assets/uploads/
+tools/__pycache__/
+*.pyc
+
+.env
+.env.*

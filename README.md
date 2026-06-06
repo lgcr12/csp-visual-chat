@@ -45,24 +45,90 @@ UI 和交互打磨参考：
 
 - `ui-ux-pro-max`: 用于桌宠模式选择、候选图选择器、交互状态和界面可用性优化。
 
-## 下载方法
+## 一键部署
 
-```bash
+Windows PowerShell:
+
+```powershell
+git clone <your-repo-url>
+cd csp-visual-chat
+powershell -ExecutionPolicy Bypass -File .\deploy.ps1
+```
+
+或者直接双击/运行：
+
+```powershell
+.\deploy.bat
+```
+
+指定端口：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\deploy.ps1 -Port 4175
+```
+
+跳过 Python 抠图依赖安装：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\deploy.ps1 -SkipPython
+```
+
+部署脚本会自动完成：
+
+- 检查 Node.js / npm
+- 创建本地运行目录
+- 执行 `npm install`
+- 安装可选 Python 抠图依赖
+- 启动本地服务
+
+启动成功后访问：
+
+```text
+http://localhost:4173
+```
+
+## 手动下载和安装
+
+### 方式一：Git clone
+
+```powershell
 git clone <your-repo-url>
 cd csp-visual-chat
 ```
 
-如果你是从 GitHub 页面下载，也可以点击 `Code` -> `Download ZIP`，解压后进入项目目录。
+如果你 fork 了仓库，请把 `<your-repo-url>` 换成自己的仓库地址。
 
-## 安装
+### 方式二：Download ZIP
 
-安装 Node.js 依赖。当前项目没有 npm 第三方依赖，但建议执行一次以保持 npm 工作流一致。
+1. 打开 GitHub 仓库页面。
+2. 点击绿色 `Code` 按钮。
+3. 点击 `Download ZIP`。
+4. 解压到任意目录。
+5. 在该目录空白处右键，选择“在终端中打开”或“Open in Terminal”。
+
+### 环境要求
+
+必须安装：
+
+- Node.js 20+
+- npm
+
+建议安装：
+
+- Python 3.10+
+- pip
+
+Python 不是启动项目的硬性要求，但会影响高质量抠图。没有 Python 依赖时，项目仍然能聊天和显示图片，只是复杂背景抠图会退化。
+
+### 手动安装依赖
+
+安装 Node 工作流：
 
 ```bash
 npm install
 ```
 
-安装可选 Python 抠图依赖。没有这些依赖时项目仍可运行，但复杂背景抠图质量会下降。
+安装 Python 抠图依赖：
 
 ```bash
 python -m pip install -r requirements.txt
@@ -74,26 +140,47 @@ python -m pip install -r requirements.txt
 C:\Users\<YourName>\.u2net
 ```
 
-## 使用方法
+## 启动方法
 
-启动服务：
+默认启动：
 
 ```bash
 npm start
 ```
 
-默认访问：
+开发模式，文件变更后自动重启后端：
+
+```bash
+npm run dev
+```
+
+PowerShell 指定端口：
+
+```powershell
+$env:PORT=4175
+npm start
+```
+
+cmd 指定端口：
+
+```cmd
+set PORT=4175
+npm start
+```
+
+启动后访问：
 
 ```text
 http://localhost:4173
 ```
 
-如果需要指定端口：
+如果指定了端口，就访问对应端口，例如：
 
-```bash
-# PowerShell
-$env:PORT=4175; npm start
+```text
+http://localhost:4175
 ```
+
+## 使用方法
 
 打开页面后：
 
@@ -104,6 +191,28 @@ $env:PORT=4175; npm start
 5. 在候选图里选择头像、角色卡图、桌宠图。
 6. 选择桌宠模式：普通立绘、Q版或 Live2D。
 7. 提交生成角色卡。
+8. 回到聊天界面，点击或拖动右侧桌宠进行互动。
+
+## OpenAI-compatible API 配置
+
+左侧“聊天 API”区域可以选择：
+
+- 本地预览：不调用外部模型，适合测试 UI 和角色卡。
+- OpenAI-compatible API：填写 Base URL、Model、API Key。
+
+API Key 只保存在浏览器本地存储，不会写入仓库。
+
+常见 Base URL 示例：
+
+```text
+https://api.openai.com/v1
+```
+
+模型名按你的服务商填写，例如：
+
+```text
+gpt-4.1-mini
+```
 
 ## 桌宠模式
 
@@ -139,6 +248,8 @@ $env:PORT=4175; npm start
 ├─ data/                  # 本地角色和会话 JSON
 ├─ public/                # 前端页面、样式、脚本和上传资源
 ├─ tools/                 # 图片处理脚本
+├─ deploy.ps1             # Windows 一键部署脚本
+├─ deploy.bat             # Windows 批处理启动入口
 ├─ server.js              # Node 后端服务
 ├─ package.json
 ├─ requirements.txt
@@ -151,3 +262,29 @@ $env:PORT=4175; npm start
 - `public/assets/uploads/` 是本地上传和生成图片。
 - 如果要发布公开仓库，建议不要提交私人聊天记录、API Key 或不希望公开的图片素材。
 - OpenAI-compatible API Key 只保存在浏览器本地存储，不会写入仓库。
+
+## 常见问题
+
+### PowerShell 提示禁止运行脚本
+
+使用下面的方式启动：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\deploy.ps1
+```
+
+### 端口被占用
+
+换一个端口：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\deploy.ps1 -Port 4175
+```
+
+### 抠图模型第一次很慢
+
+首次使用 `rembg` 会下载模型，之后会读取本机缓存。下载完成后，后续抠图会明显更快。
+
+### 桌宠仍然有背景残留
+
+优先使用候选图里的全身立绘或透明 PNG。半身截图、复杂街景背景、人物贴边图片会降低自动抠图质量。

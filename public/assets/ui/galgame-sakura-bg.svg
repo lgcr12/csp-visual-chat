@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Sakura riverside visual novel background">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eaf6ff"/>
+      <stop offset="0.48" stop-color="#d7efff"/>
+      <stop offset="1" stop-color="#f8d7e8"/>
+    </linearGradient>
+    <linearGradient id="path" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0e7df"/>
+      <stop offset="1" stop-color="#c4b7ad"/>
+    </linearGradient>
+    <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#bfe883"/>
+      <stop offset="1" stop-color="#52b95f"/>
+    </linearGradient>
+    <radialGradient id="petal" cx="50%" cy="50%" r="60%">
+      <stop offset="0" stop-color="#fff2fb"/>
+      <stop offset="1" stop-color="#f49ac2"/>
+    </radialGradient>
+    <filter id="soft">
+      <feGaussianBlur stdDeviation="2.2"/>
+    </filter>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <path d="M0 500 C260 430 470 410 800 410 C1130 410 1340 430 1600 500 L1600 900 L0 900 Z" fill="url(#grass)"/>
+  <path d="M575 410 L1025 410 L1290 900 L310 900 Z" fill="url(#path)"/>
+  <path d="M620 430 L980 430 L1140 900 L460 900 Z" fill="none" stroke="#fff" stroke-opacity=".32" stroke-width="8"/>
+  <path d="M0 516 C180 468 338 454 542 454" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width="10"/>
+  <path d="M1600 516 C1420 468 1262 454 1058 454" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width="10"/>
+  <rect x="0" y="440" width="1600" height="70" fill="#f7fbff" opacity=".38"/>
+  <rect x="0" y="505" width="1600" height="20" fill="#79c7ef" opacity=".3"/>
+  <g opacity=".86">
+    <g transform="translate(130 0)">
+      <path d="M88 900 C74 690 78 446 142 188" stroke="#51302b" stroke-width="45" fill="none"/>
+      <path d="M128 230 C226 158 304 116 448 84" stroke="#51302b" stroke-width="24" fill="none"/>
+      <path d="M142 204 C90 140 54 84 16 0" stroke="#51302b" stroke-width="22" fill="none"/>
+      <ellipse cx="254" cy="80" rx="290" ry="92" fill="url(#petal)" filter="url(#soft)"/>
+      <ellipse cx="178" cy="146" rx="250" ry="86" fill="#f7b4d0" opacity=".84" filter="url(#soft)"/>
+    </g>
+    <g transform="translate(560 -12)">
+      <path d="M90 900 C84 680 92 438 150 168" stroke="#54322c" stroke-width="42" fill="none"/>
+      <path d="M142 212 C254 148 372 98 552 70" stroke="#54322c" stroke-width="23" fill="none"/>
+      <path d="M144 210 C88 150 48 94 12 8" stroke="#54322c" stroke-width="21" fill="none"/>
+      <ellipse cx="310" cy="82" rx="330" ry="98" fill="url(#petal)" filter="url(#soft)"/>
+      <ellipse cx="216" cy="154" rx="280" ry="90" fill="#f6a9ca" opacity=".82" filter="url(#soft)"/>
+    </g>
+    <g transform="translate(1110 -4)">
+      <path d="M118 900 C96 670 92 430 136 152" stroke="#4d2d2a" stroke-width="48" fill="none"/>
+      <path d="M130 204 C30 136 -50 92 -196 70" stroke="#4d2d2a" stroke-width="24" fill="none"/>
+      <path d="M148 204 C232 148 298 88 372 0" stroke="#4d2d2a" stroke-width="23" fill="none"/>
+      <ellipse cx="-82" cy="82" rx="310" ry="92" fill="url(#petal)" filter="url(#soft)"/>
+      <ellipse cx="162" cy="124" rx="270" ry="84" fill="#f6afd0" opacity=".8" filter="url(#soft)"/>
+    </g>
+  </g>
+  <g opacity=".34" fill="#f8a9ca">
+    <circle cx="214" cy="238" r="8"/>
+    <circle cx="344" cy="174" r="5"/>
+    <circle cx="686" cy="214" r="7"/>
+    <circle cx="920" cy="156" r="6"/>
+    <circle cx="1168" cy="228" r="7"/>
+    <circle cx="1356" cy="182" r="5"/>
+  </g>
+  <rect width="1600" height="900" fill="#fff" opacity=".06"/>
+</svg>

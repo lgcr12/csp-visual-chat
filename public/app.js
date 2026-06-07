@@ -10,7 +10,8 @@ const state = {
     y: 0,
     lastSpeech: "",
     suppressClick: false
-  }
+  },
+  voiceEnabled: false
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -24,6 +25,25 @@ const els = {
   baseUrl: $("#baseUrl"),
   model: $("#model"),
   apiKey: $("#apiKey"),
+  voiceProvider: $("#voiceProvider"),
+  voiceBaseUrl: $("#voiceBaseUrl"),
+  voiceModel: $("#voiceModel"),
+  voiceId: $("#voiceId"),
+  voiceSearch: $("#voiceSearch"),
+  acgnVoiceResults: $("#acgnVoiceResults"),
+  acgnVoiceSelect: $("#acgnVoiceSelect"),
+  voiceAutoTranslate: $("#voiceAutoTranslate"),
+  voiceProviderHint: $("#voiceProviderHint"),
+  voiceKey: $("#voiceKey"),
+  checkAcgnQuota: $("#checkAcgnQuota"),
+  acgnQuotaStatus: $("#acgnQuotaStatus"),
+  openOnboarding: $("#openOnboarding"),
+  onboardingModal: $("#onboardingModal"),
+  closeOnboarding: $("#closeOnboarding"),
+  finishOnboarding: $("#finishOnboarding"),
+  voiceToggle: $("#voiceToggle"),
+  voiceToggleDock: $("#voiceToggleDock"),
+  styleInputs: [...document.querySelectorAll('input[name="uiStyle"]')],
   createForm: $("#createForm"),
   createStatus: $("#createStatus"),
   fetchCandidates: $("#fetchCandidates"),
@@ -39,10 +59,24 @@ const els = {
   petBubble: $("#petBubble"),
   petToolbar: $("#petToolbar"),
   live2dStage: $("#live2dStage"),
-  live2dStatus: $("#live2dStatus")
+  live2dStatus: $("#live2dStatus"),
+  createAvatarPreview: $("#createAvatarPreview"),
+  createCardPreview: $("#createCardPreview"),
+  createPetPreview: $("#createPetPreview")
 };
 
 const SETTINGS_KEY = "csp-visual-chat-settings";
+const ACGN_DEVICE_KEY = "csp-visual-chat-acgn-device-id";
+const ONBOARDING_KEY = "csp-visual-chat-onboarding-seen";
+const AVATAR_PLACEHOLDER = "/assets/ui/avatar-placeholder.svg";
+const PET_PLACEHOLDER = "/assets/ui/pet-placeholder.svg";
+const UI_STYLES = new Set(["workbench", "galgame", "pet-console", "album"]);
+const TTS_MODEL = "gpt-4o-mini-tts";
+const TTS_VOICE = "marin";
+const previewObjectUrls = {
+  imageUpload: "",
+  petUpload: ""
+};
 const LIVE2D_SCRIPTS = [
   "https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js",
   "https://cdn.jsdelivr.net/npm/pixi.js@6.5.10/dist/browser/pixi.min.js",
@@ -92,8 +126,21 @@ function loadSettings() {
     els.baseUrl.value = settings.baseUrl || "";
     els.model.value = settings.model || "";
     els.apiKey.value = settings.apiKey || "";
+    els.voiceProvider.value = settings.voiceProvider || "openai-compatible";
+    els.voiceBaseUrl.value = settings.voiceBaseUrl || "";
+    els.voiceModel.value = settings.voiceModel || "";
+    els.voiceId.value = settings.voiceId || "";
+    els.voiceAutoTranslate.checked = settings.voiceAutoTranslate !== false;
+    els.voiceKey.value = settings.voiceKey || "";
+    state.voiceEnabled = Boolean(settings.voiceEnabled);
+    syncVoiceProviderUi();
+    syncVoiceUi();
+    applyUiStyle(settings.uiStyle || "workbench");
   } catch {
     localStorage.removeItem(SETTINGS_KEY);
+    syncVoiceProviderUi();
+    syncVoiceUi();
+    applyUiStyle("workbench");
   }
 }
 
@@ -102,8 +149,158 @@ function saveSettings() {
     provider: els.provider.value,
     baseUrl: els.baseUrl.value.trim(),
     model: els.model.value.trim(),
-    apiKey: els.apiKey.value.trim()
+    apiKey: els.apiKey.value.trim(),
+    voiceProvider: els.voiceProvider.value,
+    voiceBaseUrl: els.voiceBaseUrl.value.trim(),
+    voiceModel: els.voiceModel.value.trim(),
+    voiceId: els.voiceId.value.trim(),
+    voiceAutoTranslate: els.voiceAutoTranslate.checked,
+    voiceKey: els.voiceKey.value.trim(),
+    uiStyle: document.documentElement.dataset.uiStyle || "workbench",
+    voiceEnabled: state.voiceEnabled
   }));
+}
+
+function getAcgnDeviceId() {
+  let deviceId = localStorage.getItem(ACGN_DEVICE_KEY);
+  if (!deviceId) {
+    if (globalThis.crypto?.getRandomValues) {
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      deviceId = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    } else {
+      deviceId = `${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`.padEnd(32, "0").slice(0, 32);
+    }
+    localStorage.setItem(ACGN_DEVICE_KEY, deviceId);
+  }
+  return deviceId;
+}
+
+function isAcgnProvider(provider = els.voiceProvider.value) {
+  return provider === "acgn-official" || provider === "acgn-ttson";
+}
+
+function syncVoiceProviderUi() {
+  const provider = els.voiceProvider.value || "openai-compatible";
+  document.documentElement.dataset.voiceProvider = provider;
+
+  if (provider === "acgn-official") {
+    els.voiceProviderHint.textContent = "官方 API 需要 token。Base URL 留空使用 https://api.ttson.cn，可查询剩余字符额度。";
+    els.voiceBaseUrl.placeholder = "可不填，默认 https://api.ttson.cn";
+    els.voiceModel.placeholder = "配音语言，默认 JP，可填 ZH / JP / EN / auto";
+    els.voiceId.placeholder = "选择声线后自动填入 voice_id";
+    els.voiceKey.placeholder = "ACGN 官方 token，或完整 www/acgn 链接";
+    if (!/^(ZH|JP|EN|auto)$/i.test(els.voiceModel.value.trim())) els.voiceModel.value = "JP";
+    return;
+  }
+
+  if (provider === "acgn-ttson") {
+    els.voiceProviderHint.textContent = "网页兼容模式可不填 token。Base URL 留空使用网页接口，适合先测试。";
+    els.voiceBaseUrl.placeholder = "可不填，默认使用网页接口";
+    els.voiceModel.placeholder = "配音语言，默认 JP，可填 ZH / JP / EN / ko / yue / auto";
+    els.voiceId.placeholder = "选择声线后自动填入 voice_id";
+    els.voiceKey.placeholder = "ACGN token 或完整链接，可不填";
+    if (!/^(ZH|JP|EN|ko|yue|auto)$/i.test(els.voiceModel.value.trim())) els.voiceModel.value = "JP";
+    return;
+  }
+
+  if (provider === "elevenlabs") {
+    els.voiceProviderHint.textContent = "ElevenLabs 需要 API Key 和 Voice ID。";
+    els.voiceBaseUrl.placeholder = "Voice Base URL，可选";
+    els.voiceModel.placeholder = "Voice Model，可选";
+    els.voiceId.placeholder = "ElevenLabs Voice ID";
+    els.voiceKey.placeholder = "ElevenLabs API Key";
+    return;
+  }
+
+  if (provider === "browser") {
+    els.voiceProviderHint.textContent = "浏览器语音不需要 API，但声线质量取决于系统。";
+    els.voiceBaseUrl.placeholder = "浏览器语音无需填写";
+    els.voiceModel.placeholder = "浏览器语音无需填写";
+    els.voiceId.placeholder = "浏览器语音无需填写";
+    els.voiceKey.placeholder = "浏览器语音无需填写";
+    return;
+  }
+
+  els.voiceProviderHint.textContent = "OpenAI TTS 需要兼容的 API Key。";
+  els.voiceBaseUrl.placeholder = "Voice Base URL，可选";
+  els.voiceModel.placeholder = "Voice Model，可选";
+  els.voiceId.placeholder = "OpenAI voice，例如 marin";
+  els.voiceKey.placeholder = "Voice API Key，可选，仅保存在本机浏览器";
+}
+
+function syncVoiceUi() {
+  [els.voiceToggle, els.voiceToggleDock].filter(Boolean).forEach((button) => {
+    button.textContent = state.voiceEnabled ? "语音开" : "语音关";
+    button.setAttribute("aria-pressed", String(state.voiceEnabled));
+    button.dataset.active = state.voiceEnabled ? "true" : "false";
+  });
+}
+
+function isAlbumStyle() {
+  return (document.documentElement.dataset.uiStyle || "workbench") === "album";
+}
+
+function modalIsTopLayer() {
+  try {
+    return els.modal.matches(":modal");
+  } catch {
+    return false;
+  }
+}
+
+function openCharacterLibrary() {
+  if (els.modal.open) {
+    if (isAlbumStyle() && modalIsTopLayer()) {
+      els.modal.close();
+    } else {
+      return;
+    }
+  }
+
+  if (isAlbumStyle()) {
+    els.modal.show();
+  } else {
+    els.modal.showModal();
+  }
+}
+
+function closeCharacterLibrary() {
+  if (els.modal.open) els.modal.close();
+}
+
+function openOnboarding(force = false) {
+  if (!force && localStorage.getItem(ONBOARDING_KEY) === "true") return;
+  if (!els.onboardingModal.open) els.onboardingModal.showModal();
+}
+
+function closeOnboarding(markSeen = true) {
+  if (markSeen) localStorage.setItem(ONBOARDING_KEY, "true");
+  if (els.onboardingModal.open) els.onboardingModal.close();
+}
+
+function applyUiStyle(style) {
+  const nextStyle = UI_STYLES.has(style) ? style : "workbench";
+  document.documentElement.dataset.uiStyle = nextStyle;
+  els.styleInputs.forEach((input) => {
+    input.checked = input.value === nextStyle;
+  });
+  syncStyleModeUi();
+}
+
+function syncStyleModeUi() {
+  const style = document.documentElement.dataset.uiStyle || "workbench";
+  if (style === "pet-console" && state.current && (!els.petActor.hidden || !els.live2dStage.hidden)) {
+    els.petToolbar.hidden = false;
+  } else if (style !== "pet-console") {
+    els.petToolbar.hidden = true;
+  }
+
+  if (style === "album") {
+    openCharacterLibrary();
+  } else if (els.modal.open && !modalIsTopLayer()) {
+    closeCharacterLibrary();
+  }
 }
 
 async function api(path, options = {}) {
@@ -114,6 +311,91 @@ async function api(path, options = {}) {
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || "请求失败");
   return data;
+}
+
+let voiceSearchTimer = null;
+async function searchAcgnVoices(query) {
+  const text = String(query || "").trim();
+  if (!text) return [];
+  const params = new URLSearchParams({
+    query: text,
+    limit: "12",
+    deviceId: getAcgnDeviceId()
+  });
+  const result = await api(`/api/acgn-voices?${params.toString()}`);
+  return result.voices || [];
+}
+
+function renderAcgnVoiceOptions(voices) {
+  els.acgnVoiceResults.hidden = !voices.length;
+  els.acgnVoiceResults.innerHTML = voices.map((voice) => (
+    `<button type="button" data-voice-id="${escapeAttr(voice.voice_id)}" data-voice-label="${escapeAttr(`${voice.voice_id} | ${voice.name}`)}">
+      <b>${escapeHtml(voice.voice_id)}</b>
+      <span>${escapeHtml(voice.name)}</span>
+    </button>`
+  )).join("");
+  els.acgnVoiceSelect.innerHTML = [
+    `<option value="">${voices.length ? "从候选声线中选择" : "没有候选声线"}</option>`,
+    ...voices.map((voice) => (
+      `<option value="${escapeAttr(String(voice.voice_id))}">${escapeHtml(`${voice.voice_id} | ${voice.name}`)}</option>`
+    ))
+  ].join("");
+}
+
+function applyAcgnVoice(voiceId, label = "") {
+  if (!voiceId) return;
+  if (!isAcgnProvider()) els.voiceProvider.value = "acgn-official";
+  els.voiceId.value = voiceId;
+  if (label) els.voiceSearch.value = label;
+  if (!els.voiceModel.value.trim()) els.voiceModel.value = "JP";
+  syncVoiceProviderUi();
+  saveSettings();
+}
+
+function pickAcgnVoiceFromInput() {
+  const match = els.voiceSearch.value.match(/^\s*(\d+)\s*\|/);
+  if (!match) return;
+  applyAcgnVoice(match[1], els.voiceSearch.value);
+}
+
+function scheduleAcgnVoiceSearch() {
+  clearTimeout(voiceSearchTimer);
+  const query = els.voiceSearch.value.trim();
+  if (query.length < 2 || /^\d+\s*\|/.test(query)) {
+    if (query.length < 2) renderAcgnVoiceOptions([]);
+    return;
+  }
+  voiceSearchTimer = setTimeout(async () => {
+    try {
+      const voices = await searchAcgnVoices(query);
+      renderAcgnVoiceOptions(voices);
+    } catch (error) {
+      console.warn("ACGN voice search failed:", error);
+    }
+  }, 500);
+}
+
+async function checkAcgnQuota() {
+  const token = els.voiceKey.value.trim();
+  if (!token) {
+    els.acgnQuotaStatus.textContent = "先填写 ACGN token";
+    return;
+  }
+
+  els.acgnQuotaStatus.textContent = "查询中...";
+  els.checkAcgnQuota.disabled = true;
+  try {
+    const params = new URLSearchParams({ token });
+    if (els.voiceBaseUrl.value.trim()) params.set("baseUrl", els.voiceBaseUrl.value.trim());
+    const data = await api(`/api/acgn-quota?${params.toString()}`);
+    els.acgnQuotaStatus.textContent = Number.isFinite(Number(data.remaining))
+      ? `剩余 ${Number(data.remaining).toLocaleString()} 字符`
+      : "已查询，但返回中没有 remaining";
+  } catch (error) {
+    els.acgnQuotaStatus.textContent = `查询失败：${error.message}`;
+  } finally {
+    els.checkAcgnQuota.disabled = false;
+  }
 }
 
 function isGeneratedFallback(url) {
@@ -133,6 +415,83 @@ function avatarFor(character) {
 
 function petImageFor(character) {
   return character?.petImageUrl || "";
+}
+
+function setPreviewImage(image, url, placeholder) {
+  image.onerror = () => {
+    image.onerror = null;
+    image.src = placeholder;
+  };
+  image.src = url || placeholder;
+}
+
+function updateCreatePreviews() {
+  const form = els.createForm.elements;
+  const avatarUrl = form.avatarUrl.value.trim();
+  const cardUrl = previewObjectUrls.imageUpload || form.imageUrl.value.trim();
+  const petUrl = previewObjectUrls.petUpload || form.petImageUrl.value.trim();
+  setPreviewImage(els.createAvatarPreview, avatarUrl || cardUrl, AVATAR_PLACEHOLDER);
+  setPreviewImage(els.createCardPreview, cardUrl || petUrl, PET_PLACEHOLDER);
+  setPreviewImage(els.createPetPreview, petUrl || cardUrl, PET_PLACEHOLDER);
+}
+
+function setUploadPreview(key, file) {
+  if (previewObjectUrls[key]) {
+    URL.revokeObjectURL(previewObjectUrls[key]);
+    previewObjectUrls[key] = "";
+  }
+  if (file) previewObjectUrls[key] = URL.createObjectURL(file);
+  updateCreatePreviews();
+}
+
+function resetCreatePreviews() {
+  Object.keys(previewObjectUrls).forEach((key) => {
+    if (previewObjectUrls[key]) URL.revokeObjectURL(previewObjectUrls[key]);
+    previewObjectUrls[key] = "";
+  });
+  updateCreatePreviews();
+}
+
+function candidateFor(kinds, candidates) {
+  return candidates.find((item) => kinds.includes(item.best)) || candidates[0];
+}
+
+function selectCandidateButton(fieldName, candidate) {
+  els.candidateGrid
+    .querySelectorAll(`[data-target-field="${fieldName}"]`)
+    .forEach((button) => {
+      const item = state.candidates[Number(button.dataset.candidate)];
+      if (item?.url === candidate?.url) {
+        button.dataset.selected = "true";
+      } else {
+        button.removeAttribute("data-selected");
+      }
+    });
+}
+
+function autofillCandidateFields(candidates) {
+  const fields = els.createForm.elements;
+  const targets = [
+    ["avatarUrl", candidateFor(["avatar"], candidates)],
+    ["imageUrl", candidateFor(["standee"], candidates)],
+    ["petImageUrl", candidateFor(["chibi", "standee"], candidates)]
+  ];
+  let filled = 0;
+
+  targets.forEach(([fieldName, candidate]) => {
+    if (!candidate || fields[fieldName].value.trim()) return;
+    fields[fieldName].value = candidate.url;
+    selectCandidateButton(fieldName, candidate);
+    filled += 1;
+  });
+
+  const petCandidate = targets.find(([fieldName]) => fieldName === "petImageUrl")?.[1];
+  if (petCandidate?.best === "chibi") {
+    const chibiInput = els.createForm.querySelector('input[name="petStyle"][value="chibi"]');
+    if (chibiInput) chibiInput.checked = true;
+  }
+  if (filled) updateCreatePreviews();
+  return filled;
 }
 
 function loadScript(src) {
@@ -214,6 +573,7 @@ function applyCharacter(character) {
   const petImageUrl = petImageFor(character);
 
   document.documentElement.style.setProperty("--accent", character.accent || "#7aa8ff");
+  document.documentElement.style.setProperty("--galgame-name", `"${character.name}"`);
   $("#currentThumb").onerror = () => { $("#currentThumb").src = fallbackPortrait(character.name, character.accent); };
   $("#currentThumb").src = avatarUrl;
   els.activeAvatar.onerror = () => { els.activeAvatar.src = fallbackPortrait(character.name, character.accent); };
@@ -227,6 +587,19 @@ function applyCharacter(character) {
   $("#sourceLink").href = character.sourceUrl || "#";
   $("#sourceLink").style.display = character.sourceUrl ? "inline" : "none";
   $("#sheetTags").innerHTML = (character.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("");
+  if (character.voiceProvider || character.voiceId) {
+    els.voiceProvider.value = character.voiceProvider || "acgn-ttson";
+    els.voiceId.value = character.voiceId || "";
+    els.voiceSearch.value = character.voiceName || "";
+    if (character.voiceId && character.voiceName) {
+      els.acgnVoiceSelect.innerHTML = `<option value="${escapeAttr(character.voiceId)}">${escapeHtml(`${character.voiceId} | ${character.voiceName}`)}</option>`;
+      els.acgnVoiceSelect.value = character.voiceId;
+    }
+    els.voiceModel.value = character.voiceLanguage || els.voiceModel.value || "JP";
+    els.voiceAutoTranslate.checked = character.voiceAutoTranslate !== false;
+    syncVoiceProviderUi();
+    saveSettings();
+  }
 
   els.petActor.style.setProperty("--pet-x", "0px");
   els.petActor.style.setProperty("--pet-y", "0px");
@@ -261,6 +634,7 @@ function applyCharacter(character) {
     els.petEmpty.hidden = false;
   }
 
+  syncStyleModeUi();
   renderMessages();
 }
 
@@ -269,11 +643,12 @@ function clearCharacter() {
   state.messages = [];
   state.sessionId = null;
   state.pet.lastSpeech = "";
-  $("#currentThumb").removeAttribute("src");
-  els.activeAvatar.removeAttribute("src");
+  $("#currentThumb").src = AVATAR_PLACEHOLDER;
+  els.activeAvatar.src = AVATAR_PLACEHOLDER;
   $("#currentName").textContent = "选择角色";
   $("#currentWork").textContent = "新建或选择一个聊天对象";
   $("#chatTitle").textContent = "请选择聊天对象";
+  document.documentElement.style.setProperty("--galgame-name", "\"角色\"");
   $("#sheetWork").textContent = "";
   $("#sheetName").textContent = "未选择";
   $("#sheetSubtitle").textContent = "角色库为空，请新建角色开始。";
@@ -282,10 +657,12 @@ function clearCharacter() {
   els.petEmpty.hidden = true;
   els.petActor.hidden = true;
   els.live2dStage.hidden = true;
+  els.petAvatar.src = PET_PLACEHOLDER;
   state.live2d?.app?.destroy?.(true);
   state.live2d = null;
   els.petBubble.hidden = true;
   els.petToolbar.hidden = true;
+  syncStyleModeUi();
   renderMessages();
 }
 
@@ -362,7 +739,10 @@ async function fetchImageCandidates() {
     state.candidates = result.candidates || [];
     state.candidateQuery = name;
     renderCandidateGrid(state.candidates);
-    els.candidateStatus.textContent = state.candidates.length ? `已抓取 ${state.candidates.length} 张` : "没有找到候选图";
+    const filled = autofillCandidateFields(state.candidates);
+    els.candidateStatus.textContent = state.candidates.length
+      ? `已抓取 ${state.candidates.length} 张${filled ? `，自动放入 ${filled} 项` : ""}`
+      : "没有找到候选图";
   } catch (error) {
     els.candidateStatus.textContent = `抓取失败：${error.message}`;
   } finally {
@@ -383,20 +763,53 @@ function scheduleCandidateFetch() {
   candidateTimer = setTimeout(fetchImageCandidates, 900);
 }
 
+function galgameChoices() {
+  if (!state.current) return [];
+  return [
+    `继续追问${state.current.name}刚才的话`,
+    "换个轻松的话题",
+    "问问现在的心情"
+  ];
+}
+
+function renderChoiceButtons(choices, className = "starter-actions") {
+  if (!choices.length) return "";
+  return `
+    <div class="${className}">
+      ${choices.map((text) => `<button type="button" data-starter="${escapeAttr(text)}">${escapeHtml(text)}</button>`).join("")}
+    </div>
+  `;
+}
+
 function renderMessages() {
   if (!state.messages.length) {
-    els.messages.innerHTML = `<div class="empty-state">还没有对话。</div>`;
+    const starters = state.current ? [
+      `今天想和${state.current.name}聊点日常`,
+      `请用${state.current.name}的语气介绍自己`,
+      "现在是什么心情？"
+    ] : [];
+    els.messages.innerHTML = `
+      <div class="empty-state">
+        <strong>${state.current ? `准备和 ${escapeHtml(state.current.name)} 打个招呼` : "先选择一个角色"}</strong>
+        <span>${state.current ? "输入第一句话，右侧桌宠会跟着回应你的互动。" : "创建或选择角色后，就能开始聊天和桌宠互动。"}</span>
+        ${renderChoiceButtons(starters)}
+      </div>
+    `;
     return;
   }
-  els.messages.innerHTML = state.messages.map((message) => (
+  const isGalgame = document.documentElement.dataset.uiStyle === "galgame";
+  const visibleMessages = isGalgame ? state.messages.slice(-1) : state.messages;
+  const choiceBar = isGalgame ? renderChoiceButtons(galgameChoices(), "galgame-choices") : "";
+  els.messages.innerHTML = visibleMessages.map((message) => (
     `<div class="bubble ${message.role}">${escapeHtml(message.content)}</div>`
-  )).join("");
+  )).join("") + choiceBar;
   els.messages.scrollTop = els.messages.scrollHeight;
 
   const latestAssistant = [...state.messages].reverse().find((message) => message.role === "assistant");
   if (latestAssistant?.content && latestAssistant.content !== "..." && latestAssistant.content !== state.pet.lastSpeech) {
     state.pet.lastSpeech = latestAssistant.content;
     petSpeak(latestAssistant.content, 7000);
+    speakAssistant(latestAssistant.content);
   }
 }
 
@@ -467,6 +880,113 @@ function petSpeak(text, duration = 3600) {
   }, duration);
 }
 
+async function speakAssistant(text) {
+  if (!state.voiceEnabled) return;
+  const content = String(text || "").replace(/\s+/g, " ").trim();
+  if (!content || content === "...") return;
+
+  const voiceProvider = els.voiceProvider.value || "openai-compatible";
+  const voiceApiKey = els.voiceKey.value.trim() || (voiceProvider === "openai-compatible" ? els.apiKey.value.trim() : "");
+  const voiceBaseUrl = els.voiceBaseUrl.value.trim() || (voiceProvider === "openai-compatible" ? els.baseUrl.value.trim() : "");
+  const voiceModel = els.voiceModel.value.trim() || (isAcgnProvider(voiceProvider) ? "JP" : voiceProvider === "elevenlabs" ? "eleven_multilingual_v2" : TTS_MODEL);
+  const voiceId = els.voiceId.value.trim() || state.current?.voiceId || (voiceProvider === "openai-compatible" ? TTS_VOICE : "");
+  const canUseRemoteTts = voiceProvider === "acgn-official"
+    ? Boolean(voiceApiKey)
+    : voiceProvider !== "browser" && (voiceApiKey || voiceProvider === "acgn-ttson");
+
+  if (canUseRemoteTts) {
+    try {
+      const requestAudio = (segment) => fetchTtsAudio({
+        provider: voiceProvider,
+        baseUrl: voiceBaseUrl,
+        apiKey: voiceApiKey,
+        model: voiceModel,
+        voice: voiceId,
+        language: isAcgnProvider(voiceProvider) ? voiceModel : undefined,
+        autoTranslate: voiceProvider === "acgn-ttson" ? els.voiceAutoTranslate.checked : undefined,
+        deviceId: voiceProvider === "acgn-ttson" ? getAcgnDeviceId() : undefined,
+        text: segment
+      });
+
+      if (isAcgnProvider(voiceProvider)) {
+        await playTtsSegments(splitTtsSegments(content), requestAudio);
+      } else {
+        await playTtsSegments([content], requestAudio);
+      }
+      return;
+    } catch (error) {
+      console.warn("Remote TTS failed, falling back to browser voice:", error);
+    }
+  }
+
+  if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(content.slice(0, 260));
+  utterance.lang = "ja-JP";
+  utterance.rate = 1;
+  utterance.pitch = 1.08;
+  const voices = window.speechSynthesis.getVoices?.() || [];
+  const jpVoice = voices.find((voice) => /ja|Japanese|Japan/i.test(`${voice.lang} ${voice.name}`));
+  if (jpVoice) utterance.voice = jpVoice;
+  window.speechSynthesis.speak(utterance);
+}
+
+async function fetchTtsAudio(payload) {
+  const response = await fetch("/api/tts", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || `TTS failed: ${response.status}`);
+  }
+  return response.blob();
+}
+
+function splitTtsSegments(text) {
+  const chunks = (String(text || "").match(/[^。！？!?；;]+[。！？!?；;]?/g) || [String(text || "")])
+    .map((item) => item.trim())
+    .filter(Boolean);
+  if (chunks.length <= 1) return [String(text || "").slice(0, 900)];
+
+  const segments = [];
+  let current = "";
+  for (const chunk of chunks) {
+    if ((current + chunk).length > 90 && current) {
+      segments.push(current);
+      current = chunk;
+    } else {
+      current = current ? `${current} ${chunk}` : chunk;
+    }
+  }
+  if (current) segments.push(current);
+  return segments.slice(0, 6);
+}
+
+async function playTtsSegments(segments, requestAudio) {
+  speakAssistant.abort?.abort();
+  speakAssistant.abort = new AbortController();
+  const signal = speakAssistant.abort.signal;
+  if (speakAssistant.audio) speakAssistant.audio.pause();
+
+  let nextBlob = requestAudio(segments[0]);
+  for (let index = 0; index < segments.length; index += 1) {
+    if (signal.aborted) return;
+    const blob = await nextBlob;
+    nextBlob = index + 1 < segments.length ? requestAudio(segments[index + 1]) : null;
+    if (signal.aborted) return;
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    speakAssistant.audio = audio;
+    await new Promise((resolve, reject) => {
+      audio.addEventListener("ended", resolve, { once: true });
+      audio.addEventListener("error", reject, { once: true });
+      audio.play().catch(reject);
+    }).finally(() => URL.revokeObjectURL(url));
+  }
+}
+
 function playPetMotion(name) {
   const target = els.petActor.hidden ? els.live2dStage : els.petActor;
   if (target.hidden) return;
@@ -474,7 +994,7 @@ function playPetMotion(name) {
   clearTimeout(playPetMotion.timer);
   playPetMotion.timer = setTimeout(() => {
     delete target.dataset.motion;
-  }, 900);
+  }, name === "spin" ? 1200 : 900);
 }
 
 async function handlePetAction(action) {
@@ -483,6 +1003,9 @@ async function handlePetAction(action) {
     touch: "happy",
     feed: "feed",
     play: "jump",
+    wave: "wave",
+    shy: "shy",
+    spin: "spin",
     rest: "rest"
   }[action] || "happy";
 
@@ -490,7 +1013,12 @@ async function handlePetAction(action) {
 
   if (els.provider.value === "mock") {
     const idLines = getInteractionLines(state.current);
-    petSpeak(idLines[action] || idLines.touch);
+    const fallbackLines = {
+      wave: `${state.current.name}向你挥了挥手。`,
+      shy: `${state.current.name}稍微移开视线，像是有点不好意思。`,
+      spin: `${state.current.name}轻快地转了一圈。`
+    };
+    petSpeak(idLines[action] || fallbackLines[action] || idLines.touch);
     return;
   }
 
@@ -545,15 +1073,47 @@ function fallbackPortrait(name, accent = "#7aa8ff") {
   return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 900'><defs><radialGradient id='halo' cx='.5' cy='.22' r='.5'><stop stop-color='${color}' stop-opacity='.95'/><stop offset='.62' stop-color='${color}' stop-opacity='.32'/><stop offset='1' stop-color='${color}' stop-opacity='0'/></radialGradient><linearGradient id='body' x1='0' y1='0' x2='1' y2='1'><stop stop-color='%23ffffff' stop-opacity='.24'/><stop offset='1' stop-color='${color}' stop-opacity='.5'/></linearGradient></defs><ellipse cx='320' cy='815' rx='158' ry='32' fill='%23000000' fill-opacity='.28'/><path d='M166 820c22-276 70-434 154-434s132 158 154 434z' fill='url(%23body)'/><circle cx='320' cy='245' r='170' fill='url(%23halo)'/><text x='320' y='294' text-anchor='middle' font-size='92' font-family='Arial, sans-serif' font-weight='800' fill='white'>${initial}</text></svg>`;
 }
 
-$("#openCharacterModal").addEventListener("click", () => els.modal.showModal());
-$("#closeCharacterModal").addEventListener("click", () => els.modal.close());
+$("#openCharacterModal").addEventListener("click", openCharacterLibrary);
+$("#closeCharacterModal").addEventListener("click", closeCharacterLibrary);
+els.openOnboarding.addEventListener("click", () => openOnboarding(true));
+els.closeOnboarding.addEventListener("click", () => closeOnboarding(true));
+els.finishOnboarding.addEventListener("click", () => closeOnboarding(true));
 $("#showCreate").addEventListener("click", () => els.createForm.querySelector("input").focus());
 els.search.addEventListener("input", renderCharacters);
 els.createForm.elements.name.addEventListener("input", scheduleCandidateFetch);
 
-[els.provider, els.baseUrl, els.model, els.apiKey].forEach((input) => {
+[els.provider, els.baseUrl, els.model, els.apiKey, els.voiceProvider, els.voiceBaseUrl, els.voiceModel, els.voiceId, els.voiceKey, els.voiceAutoTranslate].forEach((input) => {
   input.addEventListener("change", saveSettings);
   input.addEventListener("input", saveSettings);
+});
+
+els.voiceProvider.addEventListener("change", () => {
+  syncVoiceProviderUi();
+  saveSettings();
+});
+els.checkAcgnQuota.addEventListener("click", checkAcgnQuota);
+
+els.voiceSearch.addEventListener("input", () => {
+  pickAcgnVoiceFromInput();
+  scheduleAcgnVoiceSearch();
+});
+els.voiceSearch.addEventListener("change", pickAcgnVoiceFromInput);
+els.acgnVoiceResults.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-voice-id]");
+  if (!button) return;
+  applyAcgnVoice(button.dataset.voiceId, button.dataset.voiceLabel || button.textContent.trim());
+  els.acgnVoiceResults.hidden = true;
+});
+els.acgnVoiceSelect.addEventListener("change", () => {
+  const option = els.acgnVoiceSelect.selectedOptions[0];
+  applyAcgnVoice(els.acgnVoiceSelect.value, option?.textContent || "");
+});
+
+els.styleInputs.forEach((input) => {
+  input.addEventListener("change", () => {
+    applyUiStyle(input.value);
+    saveSettings();
+  });
 });
 
 els.petToolbar.addEventListener("click", (event) => {
@@ -641,7 +1201,7 @@ els.grid.addEventListener("click", (event) => {
     const character = state.characters.find((item) => item.id === id);
     if (!character) return;
     applyCharacter(character);
-    els.modal.close();
+    if (!isAlbumStyle()) closeCharacterLibrary();
   }
 });
 
@@ -649,6 +1209,12 @@ els.composer.addEventListener("submit", (event) => {
   event.preventDefault();
   const content = els.input.value.trim();
   if (content) sendMessage(content);
+});
+
+els.messages.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-starter]");
+  if (!button || !state.current) return;
+  sendMessage(button.dataset.starter);
 });
 
 els.input.addEventListener("input", autosize);
@@ -664,6 +1230,13 @@ $("#resetChat").addEventListener("click", () => {
   state.sessionId = null;
   renderMessages();
 });
+
+[els.voiceToggle, els.voiceToggleDock].filter(Boolean).forEach((button) => button.addEventListener("click", () => {
+  state.voiceEnabled = !state.voiceEnabled;
+  if (!state.voiceEnabled && "speechSynthesis" in window) window.speechSynthesis.cancel();
+  syncVoiceUi();
+  saveSettings();
+}));
 
 els.fetchCandidates.addEventListener("click", fetchImageCandidates);
 
@@ -683,7 +1256,20 @@ els.candidateGrid.addEventListener("click", (event) => {
     const modeInput = els.createForm.querySelector(`input[name="petStyle"][value="${mode}"]`);
     if (modeInput) modeInput.checked = true;
   }
+  updateCreatePreviews();
   els.candidateStatus.textContent = `已设置${button.textContent}图`;
+});
+
+["avatarUrl", "imageUrl", "petImageUrl"].forEach((name) => {
+  els.createForm.elements[name].addEventListener("input", updateCreatePreviews);
+});
+
+els.imageUpload.addEventListener("change", () => {
+  setUploadPreview("imageUpload", els.imageUpload.files?.[0]);
+});
+
+els.petUpload.addEventListener("change", () => {
+  setUploadPreview("petUpload", els.petUpload.files?.[0]);
 });
 
 els.createForm.addEventListener("submit", async (event) => {
@@ -694,6 +1280,8 @@ els.createForm.addEventListener("submit", async (event) => {
   payload.petStyle = form.get("petStyle") || "standee";
   payload.makePet = payload.petStyle !== "live2d";
   payload.useChibiPet = payload.petStyle === "chibi";
+  payload.voiceLanguage = payload.voiceLanguage || "JP";
+  payload.voiceAutoTranslate = form.get("voiceAutoTranslate") === "on";
   payload.uploadedImageData = await readFileAsDataUrl(els.imageUpload.files?.[0]);
   payload.uploadedPetData = await readFileAsDataUrl(els.petUpload.files?.[0]);
 
@@ -709,12 +1297,13 @@ els.createForm.addEventListener("submit", async (event) => {
     renderCharacters();
     applyCharacter(character);
     els.createForm.reset();
+    resetCreatePreviews();
     state.candidates = [];
     state.candidateQuery = "";
     renderCandidateGrid([]);
     els.candidateStatus.textContent = "";
     els.createStatus.textContent = "角色卡已生成。";
-    setTimeout(() => els.modal.close(), 350);
+    if (!isAlbumStyle()) setTimeout(closeCharacterLibrary, 350);
   } catch (error) {
     els.createStatus.textContent = `生成失败：${error.message}`;
   } finally {
@@ -723,6 +1312,7 @@ els.createForm.addEventListener("submit", async (event) => {
 });
 
 loadSettings();
+setTimeout(() => openOnboarding(false), 350);
 loadCharacters().catch((error) => {
   els.messages.innerHTML = `<div class="empty-state">加载失败：${escapeHtml(error.message)}</div>`;
 });

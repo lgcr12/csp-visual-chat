@@ -15,15 +15,38 @@
             <strong>CSP Chat</strong>
             <span>角色技能聊天平台</span>
           </div>
+          <button class="help-button" id="openOnboarding" type="button">使用引导</button>
         </div>
 
         <button class="select-target" id="openCharacterModal">
-          <span class="mini-portrait"><img id="currentThumb" alt="" /></span>
+          <span class="mini-portrait"><img id="currentThumb" src="/assets/ui/avatar-placeholder.svg" alt="" /></span>
           <span>
             <b id="currentName">选择角色</b>
             <small id="currentWork">点击打开角色卡片</small>
           </span>
         </button>
+
+        <div class="panel compact style-panel">
+          <label>界面风格</label>
+          <div class="style-switch" role="radiogroup" aria-label="界面风格">
+            <label>
+              <input name="uiStyle" type="radio" value="workbench" checked />
+              <span>陪伴工作台</span>
+            </label>
+            <label>
+              <input name="uiStyle" type="radio" value="galgame" />
+              <span>Galgame</span>
+            </label>
+            <label>
+              <input name="uiStyle" type="radio" value="pet-console" />
+              <span>桌宠控制台</span>
+            </label>
+            <label>
+              <input name="uiStyle" type="radio" value="album" />
+              <span>角色卡册</span>
+            </label>
+          </div>
+        </div>
 
         <div class="panel compact">
           <label>聊天 API</label>
@@ -37,29 +60,68 @@
           <input id="apiKey" placeholder="API Key，可选，仅保存在本机浏览器" type="password" />
         </div>
 
+        <div class="panel compact voice-api-panel">
+          <label>配音 API</label>
+          <select id="voiceProvider">
+            <option value="openai-compatible">OpenAI TTS</option>
+            <option value="elevenlabs">ElevenLabs</option>
+            <option value="acgn-official">TTS-Online 官方 API</option>
+            <option value="acgn-ttson">TTS-Online 网页兼容</option>
+            <option value="browser">浏览器语音</option>
+          </select>
+          <p id="voiceProviderHint" class="field-hint">官方 API 需要 token；网页兼容模式可不填 token。</p>
+          <input id="voiceBaseUrl" placeholder="Voice Base URL，可选" />
+          <input id="voiceModel" placeholder="Voice Model / ACGN 语言，可选" />
+          <input id="voiceId" placeholder="Voice ID / 音色 ID，可选" />
+          <input id="voiceSearch" placeholder="搜索 ACGN 声线，例如 艾米莉亚" autocomplete="off" />
+          <div id="acgnVoiceResults" class="voice-results" hidden></div>
+          <select id="acgnVoiceSelect">
+            <option value="">先搜索，然后从候选声线中选择</option>
+          </select>
+          <label class="check-line">
+            <input id="voiceAutoTranslate" type="checkbox" checked />
+            <span>中文回复自动转成日语配音</span>
+          </label>
+          <input id="voiceKey" placeholder="Voice API Key / ACGN token 或完整链接，仅保存在本机浏览器" type="password" />
+          <div class="quota-row">
+            <button id="checkAcgnQuota" type="button">查询 ACGN 额度</button>
+            <span id="acgnQuotaStatus"></span>
+          </div>
+        </div>
+
         <div class="panel compact muted">
           <p>新建角色会分开处理头像、角色卡图和桌宠立绘。上传桌宠图后会自动抠白底并显示在右侧区域。</p>
         </div>
       </aside>
 
       <main class="chat">
-        <header class="chat-head">
-          <div class="chat-character">
-            <span class="active-avatar"><img id="activeAvatar" alt="" /></span>
-            <div>
-            <span class="eyebrow">ACTIVE CHARACTER</span>
-            <h1 id="chatTitle">请选择聊天对象</h1>
+        <div class="chat-shell">
+          <header class="chat-head">
+            <div class="chat-character">
+              <span class="active-avatar"><img id="activeAvatar" src="/assets/ui/avatar-placeholder.svg" alt="" /></span>
+              <div>
+                <span class="eyebrow">当前角色</span>
+                <h1 id="chatTitle">请选择聊天对象</h1>
+                <div class="presence-row" aria-label="角色状态">
+                  <span>桌宠在线</span>
+                  <span>本地会话</span>
+                  <span>素材就绪</span>
+                </div>
+              </div>
             </div>
-          </div>
-          <button class="ghost" id="resetChat">清空对话</button>
-        </header>
+            <div class="chat-actions">
+              <button class="ghost" id="voiceToggle" type="button" aria-pressed="false">语音关</button>
+              <button class="ghost" id="resetChat" type="button">清空对话</button>
+            </div>
+          </header>
 
-        <section class="messages" id="messages"></section>
+          <section class="messages" id="messages"></section>
 
-        <form class="composer" id="composer">
-          <textarea id="messageInput" rows="1" placeholder="输入消息，按 Enter 发送，Shift + Enter 换行"></textarea>
-          <button type="submit">发送</button>
-        </form>
+          <form class="composer" id="composer">
+            <textarea id="messageInput" rows="1" placeholder="输入消息，按 Enter 发送，Shift + Enter 换行"></textarea>
+            <button type="submit">发送</button>
+          </form>
+        </div>
       </main>
 
       <aside class="stage">
@@ -71,7 +133,7 @@
             <span>上传透明全身立绘后会显示在这里</span>
           </div>
           <div class="pet-actor" id="petActor" role="button" tabindex="0" aria-label="桌宠" hidden>
-            <img id="petAvatar" class="pet-avatar" alt="桌宠形象" draggable="false" />
+            <img id="petAvatar" class="pet-avatar" src="/assets/ui/pet-placeholder.svg" alt="桌宠形象" draggable="false" />
             <div class="pet-shadow"></div>
           </div>
           <div class="live2d-stage" id="live2dStage" role="button" tabindex="0" aria-label="Live2D 桌宠" hidden>
@@ -82,6 +144,9 @@
             <button type="button" data-pet-action="touch">摸头</button>
             <button type="button" data-pet-action="feed">投喂</button>
             <button type="button" data-pet-action="play">玩耍</button>
+            <button type="button" data-pet-action="wave">挥手</button>
+            <button type="button" data-pet-action="shy">害羞</button>
+            <button type="button" data-pet-action="spin">转圈</button>
             <button type="button" data-pet-action="rest">休息</button>
           </div>
         </section>
@@ -96,17 +161,73 @@
       </aside>
     </div>
 
+    <div class="style-dock" aria-label="界面风格">
+      <button type="button" id="voiceToggleDock" aria-pressed="false">语音关</button>
+      <label>
+        <input name="uiStyle" type="radio" value="workbench" />
+        <span>工作台</span>
+      </label>
+      <label>
+        <input name="uiStyle" type="radio" value="galgame" />
+        <span>Galgame</span>
+      </label>
+      <label>
+        <input name="uiStyle" type="radio" value="pet-console" />
+        <span>桌宠</span>
+      </label>
+      <label>
+        <input name="uiStyle" type="radio" value="album" />
+        <span>卡册</span>
+      </label>
+    </div>
+
+    <dialog id="onboardingModal" class="modal onboarding-modal">
+      <div class="modal-head">
+        <div>
+          <span class="eyebrow">首次使用</span>
+          <h2>配置聊天和配音</h2>
+        </div>
+        <button class="icon-button" id="closeOnboarding" aria-label="关闭">x</button>
+      </div>
+      <div class="onboarding-body">
+        <section>
+          <h3>1. 聊天 API</h3>
+          <p>本地预览可以直接聊天，但不会调用真实模型。要让角色按 Skill 正常回复，选择 OpenAI Compatible 或 Claude Messages API。</p>
+          <ul>
+            <li>OpenAI Compatible：填 Base URL、Model、API Key。</li>
+            <li>Claude：填 Claude API Key，Base URL 通常可留空。</li>
+            <li>API Key 只保存在本机浏览器 localStorage。</li>
+          </ul>
+        </section>
+        <section>
+          <h3>2. ACGN 配音</h3>
+          <p>推荐优先选择 TTS-Online 官方 API。官方模式需要 token，网页兼容模式可以不填 token，适合先测试。</p>
+          <ul>
+            <li>Voice Model / ACGN 语言：日语填 JP，中文填 ZH。</li>
+            <li>中文回复自动转日语配音：勾上后中文台词会发给 ACGN 自动翻译。</li>
+            <li>官方 API：token 必填，也可以直接粘贴 www.ttson.cn/?token=xxx 链接。</li>
+            <li>网页兼容：token 可不填，不填走本机游客额度。充值链接要先用 acgn.ttson.cn?token=xxx 打开一次同步额度。</li>
+          </ul>
+        </section>
+        <section>
+          <h3>3. 语音延迟</h3>
+          <p>ACGN 需要生成音频后才能播放，长回复会更慢。现在已启用按句分段生成，第一句会先播放，后面的句子继续排队。</p>
+        </section>
+        <button id="finishOnboarding" type="button">知道了</button>
+      </div>
+    </dialog>
+
     <dialog id="characterModal" class="modal">
       <div class="modal-head">
         <div>
-          <span class="eyebrow">CHARACTER LIBRARY</span>
+          <span class="eyebrow">角色库</span>
           <h2>选择聊天对象</h2>
         </div>
         <button class="icon-button" id="closeCharacterModal" aria-label="关闭">x</button>
       </div>
 
       <div class="modal-body">
-        <section>
+        <section class="library-pane" aria-label="角色选择">
           <div class="tools-row">
             <input id="characterSearch" placeholder="搜索角色或作品" />
             <button id="showCreate">新建角色</button>
@@ -115,51 +236,105 @@
         </section>
 
         <form id="createForm" class="create-form">
-          <h3>用 CSP 新建角色</h3>
-          <input name="name" required placeholder="角色名，例如 要乐奈" />
-          <input name="work" placeholder="作品名，例如 BanG Dream! It's MyGO!!!!!" />
-          <input name="subtitle" placeholder="角色短描述，可选" />
-          <input name="avatarUrl" placeholder="头像图片 URL，可选" />
-          <input name="imageUrl" placeholder="全身立绘 URL，可选" />
-          <input name="petImageUrl" placeholder="Q版桌宠图片 URL，可选" />
-          <input name="live2dModelUrl" placeholder="Live2D model3.json URL，可选" />
-
-          <div class="candidate-tools">
-            <button id="fetchCandidates" type="button">抓取候选图</button>
-            <span id="candidateStatus"></span>
-          </div>
-          <div id="candidateGrid" class="candidate-grid" hidden></div>
-
-          <label class="file-line">
-            <span>上传全身立绘</span>
-            <input id="imageUpload" type="file" accept="image/*" />
-          </label>
-          <label class="file-line">
-            <span>上传桌宠图片</span>
-            <input id="petUpload" type="file" accept="image/*" />
-          </label>
-
-          <label class="check-line">
-            <input name="useFetchedImage" type="checkbox" checked />
-            <span>没有上传或填写图片时，使用自动抓取到的图片</span>
-          </label>
-          <div class="pet-style-control" role="radiogroup" aria-label="桌宠模式">
-            <label>
-              <input name="petStyle" type="radio" value="standee" checked />
-              <span>普通立绘</span>
-            </label>
-            <label>
-              <input name="petStyle" type="radio" value="chibi" />
-              <span>Q版</span>
-            </label>
-            <label>
-              <input name="petStyle" type="radio" value="live2d" />
-              <span>Live2D</span>
-            </label>
+          <div class="create-header">
+            <div>
+              <span class="eyebrow">素材面板</span>
+              <h3>用 CSP 新建角色</h3>
+            </div>
+            <button type="submit">生成角色卡</button>
           </div>
 
-          <textarea name="notes" rows="5" placeholder="补充设定边界、时间线、口吻要求，可选"></textarea>
-          <button type="submit">生成角色卡</button>
+          <div class="create-preview" aria-label="素材预览">
+            <figure class="material-slot avatar-slot">
+              <img id="createAvatarPreview" src="/assets/ui/avatar-placeholder.svg" alt="" />
+              <figcaption>头像</figcaption>
+            </figure>
+            <figure class="material-slot">
+              <img id="createCardPreview" src="/assets/ui/pet-placeholder.svg" alt="" />
+              <figcaption>卡片立绘</figcaption>
+            </figure>
+            <figure class="material-slot">
+              <img id="createPetPreview" src="/assets/ui/pet-placeholder.svg" alt="" />
+              <figcaption>桌宠</figcaption>
+            </figure>
+          </div>
+
+          <section class="create-section">
+            <h4>基础资料</h4>
+            <div class="form-grid">
+              <input name="name" required placeholder="角色名，例如 要乐奈" />
+              <input name="work" placeholder="作品名，例如 BanG Dream! It's MyGO!!!!!" />
+              <input name="subtitle" class="span-2" placeholder="角色短描述，可选" />
+            </div>
+          </section>
+
+          <section class="create-section">
+            <div class="section-head">
+              <h4>图片素材</h4>
+              <div class="candidate-tools">
+                <button id="fetchCandidates" type="button">抓取候选图</button>
+                <span id="candidateStatus"></span>
+              </div>
+            </div>
+            <div class="form-grid">
+              <input name="avatarUrl" placeholder="头像图片 URL，可选" />
+              <input name="imageUrl" placeholder="全身立绘 URL，可选" />
+              <input name="petImageUrl" placeholder="Q版桌宠图片 URL，可选" />
+              <input name="live2dModelUrl" placeholder="Live2D model3.json URL，可选" />
+            </div>
+            <div id="candidateGrid" class="candidate-grid" hidden></div>
+            <div class="upload-grid">
+              <label class="file-line">
+                <span>上传全身立绘</span>
+                <input id="imageUpload" type="file" accept="image/*" />
+              </label>
+              <label class="file-line">
+                <span>上传桌宠图片</span>
+                <input id="petUpload" type="file" accept="image/*" />
+              </label>
+            </div>
+          </section>
+
+          <section class="create-section">
+            <h4>桌宠模式</h4>
+            <div class="pet-style-control" role="radiogroup" aria-label="桌宠模式">
+              <label>
+                <input name="petStyle" type="radio" value="standee" checked />
+                <span>普通立绘</span>
+              </label>
+              <label>
+                <input name="petStyle" type="radio" value="chibi" />
+                <span>Q版</span>
+              </label>
+              <label>
+                <input name="petStyle" type="radio" value="live2d" />
+                <span>Live2D</span>
+              </label>
+            </div>
+            <label class="check-line">
+              <input name="useFetchedImage" type="checkbox" checked />
+              <span>没有上传或填写图片时，使用自动抓取到的图片</span>
+            </label>
+          </section>
+
+          <section class="create-section">
+            <h4>配音声线</h4>
+            <div class="form-grid">
+              <input name="voiceId" placeholder="ACGN voice_id，可自动匹配" />
+              <input name="voiceName" placeholder="声线名称，可选" />
+              <input name="voiceLanguage" placeholder="配音语言，默认 JP" />
+            </div>
+            <label class="check-line">
+              <input name="voiceAutoTranslate" type="checkbox" checked />
+              <span>创建后默认使用中文转日语配音</span>
+            </label>
+          </section>
+
+          <section class="create-section">
+            <h4>设定补充</h4>
+            <textarea name="notes" rows="4" placeholder="补充设定边界、时间线、口吻要求，可选"></textarea>
+          </section>
+
           <p id="createStatus"></p>
         </form>
       </div>

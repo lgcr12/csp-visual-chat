@@ -4,6 +4,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
+import crypto from "node:crypto";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 4173);
@@ -12,6 +13,15 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 const UPLOAD_DIR = path.join(PUBLIC_DIR, "assets", "uploads");
 const CHARACTER_FILE = path.join(DATA_DIR, "characters.json");
 const SESSION_FILE = path.join(DATA_DIR, "sessions.json");
+const ACGN_VOICE_INDEX_FILE = path.join(__dirname, "outputs", "acgn-tts", "acgn-voices-index.json");
+const ACGN_DEFAULT_BASE = "https://u95167-8ncb-3637bf8b.bjb1.seetacloud.com:8443";
+const ACGN_FALLBACK_BASE = "https://api.ttson.cn";
+const ACGN_OFFICIAL_BASE = "https://api.ttson.cn";
+const ACGN_OFFICIAL_FALLBACKS = [
+  "https://api.ttson.cn",
+  "https://u95167-8ncb-3637bf8b.bjb1.seetacloud.com:8443",
+  "https://ht.ttson.cn:37284"
+];
 const CUTOUT_SCRIPT = path.join(__dirname, "tools", "cutout_white_bg.py");
 const CSP_DIR = process.env.CSP_SKILL_DIR || "C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer";
 const CSP_SEARCH = path.join(CSP_DIR, "scripts", "source_search.py");
@@ -39,7 +49,8 @@ const MIME = {
   ".png": "image/png",
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
-  ".webp": "image/webp"
+  ".webp": "image/webp",
+  ".mp3": "audio/mpeg"
 };
 
 const defaultCharacters = [
@@ -556,6 +567,184 @@ async function fetchMoegirlImages(name) {
   };
 }
 
+let acgnVoiceIndexCache = null;
+
+function acgnHeaders(deviceId) {
+  const hour = new Date().toISOString().slice(0, 13);
+  const headers = {
+    "accept": "application/json, text/plain, */*",
+    "content-type": "application/json",
+    "origin": "https://acgn.ttson.cn",
+    "referer": "https://acgn.ttson.cn/",
+    "x-checkout-header": "_checkout",
+    "x-client-header": crypto.createHash("md5").update(`alex${hour}`).digest("hex"),
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/148 Safari/537.36"
+  };
+  if (deviceId) headers["x-device-id"] = deviceId;
+  return headers;
+}
+
+async function fetchAcgnJson(pathname, deviceId) {
+  const headers = acgnHeaders(deviceId);
+  for (const base of [ACGN_DEFAULT_BASE, ACGN_FALLBACK_BASE]) {
+    try {
+      const response = await fetch(`${base}${pathname}`, {
+        headers,
+        signal: AbortSignal.timeout(20000)
+      });
+      const text = await response.text();
+      if (!response.ok) throw new Error(`${response.status} ${text.slice(0, 160)}`);
+      return JSON.parse(text);
+    } catch (error) {
+      if (base === ACGN_FALLBACK_BASE) throw error;
+    }
+  }
+  throw new Error("ACGN request failed");
+}
+
+async function loadAcgnVoiceIndex(deviceId) {
+  if (acgnVoiceIndexCache) return acgnVoiceIndexCache;
+  if (existsSync(ACGN_VOICE_INDEX_FILE)) {
+    acgnVoiceIndexCache = await readJson(ACGN_VOICE_INDEX_FILE, []);
+    return acgnVoiceIndexCache;
+  }
+
+  const tags = await fetchAcgnJson("/flashsummary/tags?language=zh-CN", deviceId);
+  const byId = new Map();
+  for (const tag of Array.isArray(tags) ? tags : []) {
+    if (tag.tag_id == null) continue;
+    const data = await fetchAcgnJson(`/flashsummary/voices?language=zh-CN&tag_id=${encodeURIComponent(tag.tag_id)}`, deviceId);
+    for (const voice of Array.isArray(data.data) ? data.data : []) {
+      if (voice?.id == null || byId.has(String(voice.id))) continue;
+      byId.set(String(voice.id), {
+        voice_id: voice.id,
+        name: voice.voice_name || voice.name || voice.speaker || "",
+        tags: Array.isArray(voice.tags) ? voice.tags.map((item) => item.tag_name).filter(Boolean) : [],
+        language: voice.language || "",
+        gender: voice.gender || "",
+        max_length: voice.max_length ?? null
+      });
+    }
+  }
+  acgnVoiceIndexCache = [...byId.values()].sort((a, b) => Number(a.voice_id) - Number(b.voice_id));
+  return acgnVoiceIndexCache;
+}
+
+function normalizeSearchText(value) {
+  return String(value || "").toLowerCase().replace(/\s+/g, "");
+}
+
+function scoreAcgnVoice(voice, query, work = "") {
+  const name = normalizeSearchText(voice.name);
+  const q = normalizeSearchText(query);
+  const w = normalizeSearchText(work);
+  if (!q) return 0;
+
+  let score = 0;
+  if (name.includes(q)) score += 140;
+  if (q.includes(name)) score += 50;
+  if (w && name.includes(w)) score += 45;
+  for (const part of [query, work].join(" ").split(/[\s/|,，、:：-]+/).filter(Boolean)) {
+    const token = normalizeSearchText(part);
+    if (token.length >= 2 && name.includes(token)) score += 24;
+  }
+  if (/高桥李依|高橋李依|水瀬|水濑|日语|日本|jp|japanese/i.test(voice.name)) score += 10;
+  if (/Kayli|Sean|English|英文/i.test(voice.name)) score -= 12;
+  return score;
+}
+
+async function searchAcgnVoices(query, { work = "", limit = 12, deviceId = "" } = {}) {
+  const voices = await loadAcgnVoiceIndex(deviceId);
+  return voices
+    .map((voice) => ({ ...voice, score: scoreAcgnVoice(voice, query, work) }))
+    .filter((voice) => voice.score > 0)
+    .sort((a, b) => b.score - a.score || Number(a.voice_id) - Number(b.voice_id))
+    .slice(0, limit);
+}
+
+function normalizeAcgnLanguage(value, fallback = "JP") {
+  const lang = String(value || "").trim();
+  return /^(ZH|EN|JP|auto)$/i.test(lang) ? lang : fallback;
+}
+
+function extractAcgnToken(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  try {
+    const url = new URL(text);
+    return url.searchParams.get("token") || text;
+  } catch {
+    const match = text.match(/[?&]token=([^&\s]+)/);
+    return match ? decodeURIComponent(match[1]) : text;
+  }
+}
+
+async function postAcgnOfficialTts({ token, baseUrl, voice, input, language }) {
+  const bases = baseUrl
+    ? [baseUrl.replace(/\/$/, "")]
+    : ACGN_OFFICIAL_FALLBACKS;
+  let lastError = null;
+
+  for (const base of bases) {
+    try {
+      const response = await fetch(`${base}/flashsummary/tts?token=${encodeURIComponent(token)}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          voice_id: Number(voice),
+          text: input,
+          to_lang: normalizeAcgnLanguage(language),
+          format: "mp3",
+          speed_factor: 1,
+          pitch_factor: 0,
+          volume_change_dB: 0,
+          emotion: 1
+        }),
+        signal: AbortSignal.timeout(30000)
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.code !== 200 || !data.voice_path || !data.url || !data.port) {
+        throw new Error(data.detail || data.msg || `ACGN official TTS failed: ${response.status}`);
+      }
+      return data;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error("ACGN official TTS failed");
+}
+
+async function downloadAcgnAudio({ data, token, deviceId, official }) {
+  const query = new URLSearchParams({
+    voice_audio_path: data.voice_path,
+    stream: "true"
+  });
+  if (token) query.set("token", token);
+  const audioUrl = `${data.url}:${data.port}/flashsummary/retrieveFileData?${query.toString()}`;
+  const audioResponse = await fetch(audioUrl, {
+    headers: official ? {} : acgnHeaders(token ? "" : deviceId),
+    signal: AbortSignal.timeout(60000)
+  });
+  if (!audioResponse.ok) throw new Error(`ACGN audio download failed: ${audioResponse.status}`);
+  return {
+    contentType: audioResponse.headers.get("content-type") || "audio/mpeg",
+    buffer: Buffer.from(await audioResponse.arrayBuffer())
+  };
+}
+
+async function getAcgnPackageRemaining(token, baseUrl = ACGN_OFFICIAL_BASE) {
+  const normalizedToken = extractAcgnToken(token);
+  if (!normalizedToken) throw new Error("查询 ACGN 剩余额度需要 token");
+  const endpoint = `${baseUrl.replace(/\/$/, "")}/flashsummary/getPackageRemaining?token=${encodeURIComponent(normalizedToken)}`;
+  const response = await fetch(endpoint, { signal: AbortSignal.timeout(20000) });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.code !== 200) {
+    throw new Error(data.detail || data.msg || `ACGN quota failed: ${response.status}`);
+  }
+  return data.data || {};
+}
+
 function makePrompt({ name, work, userNotes, csp }) {
   const record = csp?.records?.find((item) => item.status === "ok") || csp?.records?.[0] || {};
   const sourceBits = [
@@ -615,6 +804,12 @@ async function createCharacter(body) {
       : (body.petImageUrl || uploadedPetUrl || cardSourceUrl || ""))
     : "";
   const petImageUrl = petSourceUrl ? await saveStandeeImageAsset(petSourceUrl, `${id}-pet`) : "";
+  const suppliedVoiceId = String(body.voiceId || "").trim();
+  const suppliedVoiceName = String(body.voiceName || "").trim();
+  const voiceCandidates = suppliedVoiceId
+    ? []
+    : await searchAcgnVoices(name, { work, limit: 8 }).catch(() => []);
+  const matchedVoice = voiceCandidates[0] || null;
   const existing = await readJson(CHARACTER_FILE, []);
   const character = {
     id,
@@ -631,6 +826,12 @@ async function createCharacter(body) {
     sourceUrl: imageValue.sourceUrl || cspValue.records?.find((item) => item.url)?.url || "",
     prompt: makePrompt({ name, work, userNotes, csp: cspValue }),
     csp: cspValue,
+    voiceProvider: suppliedVoiceId || matchedVoice ? "acgn-ttson" : "",
+    voiceId: suppliedVoiceId || (matchedVoice ? String(matchedVoice.voice_id) : ""),
+    voiceName: suppliedVoiceName || matchedVoice?.name || "",
+    voiceLanguage: body.voiceLanguage || "JP",
+    voiceAutoTranslate: body.voiceAutoTranslate !== false,
+    voiceCandidates,
     createdAt: new Date().toISOString()
   };
 
@@ -741,7 +942,166 @@ async function callPetActionAdapter({ provider, apiKey, baseUrl, model, action, 
   });
 }
 
+async function callTtsAdapter({ provider, apiKey, baseUrl, text, voice, model, language, autoTranslate, deviceId }) {
+  const input = String(text || "").slice(0, 1200);
+  if (!input.trim()) throw new Error("语音文本不能为空");
+
+  if (provider === "acgn-official") {
+    if (!voice) throw new Error("TTS-Online 官方 API 需要 voice_id");
+    const token = extractAcgnToken(apiKey);
+    if (!token) throw new Error("TTS-Online 官方 API 需要 token");
+    const data = await postAcgnOfficialTts({
+      token,
+      baseUrl,
+      voice,
+      input,
+      language: language || model || "JP"
+    });
+    return downloadAcgnAudio({ data, token, official: true });
+  }
+
+  if (provider === "acgn-ttson") {
+    if (!voice) throw new Error("ACGN 配音需要 voice_id");
+    const endpointBase = (baseUrl || ACGN_DEFAULT_BASE).replace(/\/$/, "");
+    const token = extractAcgnToken(apiKey);
+    const query = token ? `?token=${encodeURIComponent(token)}` : "";
+    const headers = acgnHeaders(token ? "" : deviceId);
+    const response = await fetch(`${endpointBase}/flashsummary/tts${query}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        voice_id: Number(voice),
+        text: input,
+        format: "mp3",
+        to_lang: language || model || "JP",
+        auto_translate: autoTranslate === false || autoTranslate === "0" ? 0 : 1,
+        voice_speed: "0%",
+        speed_factor: 1,
+        pitch_factor: 0,
+        volume_change_dB: 0,
+        rate: "1.0",
+        client_ip: "ACGN",
+        emotion: 1
+      }),
+      signal: AbortSignal.timeout(60000)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.code !== 200 || !data.voice_path || !data.url || !data.port) {
+      throw new Error(data.detail || data.msg || `ACGN TTS failed: ${response.status}`);
+    }
+    return downloadAcgnAudio({ data, token, deviceId, official: false });
+  }
+
+  if (provider === "elevenlabs") {
+    if (!apiKey) throw new Error("ElevenLabs 需要 API Key");
+    if (!voice) throw new Error("ElevenLabs 需要 Voice ID");
+    const endpoint = `${(baseUrl || "https://api.elevenlabs.io/v1").replace(/\/$/, "")}/text-to-speech/${encodeURIComponent(voice)}?output_format=mp3_44100_128`;
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "xi-api-key": apiKey
+      },
+      body: JSON.stringify({
+        text: input,
+        model_id: model || "eleven_multilingual_v2",
+        voice_settings: {
+          stability: 0.42,
+          similarity_boost: 0.82,
+          style: 0.45,
+          use_speaker_boost: true
+        }
+      }),
+      signal: AbortSignal.timeout(30000)
+    });
+
+    if (!response.ok) {
+      let message = `ElevenLabs TTS failed: ${response.status}`;
+      try {
+        const data = await response.json();
+        message = data.detail?.message || data.detail || data.error?.message || message;
+      } catch {}
+      throw new Error(message);
+    }
+
+    return {
+      contentType: response.headers.get("content-type") || "audio/mpeg",
+      buffer: Buffer.from(await response.arrayBuffer())
+    };
+  }
+
+  if (provider !== "openai-compatible" || !apiKey) {
+    throw new Error("高质量语音需要 OpenAI Compatible API Key");
+  }
+
+  const endpoint = `${(baseUrl || "https://api.openai.com/v1").replace(/\/$/, "")}/audio/speech`;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "authorization": `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: model || "gpt-4o-mini-tts",
+      voice: voice || "marin",
+      input,
+      instructions: [
+        "Speak in Japanese with polished anime voice acting.",
+        "Use a natural seiyuu-like performance without imitating any real person.",
+        "Keep the delivery emotionally expressive, clear, and characterful."
+      ].join(" "),
+      response_format: "mp3"
+    }),
+    signal: AbortSignal.timeout(30000)
+  });
+
+  if (!response.ok) {
+    let message = `TTS API failed: ${response.status}`;
+    try {
+      const data = await response.json();
+      message = data.error?.message || message;
+    } catch {}
+    throw new Error(message);
+  }
+
+  return {
+    contentType: response.headers.get("content-type") || "audio/mpeg",
+    buffer: Buffer.from(await response.arrayBuffer())
+  };
+}
+
 async function routeApi(req, res, pathname) {
+  if (req.method === "GET" && pathname === "/api/acgn-quota") {
+    try {
+      const url = new URL(req.url || "/", `http://${req.headers.host}`);
+      const token = String(url.searchParams.get("token") || "").trim();
+      const baseUrl = String(url.searchParams.get("baseUrl") || ACGN_OFFICIAL_BASE).trim();
+      json(res, 200, await getAcgnPackageRemaining(token, baseUrl || ACGN_OFFICIAL_BASE));
+    } catch (error) {
+      json(res, 500, { error: error.message });
+    }
+    return;
+  }
+
+  if (req.method === "GET" && pathname === "/api/acgn-voices") {
+    try {
+      const url = new URL(req.url || "/", `http://${req.headers.host}`);
+      const query = String(url.searchParams.get("query") || "").trim();
+      const work = String(url.searchParams.get("work") || "").trim();
+      const limit = Math.min(30, Math.max(1, Number(url.searchParams.get("limit") || 12)));
+      const deviceId = String(url.searchParams.get("deviceId") || "").trim();
+      if (!query) {
+        json(res, 400, { error: "query 不能为空", voices: [] });
+        return;
+      }
+      const voices = await searchAcgnVoices(query, { work, limit, deviceId });
+      json(res, 200, { voices });
+    } catch (error) {
+      json(res, 500, { error: error.message, voices: [] });
+    }
+    return;
+  }
+
   if (req.method === "GET" && pathname === "/api/image-candidates") {
     try {
       const url = new URL(req.url || "/", `http://${req.headers.host}`);
@@ -820,6 +1180,20 @@ async function routeApi(req, res, pathname) {
       const character = characters.find((item) => item.id === body.characterId) || characters[0];
       const reply = await callPetActionAdapter({ ...body, character });
       json(res, 200, { reply });
+    } catch (error) {
+      json(res, 500, { error: error.message });
+    }
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/tts") {
+    try {
+      const audio = await callTtsAdapter(await readBody(req));
+      res.writeHead(200, {
+        "content-type": audio.contentType,
+        "cache-control": "no-store"
+      });
+      res.end(audio.buffer);
     } catch (error) {
       json(res, 500, { error: error.message });
     }

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 460" role="img" aria-label="桌宠占位">
+  <defs>
+    <linearGradient id="p" x1="88" y1="48" x2="236" y2="430" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff9cc8"/>
+      <stop offset="1" stop-color="#7aa8ff"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="160" cy="428" rx="92" ry="18" fill="#000" opacity=".24"/>
+  <path d="M83 420c12-145 38-230 77-230s65 85 77 230z" fill="url(#p)" opacity=".85"/>
+  <circle cx="160" cy="132" r="82" fill="url(#p)"/>
+  <circle cx="128" cy="126" r="8" fill="#071015"/>
+  <circle cx="192" cy="126" r="8" fill="#071015"/>
+  <path d="M137 158c15 12 31 12 46 0" fill="none" stroke="#071015" stroke-width="9" stroke-linecap="round"/>
+</svg>

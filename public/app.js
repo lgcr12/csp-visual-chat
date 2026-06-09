@@ -3208,6 +3208,25 @@ function textSeed(text = "") {
   }, 0);
 }
 
+function replyAnchors(text = "") {
+  const source = String(text || "");
+  const anchors = [];
+  const add = (key, label) => {
+    if (!anchors.some((item) => item.key === key)) anchors.push({ key, label });
+  };
+  if (/咖啡馆|咖啡店|咖啡|坐下|点杯/.test(source)) add("cafe", "咖啡馆");
+  if (/近路|路上|顺路|出发|过去|穿过|跟我来|带你/.test(source)) add("route", "路上");
+  if (/责任|负责|追责|甩锅|怪我|怪你/.test(source)) add("responsibility", "责任");
+  if (/理论|模型|方程|假设|建模/.test(source)) add("model", "理论模型");
+  if (/异常点|偏差|误差|变量|观测|记录|数据/.test(source)) add("anomaly", "异常点");
+  if (/时间机器|实验|研究|论文/.test(source)) add("experiment", "实验");
+  if (/当场死机|沉默|说不出|停顿|愣住|僵住/.test(source)) add("pause", "停顿");
+  if (/害怕|担心|不安|难过|孤独|寂寞|哭|迷茫/.test(source)) add("vulnerable", "不安");
+  if (/生气|讨厌|别说|别碰|烦死|指着|质问/.test(source)) add("conflict", "冲突");
+  if (/一起|陪|跟我|留下|约|邀请/.test(source)) add("invitation", "邀请");
+  return anchors;
+}
+
 function templateQuestionChoices(template, name, route = routeStateFor(), seed = 0) {
   const stage = route.relationshipStage || relationshipStageFor(route);
   const isClose = ["dependent", "ambiguous", "confirmed"].includes(stage);
@@ -3284,6 +3303,7 @@ function analyzeReplyChoiceContext(content = "") {
   return {
     kind,
     seed: textSeed(text),
+    anchors: replyAnchors(text),
     isExperimentBlame,
     isExperimentModel,
     hasQuestion,
@@ -3291,6 +3311,44 @@ function analyzeReplyChoiceContext(content = "") {
     isActionable: Boolean(kind && kind !== "question"),
     isStrong: Boolean(hasDirectChoice || ["scene-cafe", "scene-move", "experiment-pressure", "experiment-frustrated", "experiment-model", "conflict", "vulnerable", "invitation"].includes(kind))
   };
+}
+
+function contextualAnchorChoices(context, name) {
+  const anchors = Array.isArray(context?.anchors) ? context.anchors : [];
+  const has = (key) => anchors.some((item) => item.key === key);
+  const choices = [];
+
+  if (has("cafe")) {
+    choices.push(routeChoicePrompt(`把话题先带到咖啡馆的座位上，再继续问${name}`, { affection: 1, trust: 2, intimacy: 0, tension: -1, tone: "soften" }));
+    choices.push(routeChoicePrompt("先问她想点什么，用这点空隙让气氛缓下来", { affection: 1, trust: 1, intimacy: 1, tension: -2, tone: "daily-care" }));
+  }
+  if (has("route")) {
+    choices.push(routeChoicePrompt(`跟上${name}，把路上的安全和目的地先确认清楚`, { affection: 0, trust: 2, intimacy: 1, tone: "cautious" }));
+  }
+  if (has("responsibility")) {
+    choices.push(routeChoicePrompt("认真接下“责任”这个词，但先确认她指的是实验偏差还是你的态度", { affection: 0, trust: 3, intimacy: 0, honesty: 2, tone: "answer" }));
+    choices.push(routeChoicePrompt(`告诉${name}你会负责，但不会把她一个人留在结论里`, { affection: 1, trust: 3, intimacy: 1, tension: -2, tone: "sincere" }));
+  }
+  if (has("model")) {
+    choices.push(routeChoicePrompt("顺着她的理论模型，把两人联立的假设重新写清楚", { affection: 0, trust: 3, intimacy: 0, honesty: 1, tone: "action" }));
+  }
+  if (has("anomaly")) {
+    choices.push(routeChoicePrompt("先锁定异常点，不急着争谁的结论正确", { affection: 0, trust: 3, intimacy: 0, tension: -2, tone: "cautious" }));
+  }
+  if (has("pause")) {
+    choices.push(routeChoicePrompt(`注意到${name}的停顿，先放轻声音等她说完`, { affection: 1, trust: 2, intimacy: 0, tension: -2, tone: "patient" }));
+  }
+  if (has("conflict")) {
+    choices.push(routeChoicePrompt("先不反驳，把刚才刺到她的那句话收回来", { affection: 0, trust: 2, intimacy: 0, tension: -3, tone: "apology" }));
+  }
+  if (has("vulnerable")) {
+    choices.push(routeChoicePrompt(`先确认${name}现在是不安还是在逞强`, { affection: 1, trust: 2, intimacy: 1, tension: -2, tone: "comfort" }));
+  }
+  if (has("invitation")) {
+    choices.push(routeChoicePrompt(`答应${name}，但让她把邀请的理由说得更明白一点`, { affection: 1, trust: 1, intimacy: 1, tone: "tease" }));
+  }
+
+  return choices;
 }
 
 function replyContextChoices(context, template, name, route = routeStateFor(), seed = 0) {
@@ -3367,7 +3425,9 @@ function replyContextChoices(context, template, name, route = routeStateFor(), s
     "direct-choice": templateQuestionChoices(template, name, route, seed),
     question: templateQuestionChoices(template, name, route, seed)
   };
-  return rotateChoicePool(pools[kind] || pools.question || [], seed, 3);
+  const anchorChoices = contextualAnchorChoices(context, name);
+  const pooledChoices = rotateChoicePool(pools[kind] || pools.question || [], seed, 5);
+  return [...anchorChoices, ...pooledChoices].slice(0, 6);
 }
 
 function toneLabel(tone = "") {

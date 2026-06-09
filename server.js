@@ -1707,9 +1707,67 @@ function normalizeRouteEffects(effects = {}) {
   };
 }
 
+function replyChoiceAnchors(reply = "") {
+  const text = String(reply || "");
+  const anchors = [];
+  const add = (key, label) => {
+    if (!anchors.some((item) => item.key === key)) anchors.push({ key, label });
+  };
+  if (/咖啡馆|咖啡店|咖啡|坐下|点杯/.test(text)) add("cafe", "咖啡馆");
+  if (/近路|路上|顺路|出发|过去|穿过|跟我来|带你/.test(text)) add("route", "路上");
+  if (/责任|负责|追责|甩锅|怪我|怪你/.test(text)) add("responsibility", "责任");
+  if (/理论|模型|方程|假设|建模/.test(text)) add("model", "理论模型");
+  if (/异常点|偏差|误差|变量|观测|记录|数据/.test(text)) add("anomaly", "异常点");
+  if (/时间机器|实验|研究|论文/.test(text)) add("experiment", "实验");
+  if (/当场死机|沉默|说不出|停顿|愣住|僵住/.test(text)) add("pause", "停顿");
+  if (/害怕|担心|不安|难过|孤独|寂寞|哭|迷茫/.test(text)) add("vulnerable", "不安");
+  if (/生气|讨厌|别说|别碰|烦死|指着|质问/.test(text)) add("conflict", "冲突");
+  if (/一起|陪|跟我|留下|约|邀请/.test(text)) add("invitation", "邀请");
+  return anchors;
+}
+
+function genericChoiceText(text = "") {
+  return /继续聊|继续问|换个话题|轻松的话题|沉默片刻|认真回应|顺着.*问题|问问.*想法|先回答|陪.*说完/.test(String(text || ""));
+}
+
+function choiceMatchesReply(choiceText = "", anchors = []) {
+  const text = String(choiceText || "");
+  if (!anchors.length) return !genericChoiceText(text);
+  if (anchors.some((anchor) => text.includes(anchor.label))) return true;
+  if (anchors.some((anchor) => anchor.key === "responsibility" && /负责|责任|承担|到底|监督/.test(text))) return true;
+  if (anchors.some((anchor) => anchor.key === "model" && /理论|模型|假设|方程|建模/.test(text))) return true;
+  if (anchors.some((anchor) => anchor.key === "anomaly" && /异常|偏差|误差|变量|观测|记录|数据/.test(text))) return true;
+  if (anchors.some((anchor) => anchor.key === "pause" && /停顿|说完|等她|放轻|死机|沉默/.test(text))) return true;
+  if (anchors.some((anchor) => anchor.key === "route" && /路上|目的地|跟上|过去|近路|出发/.test(text))) return true;
+  return false;
+}
+
 function fallbackRouteChoices(reply, character) {
   const name = character?.name || "角色";
   const text = String(reply || "");
+  const anchors = replyChoiceAnchors(text);
+  const has = (key) => anchors.some((item) => item.key === key);
+  if (has("cafe")) {
+    return [
+      { text: `把话题先带到咖啡馆的座位上，再继续问${name}`, effects: { affection: 1, trust: 2, intimacy: 0, tension: -1, tone: "soften" } },
+      { text: "先问她想点什么，用这点空隙让气氛缓下来", effects: { affection: 1, trust: 1, intimacy: 1, tension: -2, tone: "daily-care" } },
+      { text: "等坐下后再继续聊刚才没说完的重点", effects: { affection: 0, trust: 2, intimacy: 0, tone: "patient" } }
+    ];
+  }
+  if (has("responsibility") || has("model") || has("anomaly")) {
+    return [
+      { text: "认真接下“责任”这个词，但先确认她指的是实验偏差还是你的态度", effects: { affection: 0, trust: 3, intimacy: 0, honesty: 2, tone: "answer" } },
+      { text: "顺着她的理论模型，把两人联立的假设重新写清楚", effects: { affection: 0, trust: 3, intimacy: 0, honesty: 1, tone: "action" } },
+      { text: "先锁定异常点，不急着争谁的结论正确", effects: { affection: 0, trust: 3, intimacy: 0, tension: -2, tone: "cautious" } }
+    ];
+  }
+  if (has("route") || has("invitation")) {
+    return [
+      { text: `跟上${name}，把路上的安全和目的地先确认清楚`, effects: { affection: 0, trust: 2, intimacy: 1, tone: "cautious" } },
+      { text: `答应${name}，但让她把邀请的理由说得更明白一点`, effects: { affection: 1, trust: 1, intimacy: 1, tone: "tease" } },
+      { text: "把当前话题留到路上慢慢说", effects: { affection: 1, trust: 1, intimacy: 0, tension: -1, tone: "soften" } }
+    ];
+  }
   if (/日常|工作|家务|打扫|餐点|准备|忙|偷懒|期待|陪伴|主人|说话/.test(text)) {
     return [
       { text: `问问${name}今天最累的事`, effects: { affection: 0, trust: 2, intimacy: 0, tone: "daily-care" } },
@@ -1732,14 +1790,17 @@ function fallbackRouteChoices(reply, character) {
 }
 
 function sanitizeRouteChoices(rawChoices, reply, character) {
+  const anchors = replyChoiceAnchors(reply);
   const source = Array.isArray(rawChoices) && rawChoices.length ? rawChoices : fallbackRouteChoices(reply, character);
-  return source
+  const cleaned = source
     .map((choice) => ({
       text: String(choice?.text || choice?.label || "").replace(/^【选择】/, "").trim(),
       effects: normalizeRouteEffects(choice?.effects || choice)
     }))
     .filter((choice) => choice.text.length >= 2)
+    .filter((choice) => choiceMatchesReply(choice.text, anchors))
     .slice(0, 3);
+  return cleaned.length >= 2 ? cleaned : fallbackRouteChoices(reply, character).slice(0, 3);
 }
 
 function parseRouteChoices(raw, reply, character) {
@@ -1820,10 +1881,13 @@ async function callRouteChoiceAdapter({ provider, apiKey, baseUrl, model, charac
   if (provider === "mock" || !provider) return fallbackRouteChoices(reply, character);
   const prompt = [
     "你是 Galgame 攻略分支设计器。根据角色刚刚说的话，生成 3 个贴合语境的玩家回应选项。",
-    "必须贴合台词，不要只按关键词套模板。不要生成与当前情绪相反的道歉/冲突选项，除非角色真的生气或冲突。",
-    "先在心里判断当前是日常、邀请、脆弱、冲突、暧昧还是普通推进。三个选项必须围绕同一场景，不要突然跳到无关活动。",
+    "质量优先级：当前台词的具体锚点 > 角色人设边界 > 关系温度 > 玩法推进。不要只按关键词套模板。",
+    "先在心里抽取 1-3 个台词锚点，例如地点、动作、情绪、争执焦点、道具、实验对象、邀请目的。每个选项必须回应至少一个锚点。",
+    "禁止泛泛选项：不要写“继续聊”“换个轻松话题”“认真回应”“沉默片刻”“问问她的想法”这类不贴台词的句子，除非文本里真的只有沉默。",
+    "三个选项要形成不同攻略倾向：一个推进正题，一个照顾关系温度，一个轻微试探或降温。都必须围绕同一场景，不要突然跳到无关活动。",
+    "不要生成与当前情绪相反的道歉/冲突选项，除非角色真的生气、质问、追责或紧张。",
     "日常陪伴场景优先给关心、夸奖、陪伴、休息类选项；暧昧场景可以轻微靠近，但不要油腻；脆弱场景避免调侃过头。",
-    "选项要像玩家在攻略路线里会点的回应，短、具体、能改变关系，而不是泛泛的“继续聊”。",
+    "选项要像玩家在攻略路线里会点的回应，短、具体、能改变关系；文本中尽量复用台词里的关键词，如咖啡馆、责任、理论模型、异常点、路上等。",
     "输出 JSON，不要 Markdown。格式：{\"choices\":[{\"text\":\"选项文本\",\"effects\":{\"affection\":0,\"trust\":0,\"intimacy\":0,\"tone\":\"标签\"}}]}",
     "effects 每项只能是 -3 到 3。text 不要带数字序号，不要带【选择】。",
     `角色：${character?.name || "角色"}`,
@@ -1831,6 +1895,7 @@ async function callRouteChoiceAdapter({ provider, apiKey, baseUrl, model, charac
     alias ? `用户称呼：${alias}` : "",
     routeState ? `当前隐藏路线：${routeState.route || "序章"}，上次选择：${routeState.lastChoice || "无"}` : "",
     routeState?.templateHint ? `路线模板要求：${routeState.templateHint}` : "",
+    `可用台词锚点：${replyChoiceAnchors(reply).map((item) => item.label).join("、") || "无明显锚点，请保守生成"}`,
     `角色刚刚说：${String(reply || "").slice(0, 500)}`
   ].filter(Boolean).join("\n");
   const raw = await callChatAdapter({

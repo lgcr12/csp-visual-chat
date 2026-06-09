@@ -3202,6 +3202,12 @@ function rotateChoicePool(pool = [], seed = 0, count = 3) {
   return [...items.slice(offset), ...items.slice(0, offset)].slice(0, count);
 }
 
+function textSeed(text = "") {
+  return Array.from(String(text || "")).reduce((hash, char) => {
+    return ((hash << 5) - hash + char.charCodeAt(0)) | 0;
+  }, 0);
+}
+
 function templateQuestionChoices(template, name, route = routeStateFor(), seed = 0) {
   const stage = route.relationshipStage || relationshipStageFor(route);
   const isClose = ["dependent", "ambiguous", "confirmed"].includes(stage);
@@ -3251,17 +3257,21 @@ function analyzeReplyChoiceContext(content = "") {
   const isCafeScene = /咖啡馆|咖啡店|店里|店外|咖啡|坐下|点杯|格外苦涩/.test(text);
   const isSceneMove = /跟我来|带你|近路|路上|避开|顺路|出发|过去|穿过|走吧|换个地方|到那边|去外面/.test(text);
   const isExperiment = /实验|数据|样本|论文|理论|研究|假设|观测|公式|结果|误差|失败|错了|bug|调试|记录|分析/.test(text);
+  const isExperimentBlame = /责任|负责|指着|指向|鼻子|不得了|执着|较真|当场死机|不是.*坏事|你刚才|你又|质问|追责|甩锅|怪我|怪你/.test(text);
+  const isExperimentModel = /理论|假设|模型|方程|变量|观测|记录|异常点|修正|结论|仪器架|时间机器|误差/.test(text);
   const isFrustrated = /烦|烦躁|恼火|头疼|糟|乱|不顺|讨厌|累死|麻烦|受不了|焦虑|压力/.test(text);
   const isInvitation = /一起|陪|跟我|去|来|留下|走|看看|约|一緒|行く|来て/.test(text);
   const isVulnerable = /害怕|担心|不安|难过|孤独|寂寞|痛|哭|迷茫|不知|怕|寂|泣/.test(text);
-  const isConflict = /讨厌|生气|别过来|别说|别碰|烦死|吵死|笨蛋|滚|怒|嫌い|バカ/.test(text);
+  const isConflict = /讨厌|生气|别过来|别说|别碰|烦死|吵死|笨蛋|滚|怒|嫌い|バカ|不是什么坏事|不是坏事|你这个|别把|别装/.test(text);
   const isWarm = /喜欢|可爱|谢谢|高兴|开心|楽しい|好き|ありがとう/.test(text);
   const isDaily = /日常|工作|家务|打扫|餐点|准备|忙|偷懒|期待|陪伴|主人|说话|今日|生活/.test(text);
 
   let kind = "";
   if (isCafeScene && isSceneMove) kind = "scene-cafe";
   else if (isSceneMove) kind = "scene-move";
+  else if (isExperiment && (isExperimentBlame || isConflict)) kind = "experiment-pressure";
   else if (isExperiment && isFrustrated) kind = "experiment-frustrated";
+  else if (isExperiment && isExperimentModel) kind = "experiment-model";
   else if (isExperiment) kind = "experiment";
   else if (isConflict) kind = "conflict";
   else if (isVulnerable) kind = "vulnerable";
@@ -3273,10 +3283,13 @@ function analyzeReplyChoiceContext(content = "") {
 
   return {
     kind,
+    seed: textSeed(text),
+    isExperimentBlame,
+    isExperimentModel,
     hasQuestion,
     hasDirectChoice,
     isActionable: Boolean(kind && kind !== "question"),
-    isStrong: Boolean(hasDirectChoice || ["scene-cafe", "scene-move", "experiment-frustrated", "conflict", "vulnerable", "invitation"].includes(kind))
+    isStrong: Boolean(hasDirectChoice || ["scene-cafe", "scene-move", "experiment-pressure", "experiment-frustrated", "experiment-model", "conflict", "vulnerable", "invitation"].includes(kind))
   };
 }
 
@@ -3300,10 +3313,31 @@ function replyContextChoices(context, template, name, route = routeStateFor(), s
       routeChoicePrompt(`承认${name}现在很烦，但不要否定她的判断`, { affection: 1, trust: 2, intimacy: 1, tension: -3, tone: "comfort" }),
       routeChoicePrompt("问她想先骂两句，还是直接重新看数据", { affection: 2, trust: 1, intimacy: 1, tension: -1, tone: "tease" })
     ],
+    "experiment-pressure": [
+      routeChoicePrompt(`先接住${name}说的“责任”，再问她愿意把哪部分交给你一起承担`, { affection: 1, trust: 3, intimacy: 0, tension: -2, honesty: 1, tone: "answer" }),
+      routeChoicePrompt("不急着辩解，只把刚才那句容易引起误会的话重新说清楚", { affection: 0, trust: 2, intimacy: 0, tension: -3, honesty: 2, tone: "apology" }),
+      routeChoicePrompt(`提醒${name}先别把理论争执变成人身指责`, { affection: -1, trust: 2, intimacy: 0, tension: -1, honesty: 2, tone: "cautious" }),
+      routeChoicePrompt("承认自己刚才太执着结论，改为一起核对观测条件", { affection: 1, trust: 3, intimacy: 0, tension: -2, tone: "soften" }),
+      routeChoicePrompt("把“谁负责”暂时放下，先确认实验结果是否真的出现偏差", { affection: 0, trust: 3, intimacy: 0, honesty: 1, tone: "answer" }),
+      routeChoicePrompt(`半认真地问${name}：如果你负责，她愿不愿意监督到底`, { affection: 1, trust: 1, intimacy: 1, tension: -1, tone: "tease" }),
+      routeChoicePrompt("顺着她的严厉，把两人联立观测方程的假设写下来", { affection: 0, trust: 3, intimacy: 0, honesty: 1, tone: "action" }),
+      routeChoicePrompt("先后退半步，让她把真正不满的那句话说完整", { affection: 0, trust: 2, intimacy: 0, tension: -3, tone: "patient" })
+    ],
+    "experiment-model": [
+      routeChoicePrompt("把时间机器的假设拆成可验证的三条变量", { affection: 0, trust: 3, intimacy: 0, honesty: 1, tone: "action" }),
+      routeChoicePrompt(`请${name}先标出她最不放心的异常点`, { affection: 0, trust: 3, intimacy: 0, honesty: 1, tone: "answer" }),
+      routeChoicePrompt("提出只复盘一组记录，避免两个人都陷进理论争执", { affection: 1, trust: 2, intimacy: 0, tension: -2, tone: "cautious" }),
+      routeChoicePrompt("先承认她的模型更严谨，再补充自己的观测角度", { affection: 1, trust: 2, intimacy: 0, honesty: 1, tone: "sincere" }),
+      routeChoicePrompt("把结论延后，改为一起检查仪器、记录和误差来源", { affection: 0, trust: 3, intimacy: 0, tension: -1, tone: "soften" }),
+      routeChoicePrompt(`问${name}愿不愿意把刚才的理论当作共同线索，而不是胜负`, { affection: 1, trust: 2, intimacy: 1, tone: "soften" })
+    ],
     experiment: [
       routeChoicePrompt(`请${name}先说清实验假设和异常点`, { affection: 0, trust: 3, intimacy: 0, honesty: 1, tone: "answer" }),
       routeChoicePrompt("提出一起检查记录和变量，不急着下结论", { affection: 0, trust: 2, intimacy: 0, tone: "cautious" }),
-      routeChoicePrompt(`顺着${name}的理论继续推一小步`, { affection: 1, trust: 2, intimacy: 0, tone: "sincere" })
+      routeChoicePrompt(`顺着${name}的理论继续推一小步`, { affection: 1, trust: 2, intimacy: 0, tone: "sincere" }),
+      routeChoicePrompt("先问这次实验最想证明哪一个结论", { affection: 0, trust: 2, intimacy: 0, honesty: 1, tone: "answer" }),
+      routeChoicePrompt("把讨论范围缩小到一个变量，避免话题失控", { affection: 0, trust: 2, intimacy: 0, tension: -1, tone: "cautious" }),
+      routeChoicePrompt(`认真记下${name}强调的术语，再补问一个细节`, { affection: 1, trust: 2, intimacy: 0, tone: "patient" })
     ],
     conflict: [
       routeChoicePrompt("先压低语气，不继续刺激她", { affection: 0, trust: 1, intimacy: 0, tension: -4, tone: "soften" }),
@@ -3358,6 +3392,8 @@ function toneLabel(tone = "") {
     lighten: "把气氛放轻",
     patient: "继续陪着她",
     soften: "给她台阶",
+    "follow-up": "追问线索",
+    silence: "沉默观察",
     wave: "轻松回应"
   }[tone] || "路线分支";
 }
@@ -3404,9 +3440,11 @@ function safeRouteFallbackChoices(route = routeStateFor()) {
 
 function filterRouteChoices(choices, route = routeStateFor()) {
   const seen = new Set();
+  const lastChoiceKey = routeChoiceLabel(route.lastChoice).replace(/[，。！？、\s]/g, "").slice(0, 14);
   const allowed = choices.filter((choice) => {
     if (!choiceAllowedByRoute(choice, route)) return false;
     const key = routeChoiceLabel(choice).replace(/[，。！？、\s]/g, "").slice(0, 14);
+    if (key && key === lastChoiceKey) return false;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -3608,7 +3646,7 @@ function galgameRouteChoices(latestMessage) {
       routeChoicePrompt("把话题转到更私人的地方", { affection: 1, trust: 0, intimacy: 2, tone: "intimate" })
     ];
   } else if (context.kind) {
-    choices = replyContextChoices(context, template, name, route, assistantTurns + content.length);
+    choices = replyContextChoices(context, template, name, route, assistantTurns + content.length + (context.seed || 0));
   } else {
     const fallbackByTemplate = {
       warm: [

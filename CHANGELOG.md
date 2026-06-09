@@ -1,37 +1,54 @@
-# Changelog
+# 更新日志
 
-## 2026-06-09 - Galgame Route System Upgrade
+## 2026-06-09 - Galgame 路线系统升级
 
-This update turns CSP Visual Chat from a chat-first interface into a playable AI galgame prototype.
+这次更新把 CSP Visual Chat 从“以聊天为主的角色互动界面”，推进为“可持续扩展的 AI Galgame 原型”。核心变化不是简单增加选项，而是建立一套能约束角色、人设、剧情和关系温度的路线系统。
 
-### Added
+### 新增
 
-- Galgame gameplay modes: `free`, `story`, and `hybrid`.
-- Route phases: `common`, `personal`, and `ending`.
-- Relationship stages: `distant`, `probing`, `dependent`, `ambiguous`, and `confirmed`.
-- Conditional route choices with flags, memories, tension, honesty, trust, intimacy, and route phase checks.
-- Character-specific Story Bible drafts for `warm`, `tsundere`, `mystery`, `brave`, and `default` route templates.
-- Semi-specialized route events per character template.
-- Body-level Galgame choice layer with transparent VN-style cards.
-- Click-only glass `MENU` control for the Galgame stage.
-- Story Bible editor and draft API.
+- 新增三种玩法模式：`自由聊天`、`剧情模式`、`混合模式`。
+- 新增路线阶段：`共同线`、`个人线`、`结局态`。
+- 新增关系阶段：`疏离`、`试探`、`依赖`、`暧昧`、`确定`。
+- 新增路线状态字段：张力、诚实度、当前场景、剧情旗标、记忆、结局状态。
+- 新增条件式分支选项，支持根据玩法模式、关系阶段、路线阶段、记忆和旗标决定是否出现。
+- 新增角色专属 Story Bible 草案能力，用于生成正史窗口、说话方式、亲密节奏、禁止行为、个人线冲突和结局条件。
+- 新增半专属剧情事件模板：温柔型、傲娇型、神秘型、行动型和默认型角色会获得不同的个人线推进方向。
+- 新增 Story Bible 编辑与草案接口，支持后续把角色路线设定沉淀到角色卡。
 
-### Changed
+### 优化
 
-- Galgame dialogue now uses a lighter glass style with fewer nested frames.
-- The route prompt now injects Story Bible constraints, OOC guardrails, route state, memories, and current scene context.
-- Choice generation now analyzes the assistant reply content before showing options.
-- `normal` choice frequency no longer shows choices after almost every reply.
-- Existing characters receive a generated Story Bible draft at API read time if they do not already have one.
+- Galgame 舞台改为更接近视觉小说的全屏结构：背景、立绘、玻璃对话框、居中选项和点击式菜单分层展示。
+- 对话框减少多层嵌套边框，改用半透明、微光影、留白和顶部高光提升质感。
+- 菜单改为点击触发，降低 hover 闪烁、堆叠、挤压和误触风险。
+- 玩法模式与分支频率改为中文显示，减少玩家理解成本。
+- 分支频率重新校准：`适中` 不再几乎每轮对话都弹出选项。
+- 路线提示词注入 Story Bible、OOC 守门规则、当前记忆和场景上下文，让剧情推进更稳定。
 
-### Fixed
+### 修复
 
-- Fixed menu overlap and hover flicker by making the Galgame menu click-driven.
-- Fixed central choice placement by moving route choices to a body-level overlay.
-- Fixed dialogue box drifting to the right by locking the Galgame viewport and centering the dialogue shell.
-- Fixed route choices being too generic by adding context-specific options.
+- 修复菜单与配置项重叠、下拉框挤压和 hover 闪烁问题。
+- 修复选项卡位置不在屏幕视觉中心的问题。
+- 修复对话框漂移到最右侧的问题。
+- 修复对话框疑似重复叠加造成的视觉重影。
+- 修复选项过于通用、与角色回复关联弱的问题。
+- 修复“准备去咖啡馆”的回复仍生成实验室选项的问题：现在场景移动、咖啡馆、路上同行等关键词会优先于实验关键词。
 
-### Notes
+### 剧情与人设
 
-- `data/sessions.json` is runtime chat data and should generally not be included in product commits.
-- Screenshots in `docs/assets/screenshots` are documentation SVG captures of the current product direction.
+- 角色剧情现在遵循“世界观约束 > 角色逻辑 > 剧情便利 > 玩家愿望”的优先级。
+- 共同线负责建立日常、距离感和初始信任，不直接跳深层告白。
+- 个人线负责打开角色特定矛盾，让旧有防御方式开始失效，但不会突然消失。
+- 结局态必须能从之前的记忆、旗标、关系阶段和选择中解释出来。
+- 选项不一定每次大幅改变剧情，但必须持续塑造关系温度，让玩家知道自己正在靠近哪种关系。
+
+### 用到的 Skill / 方法
+
+- `galgame-story`：路线阶段、条件选项、Story Bible、关系温度和 OOC 守门。
+- `csp` / `character-skill-producer`：角色行为蒸馏、人设边界、说话 DNA 和世界观约束。
+- `ui-ux-pro-max`：Galgame 界面层级、字体可读性、菜单布局、按钮状态和玻璃质感。
+- 项目内自研 Galgame 路线系统：玩法模式、状态机、记忆、旗标、场景上下文分析和分支生成。
+
+### 说明
+
+- 之前文档中的 SVG 被误写成截图，但它们只是设计示意图，已从 README 和 Galgame 文档中移除。
+- `data/sessions.json` 是本地运行时会话数据，一般不进入产品提交。

@@ -1,43 +1,74 @@
 # CSP Visual Chat
 
-## 2026-06-09 Galgame Update
+CSP Visual Chat 是一个面向二次元角色互动的本地 AI 聊天与 Galgame 原型项目。它以角色 Skill / Story Bible 为核心，把“角色会怎么说、怎么退让、怎么靠近、怎么守住边界”转化为可运行的互动系统，而不只是给聊天窗口换一层视觉小说皮肤。
 
-CSP Visual Chat now includes a Galgame / visual novel prototype layer:
+当前主推方向是 Galgame / Visual Novel：玩家可以自由聊天，也可以进入带路线、关系温度、条件选项和结局态的视觉小说体验。
 
-- Full-screen VN-style stage, glass dialogue, body-level branch choices, and click-only menu.
-- Three gameplay modes: free chat, story mode, and hybrid mode.
-- Route progression: common route -> personal route -> ending state.
-- Relationship temperature: distant, probing, dependent, ambiguous, confirmed.
-- Character-specific Story Bible drafts and OOC guardrails.
-- Contextual choices generated from the character's latest reply content.
+## Galgame 方向
 
-Docs:
+本次升级的目标不是做固定台词库，而是让 AI 角色拥有更稳定的“剧情行动逻辑”：
 
-- [Galgame direction](./docs/galgame/README.md)
-- [Changelog](./CHANGELOG.md)
+- 叙事结构从单纯聊天升级为 `共同线 -> 个人线 -> 结局态`。
+- 关系温度不再只有好感度数字，而是分为 `疏离 / 试探 / 依赖 / 暧昧 / 确定`。
+- 选项不再机械弹出，而是根据角色最新回复、当前场景、记忆和路线状态生成。
+- 条件选项参考 Ren'Py 的条件菜单思路，只有在前置选择、关系阶段或剧情旗标满足时才出现。
+- 每个主推角色都可以拥有专属 Story Bible，用来约束正史窗口、说话方式、亲密节奏、禁止行为、个人线冲突和结局条件。
+- 剧情推进必须服从人设和世界观，避免为了恋爱进度让角色突然 OOC 或无视作品设定。
 
-Screenshots:
+## 三种玩法模式
 
-![Galgame stage](./docs/assets/screenshots/galgame-stage.svg)
+项目目前按三种模式组织 Galgame 体验，让玩家自行选择节奏：
 
-![Contextual choices](./docs/assets/screenshots/contextual-choices.svg)
+- `自由聊天`：以自然对话为主，适合陪伴、日常互动和角色测试。
+- `剧情模式`：系统更主动地推进路线事件，适合体验完整 Galgame 段落。
+- `混合模式`：默认推荐模式。平时自由聊天，关键节点进入视觉小说式选择。
 
-![Story Bible routes](./docs/assets/screenshots/story-bible-routes.svg)
+## 剧情与人设系统
 
-一个基于 CSP 角色技能蒸馏流程的本地二次元角色聊天与桌宠平台。它可以创建角色卡、自动抓取角色头像/立绘候选图，并在聊天界面右侧显示普通立绘、Q版或 Live2D 桌宠。
+角色不再共用一套泛化剧情骨架，而是引入半专属路线生成逻辑：
 
-## 功能
+- `温柔型`：核心冲突更偏照顾、消耗、边界和自我压抑。
+- `傲娇型`：核心冲突更偏防御、试探、嘴硬和关系确认困难。
+- `神秘型`：核心冲突更偏信息差、隐藏身份、信任验证和不可说之事。
+- `行动型`：核心冲突更偏责任、目标、保护欲和临场决断。
+- `默认型`：提供保守但稳定的通用路线框架，避免无资料角色直接失控。
 
-- 使用角色名和作品名创建角色卡。
-- 自动调用 CSP 检索角色资料，生成角色聊天提示词。
-- 创建角色时自动抓取候选图片，可分别设置头像、角色卡图和桌宠图。
-- 支持三种桌宠模式：
-  - 普通立绘
-  - Q版
-  - Live2D
-- 上传或远程下载图片后自动处理抠图。
-- 桌宠支持点击、键盘触发、拖拽和动作反馈。
-- 支持本地预览模型，也可配置 OpenAI-compatible API。
+Story Bible 会作为剧情守门层参与提示词：它不是展示给玩家看的设定表，而是给 AI 使用的“角色叙事契约”。当玩家选项、场景推进或情绪升温超出角色合理边界时，系统应优先选择更小、更可信的回应，而不是强行大改剧情。
+
+## 界面与交互
+
+Galgame 界面正在向全屏视觉小说舞台靠拢：
+
+- 全屏背景、角色立绘、玻璃质感对话框和居中分支选项。
+- 菜单改为点击触发，减少 hover 闪烁和堆叠重叠。
+- 对话框减少“框外套框”，用半透明、微光影、留白和层级来提升质感。
+- 选项卡使用轻量透明卡片，尽量不遮挡背景和立绘。
+- 工作台字体、菜单密度、下拉布局和按钮可见性正在按 Galgame 使用场景持续优化。
+
+## 用到的 Skill / 方法
+
+本项目当前用到的能力包括：
+
+- `galgame-story`：用于路线结构、共同线/个人线/结局态、条件选项、关系阶段、Story Bible 和 OOC 守门。
+- `csp` / `character-skill-producer`：用于角色资料检索、行为蒸馏、说话 DNA、人设边界和世界观约束。
+- `ui-ux-pro-max`：用于 UI 层级、字体可读性、菜单布局、玻璃质感、按钮状态和 Galgame 交互体验优化。
+- 项目内自研 Galgame 路线系统：负责玩法模式、路线状态、记忆、旗标、场景上下文分析和选项生成。
+- 项目内 Story Bible 生成层：负责把角色模板转成正史窗口、亲密节奏、禁止行为、个人线冲突和结局条件。
+
+## 文档
+
+- [Galgame 产品方向](./docs/galgame/README.md)
+- [更新日志](./CHANGELOG.md)
+- [UI 结构](./docs/galgame/ui-structure.md)
+- [玩法模式](./docs/galgame/gameplay-modes.md)
+- [Story Bible](./docs/galgame/story-bible.md)
+- [路线状态规格](./docs/galgame/route-state-spec.md)
+- [角色 Bible 模板](./docs/galgame/character-bible-template.md)
+- [OOC 守门规则](./docs/galgame/ooc-guardrails.md)
+
+## 截图说明
+
+之前文档中的 SVG 是设计示意图，不是网页实机截图，已移除，避免误导。后续如果要在 README 展示图片，会使用当前网页的真实运行截图，并标注对应版本。
 
 ## 技术栈
 
@@ -46,28 +77,9 @@ Screenshots:
 - Frontend: 原生 HTML / CSS / JavaScript
 - Data: 本地 JSON 文件
 - Image processing: Python, Pillow, rembg, OpenCV
-- Live2D runtime:
-  - Live2D Cubism Core
-  - PixiJS
-  - pixi-live2d-display
+- Live2D runtime: Live2D Cubism Core, PixiJS, pixi-live2d-display
 
-项目没有引入前端构建链，启动后直接由 Node 服务静态页面和 API。
-
-## 基于的 Skill
-
-核心角色资料与提示词生成基于：
-
-- [qian-gugugaga/Character_Skill_Producer](https://github.com/qian-gugugaga/Character_Skill_Producer)
-
-本项目以这个 CSP Skill 仓库为核心能力来源，用它完成角色资料检索、证据整理和角色提示词生成。
-
-本地 Codex Skill 名称：
-
-- `csp` / `character-skill-producer`: 二次元角色技能蒸馏器，用于检索萌娘百科等资料并生成角色行为提示词。
-
-UI 和交互打磨参考：
-
-- `ui-ux-pro-max`: 用于桌宠模式选择、候选图选择器、交互状态和界面可用性优化。
+项目没有引入前端构建链路，启动后由 Node 服务直接提供静态页面与 API。
 
 ## 一键部署
 
@@ -79,7 +91,7 @@ cd csp-visual-chat
 powershell -ExecutionPolicy Bypass -File .\deploy.ps1
 ```
 
-或者直接双击/运行：
+或直接双击运行：
 
 ```powershell
 .\deploy.bat
@@ -97,218 +109,56 @@ powershell -ExecutionPolicy Bypass -File .\deploy.ps1 -Port 4175
 powershell -ExecutionPolicy Bypass -File .\deploy.ps1 -SkipPython
 ```
 
-部署脚本会自动完成：
-
-- 检查 Node.js / npm
-- 创建本地运行目录
-- 执行 `npm install`
-- 安装可选 Python 抠图依赖
-- 启动本地服务
-
 启动成功后访问：
 
 ```text
 http://localhost:4173
 ```
 
-## 手动下载和安装
-
-### 方式一：Git clone
-
-```powershell
-git clone https://github.com/lgcr12/csp-visual-chat.git
-cd csp-visual-chat
-```
-
-如果你 fork 了仓库，请把上面的地址换成自己的仓库地址。
-
-### 方式二：Download ZIP
-
-1. 打开 GitHub 仓库页面。
-2. 点击绿色 `Code` 按钮。
-3. 点击 `Download ZIP`。
-4. 解压到任意目录。
-5. 在该目录空白处右键，选择“在终端中打开”或“Open in Terminal”。
-
-### 环境要求
-
-必须安装：
-
-- Node.js 20+
-- npm
-
-建议安装：
-
-- Python 3.10+
-- pip
-
-Python 不是启动项目的硬性要求，但会影响高质量抠图。没有 Python 依赖时，项目仍然能聊天和显示图片，只是复杂背景抠图会退化。
-
-### 手动安装依赖
-
-安装 Node 工作流：
-
-```bash
-npm install
-```
-
-安装 Python 抠图依赖：
-
-```bash
-python -m pip install -r requirements.txt
-```
-
-首次使用 `rembg` 的动漫抠图模型时，会自动下载模型到本机缓存目录，例如 Windows 上的：
-
-```text
-C:\Users\<YourName>\.u2net
-```
-
-## 启动方法
-
-默认启动：
-
-```bash
-npm start
-```
-
-开发模式，文件变更后自动重启后端：
-
-```bash
-npm run dev
-```
-
-PowerShell 指定端口：
-
-```powershell
-$env:PORT=4175
-npm start
-```
-
-cmd 指定端口：
-
-```cmd
-set PORT=4175
-npm start
-```
-
-启动后访问：
-
-```text
-http://localhost:4173
-```
-
-如果指定了端口，就访问对应端口，例如：
+如果指定了端口，请访问对应端口，例如：
 
 ```text
 http://localhost:4175
 ```
 
-## 使用方法
+## 手动启动
 
-打开页面后：
+安装 Node 依赖：
 
-1. 点击角色选择。
-2. 点击新建角色。
-3. 填写角色名和作品名。
-4. 系统会自动抓取候选图，也可以点击“抓取候选图”手动刷新。
-5. 在候选图里选择头像、角色卡图、桌宠图。
-6. 选择桌宠模式：普通立绘、Q版或 Live2D。
-7. 提交生成角色卡。
-8. 回到聊天界面，点击或拖动右侧桌宠进行互动。
-
-## OpenAI-compatible API 配置
-
-左侧“聊天 API”区域可以选择：
-
-- 本地预览：不调用外部模型，适合测试 UI 和角色卡。
-- OpenAI-compatible API：填写 Base URL、Model、API Key。
-
-API Key 只保存在浏览器本地存储，不会写入仓库。
-
-常见 Base URL 示例：
-
-```text
-https://api.openai.com/v1
+```bash
+npm install
 ```
 
-模型名按你的服务商填写，例如：
+可选安装 Python 抠图依赖：
 
-```text
-gpt-4.1-mini
+```bash
+python -m pip install -r requirements.txt
 ```
 
-## 桌宠模式
+启动服务：
 
-### 普通立绘
-
-适合全身角色图。系统会优先使用候选图里的全身立绘，并自动下载高清原图和抠图。
-
-### Q版
-
-适合 SD、chibi、二头身、三头身图片。若没有找到 Q 版图，会回退使用普通立绘，避免桌宠为空。
-
-### Live2D
-
-选择 `Live2D` 后，需要填写模型的 `model3.json` URL。模型资源需要能被浏览器访问，且相关贴图、动作、物理文件路径需要相对 `model3.json` 正确。
-
-当前支持基础展示、点击、拖拽和动作反馈。更细的表情和动作组绑定可以继续扩展。
-
-## 图片处理
-
-桌宠图会经过自动处理：
-
-1. 优先使用 `rembg` 的 `isnet-anime` 动漫主体分割模型。
-2. 失败时回退到 `u2net` 通用模型。
-3. 再失败时使用 OpenCV GrabCut。
-4. 最后回退到白底边缘 flood fill 抠图。
-
-高品质桌宠最适合使用透明 PNG 或背景简单的全身立绘。半身头像、复杂街景背景、人物贴边过多的图片，自动抠图仍可能残留背景。
-
-## 目录结构
-
-```text
-.
-├─ data/                  # 本地角色和会话 JSON
-├─ public/                # 前端页面、样式、脚本和上传资源
-├─ tools/                 # 图片处理脚本
-├─ deploy.ps1             # Windows 一键部署脚本
-├─ deploy.bat             # Windows 批处理启动入口
-├─ server.js              # Node 后端服务
-├─ package.json
-├─ requirements.txt
-└─ README.md
+```bash
+npm start
 ```
+
+开发模式：
+
+```bash
+npm run dev
+```
+
+## 使用流程
+
+1. 打开页面并进入角色选择。
+2. 新建或选择角色卡。
+3. 配置头像、角色卡图、桌宠图或 Live2D 模型。
+4. 在聊天界面选择玩法模式和分支频率。
+5. 进入 Galgame 舞台后，通过聊天或条件选项推动关系与剧情。
+6. 当路线状态、记忆和关系阶段满足条件时，系统会进入个人线或结局态。
 
 ## 注意
 
-- `data/*.json` 是本地运行数据。
-- `public/assets/uploads/` 是本地上传和生成图片。
-- 如果要发布公开仓库，建议不要提交私人聊天记录、API Key 或不希望公开的图片素材。
-- OpenAI-compatible API Key 只保存在浏览器本地存储，不会写入仓库。
-
-## 常见问题
-
-### PowerShell 提示禁止运行脚本
-
-使用下面的方式启动：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\deploy.ps1
-```
-
-### 端口被占用
-
-换一个端口：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\deploy.ps1 -Port 4175
-```
-
-### 抠图模型第一次很慢
-
-首次使用 `rembg` 会下载模型，之后会读取本机缓存。下载完成后，后续抠图会明显更快。
-
-### 桌宠仍然有背景残留
-
-优先使用候选图里的全身立绘或透明 PNG。半身截图、复杂街景背景、人物贴边图片会降低自动抠图质量。
+- `data/sessions.json` 是本地运行时会话数据，一般不应提交到产品更新里。
+- 当前 Galgame 系统仍是可玩原型，不是最终商业级 VN 引擎。
+- 角色剧情质量依赖角色资料、Story Bible 完整度和模型输出稳定性。
+- 如果角色设定与玩家期待冲突，应优先保护角色逻辑，而不是强行满足玩家愿望。

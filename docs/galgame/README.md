@@ -1,65 +1,100 @@
-# Galgame Direction
+# Galgame 产品方向
 
-This folder defines the product direction for making CSP Visual Chat a real AI galgame experience, not just a chat UI skin.
+这个目录记录 CSP Visual Chat 向 AI Galgame / Visual Novel 演进的设计方案。项目目标不是把聊天界面套上背景和立绘，而是让玩家在自由对话中感到：角色有记忆、有边界、有关系温度，也有一条能够被选择持续塑形的路线。
 
-The core principle is simple: every route event, choice, and relationship change must remain believable for the character and the original world.
+核心原则：
 
-## Documents
+```text
+世界观约束 > 角色逻辑 > 剧情便利 > 玩家愿望
+```
 
-- [UI structure](./ui-structure.md): stage layout, dialogue hierarchy, system menu placement, and mobile behavior.
-- [Gameplay modes](./gameplay-modes.md): free chat, story mode, and hybrid mode.
-- [Story bible](./story-bible.md): common route, personal route, ending states, and narrative units.
-- [Route state spec](./route-state-spec.md): state fields, relationship stages, choice conditions, memories, and endings.
-- [Character bible template](./character-bible-template.md): per-character constraints for speech, intimacy, stress response, and world knowledge.
-- [OOC guardrails](./ooc-guardrails.md): checks that prevent plot convenience from breaking character or world logic.
-- [Implementation plan](./implementation-plan.md): staged delivery plan for code work.
+如果一个选项会让角色脱离原设、无视正史窗口、突然亲密或强行推动恋爱进度，系统应该选择更克制、更可信的替代写法。
 
-## Product Definition
+## 文档索引
 
-CSP Visual Chat should become a playable AI galgame:
+- [UI 结构](./ui-structure.md)：舞台布局、对话框层级、系统菜单、移动端行为。
+- [玩法模式](./gameplay-modes.md)：自由聊天、剧情模式、混合模式。
+- [Story Bible](./story-bible.md)：共同线、个人线、结局态和剧情单元。
+- [路线状态规格](./route-state-spec.md)：关系阶段、条件选项、记忆、旗标和结局状态。
+- [角色 Bible 模板](./character-bible-template.md)：说话方式、亲密节奏、压力反应、禁止行为和世界知识边界。
+- [OOC 守门规则](./ooc-guardrails.md)：防止剧情便利破坏人设与作品世界观。
+- [实施计划](./implementation-plan.md)：代码落地阶段与后续演进方向。
 
-- The player can freely talk to a character.
-- The system can also guide route events with visual novel style choices.
-- The relationship can move from distance to trust, dependence, ambiguity, and confirmation.
-- The story can reach a readable ending state.
-- The character must not act outside their established behavior, knowledge, or world constraints.
+## 产品定义
 
-## Reference Approach
+CSP Visual Chat 的 Galgame 方向由四层构成：
 
-Use three layers together:
+- `舞台层`：背景、立绘、对话框、选项卡、菜单和氛围动效。
+- `玩法层`：自由聊天、剧情模式、混合模式，以及分支频率控制。
+- `路线层`：共同线、个人线、结局态、关系温度、旗标与记忆。
+- `角色层`：Story Bible、角色行为 Skill、OOC 守门和世界观边界。
 
-- `galgame-story` for route structure, conditional choices, story bible, character bible, and OOC guardrails.
-- `ui-ux-pro-max` for interface hierarchy, readability, touch targets, and visual polish.
-- `csp` for character behavior, speech DNA, relationship boundaries, and world knowledge limits.
-- A project-native route state system for modes, choices, memories, and endings.
+这四层必须协同工作。界面负责让玩家愿意停留，玩法负责让玩家有掌控感，路线负责让选择有累积意义，角色层负责保证每一次靠近都合理。
 
-## Default Direction
+## 路线结构
 
-The default experience should be `hybrid mode`:
+Galgame 路线采用三段式：
 
-- Free chat is available most of the time.
-- Story events appear when route state and memories justify them.
-- Key moments switch into visual novel style choices.
-- After a route event resolves, the player returns to normal interaction.
+- `共同线`：建立日常、场景、初始距离和角色的正常防御方式。此阶段不应出现突兀告白、重大秘密全盘托出或过快亲密。
+- `个人线`：打开角色专属冲突。角色原有的逃避、控制、沉默、嘴硬或保护欲开始不够用了，但不会被一键治好。
+- `结局态`：对积累的记忆、选择和关系温度做出可解释的收束。结局不是奖励弹窗，而是关系状态的叙事结果。
 
-## Current Implementation Snapshot
+玩家的选择不需要每次都让剧情大转弯，但需要持续改变关系温度。一个好的选项应该让玩家知道自己是在靠近哪一种关系：疏离、试探、依赖、暧昧，还是确定。
 
-The current implementation focuses on a playable visual novel layer:
+## 玩法模式
 
-- A full-screen Galgame stage with character standee, atmospheric backgrounds, rain/petal effects, glass dialogue, and click-only menu.
-- Contextual route choices generated from the assistant's latest reply content.
-- Route state with phase, relationship stage, tension, honesty, flags, memories, current scene, and ending state.
-- Character-specific Story Bible drafts generated from route templates.
-- Semi-specialized route events for warm, tsundere, mystery, brave, and default character types.
+- `自由聊天`：弱剧情推进，保留陪伴和角色测试的自然感。
+- `剧情模式`：更频繁地触发路线事件，适合体验完整视觉小说段落。
+- `混合模式`：默认推荐。平时自由聊天，关键节点切换为视觉小说式选择。
 
-## Screenshots
+分支频率不是简单计数器，而应该受到最新回复内容、当前场景、关系阶段、玩法模式和前置记忆影响。比如角色刚提出“去咖啡馆”，选项就应该围绕跟随、确认路线、坐下再聊或暧昧试探，而不是继续生成实验室选项。
 
-![Galgame stage](../assets/screenshots/galgame-stage.svg)
+## Story Bible
 
-![Contextual choices](../assets/screenshots/contextual-choices.svg)
+Story Bible 是每个角色的叙事契约，负责把角色从“能聊天”提升到“能被写进路线”。
 
-![Story Bible routes](../assets/screenshots/story-bible-routes.svg)
+建议每个主推角色都拥有以下字段：
 
-## Latest Changelog
+- `正史窗口`：角色处于哪一段时间线，知道什么，不知道什么。
+- `说话方式`：句长、停顿、礼貌度、回避方式、情绪泄露方式。
+- `亲密节奏`：什么阶段能靠近，什么阶段必须后退。
+- `禁止行为`：角色绝不会做的事，以及不能为了剧情方便改写的底线。
+- `个人线冲突`：角色专属的核心矛盾，而不是通用恋爱模板。
+- `结局条件`：哪些记忆、旗标和关系阶段能支撑某个结局。
 
-See [../../CHANGELOG.md](../../CHANGELOG.md) for the full update log.
+这层设计能避免“所有角色选项都差不多”的问题。温柔型、傲娇型、神秘型、行动型角色会使用不同的推进方式、冲突写法和关系确认节奏。
+
+## 条件选项
+
+选项生成遵循 Ren'Py 条件菜单的思路：
+
+- 不是每轮对话都必须出选项。
+- 选项必须能从角色最新回复中找到叙事理由。
+- 条件可以来自路线阶段、关系温度、记忆、旗标、张力、诚实度和当前场景。
+- 选项效果应该是小幅持续塑形，而不是每次强行改写主线。
+- 如果选项会破坏角色设定，应该隐藏或降级成更温和的表达。
+
+当前实现已经加入回复内容分析：系统会识别咖啡馆、场景移动、私人谈话、边界试探、情绪紧张、实验/时间机器等语义，并优先生成与当前回复一致的选项。
+
+## 使用的 Skill / 方法
+
+- `galgame-story`：提供共同线、个人线、结局态、关系阶段、条件选项、Story Bible 和 OOC 守门方法。
+- `csp` / `character-skill-producer`：提供角色资料检索、行为蒸馏、说话 DNA、人设边界和世界观约束方法。
+- `ui-ux-pro-max`：提供界面层级、字体可读性、按钮状态、菜单布局、玻璃拟态和响应式体验优化方法。
+- 项目内自研 Galgame 路线系统：实现玩法模式、路线状态、记忆、旗标、场景上下文分析和分支生成。
+- 项目内 Story Bible 生成层：把角色类型模板转成可注入提示词的叙事约束。
+
+## 当前实现快照
+
+- 已实现全屏 Galgame 舞台、角色立绘、氛围背景、玻璃对话框、居中选项和点击式菜单。
+- 已实现三玩法模式与分支频率控制。
+- 已实现路线状态：阶段、关系温度、张力、诚实度、旗标、记忆、当前场景和结局状态。
+- 已实现角色 Story Bible 草案生成与角色接口更新。
+- 已实现基于角色回复内容的上下文选项生成。
+- 已修复咖啡馆场景下仍生成实验室选项的问题。
+
+## 截图说明
+
+旧文档中的 SVG 是设计示意，不是网页实机截图，已移除。后续需要展示 GitHub 图片时，应使用当前网页真实运行截图，并注明版本或场景。
+
+完整更新记录见 [../../CHANGELOG.md](../../CHANGELOG.md)。

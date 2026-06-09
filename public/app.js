@@ -3247,7 +3247,9 @@ function templateQuestionChoices(template, name, route = routeStateFor(), seed =
 function analyzeReplyChoiceContext(content = "") {
   const text = String(content || "");
   const hasQuestion = /[？?]/.test(text);
-  const hasDirectChoice = /怎么办|要不要|可以吗|愿意|想不想|选|选择|决定|哪边|哪一个|一起去|陪我|跟我|去吗|どう|かな|どちら|一緒|行く|来て|選/.test(text);
+  const hasDirectChoice = /怎么办|要不要|可以吗|愿意|想不想|选|选择|决定|哪边|哪一个|一起去|陪我|跟我|跟我来|去吗|どう|かな|どちら|一緒|行く|来て|選/.test(text);
+  const isCafeScene = /咖啡馆|咖啡店|店里|店外|咖啡|坐下|点杯|格外苦涩/.test(text);
+  const isSceneMove = /跟我来|带你|近路|路上|避开|顺路|出发|过去|穿过|走吧|换个地方|到那边|去外面/.test(text);
   const isExperiment = /实验|数据|样本|论文|理论|研究|假设|观测|公式|结果|误差|失败|错了|bug|调试|记录|分析/.test(text);
   const isFrustrated = /烦|烦躁|恼火|头疼|糟|乱|不顺|讨厌|累死|麻烦|受不了|焦虑|压力/.test(text);
   const isInvitation = /一起|陪|跟我|去|来|留下|走|看看|约|一緒|行く|来て/.test(text);
@@ -3257,7 +3259,9 @@ function analyzeReplyChoiceContext(content = "") {
   const isDaily = /日常|工作|家务|打扫|餐点|准备|忙|偷懒|期待|陪伴|主人|说话|今日|生活/.test(text);
 
   let kind = "";
-  if (isExperiment && isFrustrated) kind = "experiment-frustrated";
+  if (isCafeScene && isSceneMove) kind = "scene-cafe";
+  else if (isSceneMove) kind = "scene-move";
+  else if (isExperiment && isFrustrated) kind = "experiment-frustrated";
   else if (isExperiment) kind = "experiment";
   else if (isConflict) kind = "conflict";
   else if (isVulnerable) kind = "vulnerable";
@@ -3272,13 +3276,24 @@ function analyzeReplyChoiceContext(content = "") {
     hasQuestion,
     hasDirectChoice,
     isActionable: Boolean(kind && kind !== "question"),
-    isStrong: Boolean(hasDirectChoice || ["experiment-frustrated", "conflict", "vulnerable", "invitation"].includes(kind))
+    isStrong: Boolean(hasDirectChoice || ["scene-cafe", "scene-move", "experiment-frustrated", "conflict", "vulnerable", "invitation"].includes(kind))
   };
 }
 
 function replyContextChoices(context, template, name, route = routeStateFor(), seed = 0) {
   const kind = context?.kind || "";
   const pools = {
+    "scene-cafe": [
+      routeChoicePrompt(`跟上${name}去咖啡馆，路上先不急着追问实验`, { affection: 1, trust: 2, intimacy: 1, tension: -2, tone: "accept" }),
+      routeChoicePrompt("先确认那条近路是否安全，再一起过去", { affection: 0, trust: 2, intimacy: 0, tone: "cautious" }),
+      routeChoicePrompt("到咖啡馆坐下后，再继续聊时间机器和误差", { affection: 1, trust: 2, intimacy: 0, honesty: 1, tone: "answer" }),
+      routeChoicePrompt(`半开玩笑问${name}是不是在邀请你约会`, { affection: 2, trust: 0, intimacy: 1, tone: "tease" })
+    ],
+    "scene-move": [
+      routeChoicePrompt(`跟上${name}，先进入她带你去的场景`, { affection: 1, trust: 2, intimacy: 1, tone: "accept" }),
+      routeChoicePrompt("问清目的地和理由，再决定要不要走", { affection: 0, trust: 2, intimacy: 0, tone: "cautious" }),
+      routeChoicePrompt("把当前话题留到路上慢慢说", { affection: 1, trust: 1, intimacy: 0, tension: -1, tone: "soften" })
+    ],
     "experiment-frustrated": [
       routeChoicePrompt(`先问${name}是哪一组实验数据出了问题`, { affection: 0, trust: 3, intimacy: 0, honesty: 1, tone: "answer" }),
       routeChoicePrompt("把情绪先放一边，陪她从误差来源开始复盘", { affection: 1, trust: 2, intimacy: 0, tension: -2, tone: "cautious" }),

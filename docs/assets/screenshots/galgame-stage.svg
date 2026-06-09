@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">Galgame stage screenshot</title>
+  <desc id="desc">Visual novel style stage with night room background, character standee, glass dialogue box, and menu button.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#101524"/><stop offset="0.42" stop-color="#172238"/><stop offset="1" stop-color="#0a0b11"/></linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/><stop offset="1" stop-color="#0d101a" stop-opacity="0.62"/></linearGradient>
+    <filter id="blurShadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000000" flood-opacity="0.45"/></filter>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <g opacity="0.75">
+    <rect x="80" y="70" width="270" height="420" rx="12" fill="#111827" opacity="0.5"/>
+    <rect x="420" y="54" width="360" height="430" rx="16" fill="#0b1220" opacity="0.72"/>
+    <path d="M450 88h300v355H450z" fill="#10233f"/>
+    <path d="M500 88v355M560 88v355M620 88v355M680 88v355M740 88v355M450 170h300M450 260h300M450 350h300" stroke="#88b8ff" stroke-opacity="0.22" stroke-width="2"/>
+    <circle cx="540" cy="220" r="4" fill="#bde2ff"/><circle cx="690" cy="182" r="3" fill="#e7f2ff"/><circle cx="610" cy="300" r="3" fill="#7ac7ff"/>
+    <rect x="840" y="92" width="290" height="390" rx="18" fill="#17131e" opacity="0.55"/>
+  </g>
+  <g opacity="0.42" stroke="#dce8ff" stroke-width="3" stroke-linecap="round">
+    <path d="M90 0 10 260"/><path d="M240 0 160 330"/><path d="M520 0 430 380"/><path d="M870 0 760 420"/><path d="M1130 0 1040 360"/><path d="M1240 0 1170 240"/>
+  </g>
+  <g transform="translate(820 102)" filter="url(#blurShadow)">
+    <ellipse cx="165" cy="535" rx="100" ry="20" fill="#000" opacity="0.28"/>
+    <path d="M128 70c-44 24-68 96-54 168 9 48 12 95-4 151-12 42-14 88-7 132h197c8-58-10-101-16-150-8-58 9-106 4-161-8-82-50-136-120-140z" fill="#8a4d32"/>
+    <path d="M96 210c40-44 108-50 154-4 42 42 62 136 52 300H54c-4-134 3-239 42-296z" fill="#7a7140"/>
+    <path d="M124 205c23 22 72 24 100 0l28 278H86z" fill="#f4efe2"/>
+    <circle cx="164" cy="125" r="62" fill="#f0c2a6"/><path d="M92 116c34-78 130-92 174-16-52-16-88 8-139 38z" fill="#9d3f22"/>
+  </g>
+  <g transform="translate(410 18)">
+    <rect width="92" height="34" rx="17" fill="url(#glass)" stroke="#fff" stroke-opacity="0.42"/>
+    <text x="46" y="22" text-anchor="middle" font-family="Georgia, serif" font-size="12" font-weight="700" fill="#fff" letter-spacing="2">MENU</text>
+  </g>
+  <g transform="translate(130 520)" filter="url(#blurShadow)">
+    <text x="0" y="-14" font-family="Arial, sans-serif" font-size="26" font-weight="800" fill="#fff">牧濑红莉栖</text>
+    <rect x="0" y="0" width="1020" height="118" rx="22" fill="url(#glass)" stroke="#fff" stroke-opacity="0.16"/>
+    <text x="34" y="50" font-family="Arial, sans-serif" font-size="24" fill="#fff">哼，这还用问吗？当然是冷静且理性地观察问题。</text>
+    <text x="34" y="88" font-family="Arial, sans-serif" font-size="18" fill="#cdd7e9">共同路线 · 试探 · 情绪正在紧绷</text>
+  </g>
+</svg>

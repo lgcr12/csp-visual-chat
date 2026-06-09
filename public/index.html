@@ -28,6 +28,21 @@
           </span>
         </button>
 
+        <section class="panel compact quickstart-panel" aria-label="快速开始">
+          <div class="quickstart-copy">
+            <strong id="quickstartTitle">先选一个角色，30 秒就能开始试玩</strong>
+            <p id="quickstartHint">默认是演示模式，不需要 API 也能先体验聊天节奏、桌宠动作和界面风格。</p>
+          </div>
+          <div class="quickstart-pills" aria-label="当前体验状态">
+            <span id="experienceModePill">演示模式</span>
+            <span id="voiceStatusPill">语音未开启</span>
+          </div>
+          <div class="quickstart-actions">
+            <button class="quickstart-primary" id="startQuickChat" type="button">立即试玩</button>
+            <button class="quickstart-secondary" id="configureExperience" type="button">连接模型</button>
+          </div>
+        </section>
+
         <div class="panel compact self-name-panel">
           <label for="userAlias">角色对你的称呼</label>
           <input id="userAlias" maxlength="24" placeholder="不填默认称呼你" />
@@ -115,9 +130,9 @@
                 <span class="eyebrow">当前角色</span>
                 <h1 id="chatTitle">请选择聊天对象</h1>
                 <div class="presence-row" aria-label="角色状态">
-                  <span>桌宠在线</span>
-                  <span>本地会话</span>
-                  <span>素材就绪</span>
+                  <span id="presenceMode">演示模式</span>
+                  <span id="presenceVoice">语音关闭</span>
+                  <span id="presenceAssets">等待角色</span>
                 </div>
               </div>
             </div>
@@ -192,7 +207,7 @@
       <button class="galgame-tool" type="button" id="galgameAtmosphere" aria-pressed="true">氛围</button>
       <button class="galgame-tool" type="button" id="galgameBranchEdit">分支</button>
       <label class="galgame-frequency-control" title="控制 Galgame 分支选项出现频率">
-        <span>选项</span>
+        <span>分支频率</span>
         <select id="galgameChoiceFrequency">
           <option value="low">较少</option>
           <option value="normal" selected>适中</option>
@@ -346,6 +361,10 @@
             <input id="characterSearch" placeholder="搜索角色或作品" />
             <span id="libraryCount" class="library-count">0 个角色</span>
             <button id="showCreate" type="button">新建角色</button>
+          </div>
+          <div class="library-intro">
+            <strong>先挑一个你想进入的关系气氛</strong>
+            <span>可以按作品名搜索，也可以直接看卡片上的路线气质，选一个最想先开口的人。</span>
           </div>
           <div id="characterGrid" class="character-grid"></div>
         </section>

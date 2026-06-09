@@ -1,5 +1,29 @@
 # CSP Visual Chat
 
+## 2026-06-09 Galgame Update
+
+CSP Visual Chat now includes a Galgame / visual novel prototype layer:
+
+- Full-screen VN-style stage, glass dialogue, body-level branch choices, and click-only menu.
+- Three gameplay modes: free chat, story mode, and hybrid mode.
+- Route progression: common route -> personal route -> ending state.
+- Relationship temperature: distant, probing, dependent, ambiguous, confirmed.
+- Character-specific Story Bible drafts and OOC guardrails.
+- Contextual choices generated from the character's latest reply content.
+
+Docs:
+
+- [Galgame direction](./docs/galgame/README.md)
+- [Changelog](./CHANGELOG.md)
+
+Screenshots:
+
+![Galgame stage](./docs/assets/screenshots/galgame-stage.svg)
+
+![Contextual choices](./docs/assets/screenshots/contextual-choices.svg)
+
+![Story Bible routes](./docs/assets/screenshots/story-bible-routes.svg)
+
 一个基于 CSP 角色技能蒸馏流程的本地二次元角色聊天与桌宠平台。它可以创建角色卡、自动抓取角色头像/立绘候选图，并在聊天界面右侧显示普通立绘、Q版或 Live2D 桌宠。
 
 ## 功能

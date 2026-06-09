@@ -32,6 +32,7 @@ const state = {
     autoScene: true,
     atmosphere: true,
     choiceFrequency: "normal",
+    gameplayMode: "hybrid",
     customBackgrounds: [],
     emotion: "calm",
     pendingAutoTimer: null
@@ -75,6 +76,12 @@ const els = {
   onboardingModal: $("#onboardingModal"),
   closeOnboarding: $("#closeOnboarding"),
   finishOnboarding: $("#finishOnboarding"),
+  quickstartTitle: $("#quickstartTitle"),
+  quickstartHint: $("#quickstartHint"),
+  experienceModePill: $("#experienceModePill"),
+  voiceStatusPill: $("#voiceStatusPill"),
+  startQuickChat: $("#startQuickChat"),
+  configureExperience: $("#configureExperience"),
   styleDock: $("#styleDock"),
   voiceToggle: $("#voiceToggle"),
   voiceToggleDock: $("#voiceToggleDock"),
@@ -88,6 +95,7 @@ const els = {
   galgameAutoScene: $("#galgameAutoScene"),
   galgameAtmosphere: $("#galgameAtmosphere"),
   galgameBranchEdit: $("#galgameBranchEdit"),
+  galgameGameplayMode: $("#galgameGameplayMode"),
   galgameChoiceFrequency: $("#galgameChoiceFrequency"),
   galgameRouteStatus: $("#galgameRouteStatus"),
   galgameLog: $("#galgameLog"),
@@ -95,6 +103,9 @@ const els = {
   galgameLogBody: $("#galgameLogBody"),
   galgameLogSearch: $("#galgameLogSearch"),
   galgameLogCount: $("#galgameLogCount"),
+  presenceMode: $("#presenceMode"),
+  presenceVoice: $("#presenceVoice"),
+  presenceAssets: $("#presenceAssets"),
   galgameSaveDialog: $("#galgameSaveDialog"),
   galgameSaveDialogTitle: $("#galgameSaveDialogTitle"),
   galgameSaveDialogClose: $("#galgameSaveDialogClose"),
@@ -126,6 +137,13 @@ const els = {
   petBubble: $("#petBubble"),
   petToolbar: $("#petToolbar"),
   reprocessPetImage: $("#reprocessPetImage"),
+  editStoryBible: $("#editStoryBible"),
+  storyBibleDialog: $("#storyBibleDialog"),
+  storyBibleForm: $("#storyBibleForm"),
+  storyBibleClose: $("#storyBibleClose"),
+  storyBibleCancel: $("#storyBibleCancel"),
+  storyBibleDraft: $("#storyBibleDraft"),
+  storyBibleStatus: $("#storyBibleStatus"),
   playStatus: $("#playStatus"),
   live2dStage: $("#live2dStage"),
   live2dStatus: $("#live2dStatus"),
@@ -155,6 +173,11 @@ const GALGAME_INPUT_PLACEHOLDER = "输入台词...";
 const AVATAR_PLACEHOLDER = "/assets/ui/avatar-placeholder.svg";
 const PET_PLACEHOLDER = "/assets/ui/pet-placeholder.svg";
 const UI_STYLES = new Set(["workbench", "galgame", "pet-console", "album"]);
+const PROVIDER_LABELS = {
+  mock: "演示模式",
+  "openai-compatible": "OpenAI Compatible",
+  claude: "Claude API"
+};
 const GALGAME_BACKGROUNDS = {
   riverside: "/assets/ui/galgame-riverside-spring.png?v=1",
   classroom: "/assets/ui/galgame-classroom-sunset.png?v=1",
@@ -282,6 +305,359 @@ const ROUTE_MILESTONES = [
   { id: "distant", field: "affection", at: -8, below: true, text: "气氛稍微冷了下来。", motion: "rest", emotion: "sad" }
 ];
 
+const GALGAME_STORY_EVENTS = [
+  {
+    id: "common-boundary",
+    phase: "common",
+    minTrust: 5,
+    minTurns: 2,
+    maxTension: 70,
+    label: "不再追问，让这一刻安静地停下来。",
+    tone: "soften",
+    memory: "玩家尊重了一次小小的边界，没有强行索要答案。",
+    flags: ["player_respected_boundary"],
+    effects: { trust: 3, tension: -4, honesty: 1 }
+  },
+  {
+    id: "first-private-scene",
+    phase: "common",
+    minTrust: 9,
+    minAffection: 7,
+    minTurns: 3,
+    requiredFlags: ["player_respected_boundary"],
+    label: "邀请她换到更安静的地方聊一会儿。",
+    tone: "comfort",
+    memory: "因为之前的克制，角色愿意接受一次更私下的谈话。",
+    flags: ["shared_private_moment"],
+    effects: { affection: 2, trust: 3, intimacy: 2, honesty: 2, tension: -2 }
+  },
+  {
+    id: "personal-conflict-open",
+    phase: "personal",
+    minTrust: 14,
+    minAffection: 10,
+    requiredFlags: ["shared_private_moment"],
+    label: "轻轻碰触她一直回避的那个话题。",
+    tone: "probe",
+    memory: "路线第一次触及角色的个人矛盾，但没有逼她立刻给出全部答案。",
+    flags: ["personal_conflict_opened"],
+    effects: { trust: 2, honesty: 4, tension: 5 }
+  },
+  {
+    id: "personal-conflict-resolve",
+    phase: "personal",
+    minTrust: 20,
+    minHonesty: 10,
+    requiredFlags: ["personal_conflict_opened"],
+    label: "用行动回应她，而不是要求她立刻改变。",
+    tone: "action",
+    memory: "玩家在不抹消角色主体性的前提下，帮助她面对了个人矛盾。",
+    flags: ["personal_conflict_resolved", "ending_ready"],
+    effects: { affection: 3, trust: 4, intimacy: 3, honesty: 3, tension: -6 }
+  }
+];
+
+const GALGAME_TEMPLATE_STORY_EVENTS = {
+  warm: [
+    {
+      id: "warm-daily-care",
+      phase: "common",
+      minTrust: 4,
+      minTurns: 2,
+      maxTension: 64,
+      label: "把话题放慢，陪{name}处理一件很小的日常。",
+      tone: "daily-care",
+      memory: "玩家没有急着推进关系，而是陪角色把日常里真实的小负担放下来。",
+      flags: ["warm_daily_care"],
+      effects: { affection: 2, trust: 2, intimacy: 1, tension: -3, honesty: 1 }
+    },
+    {
+      id: "warm-accept-care",
+      phase: "common",
+      minTrust: 9,
+      minAffection: 8,
+      minTurns: 4,
+      requiredFlags: ["warm_daily_care"],
+      label: "让{name}也可以被照顾，而不是总是照顾别人。",
+      tone: "comfort",
+      memory: "角色第一次允许自己成为被照顾的一方。",
+      flags: ["warm_accepted_care"],
+      effects: { affection: 2, trust: 3, intimacy: 2, honesty: 2, tension: -3 }
+    },
+    {
+      id: "warm-personal-burden",
+      phase: "personal",
+      minTrust: 14,
+      minAffection: 12,
+      requiredFlags: ["warm_accepted_care"],
+      label: "问{name}是不是也会有不想再逞强的时候。",
+      tone: "probe",
+      memory: "个人线触及了角色温柔背后的负担，但没有把她的温柔否定掉。",
+      flags: ["personal_conflict_opened", "warm_burden_opened"],
+      effects: { trust: 2, honesty: 4, tension: 3 }
+    },
+    {
+      id: "warm-burden-resolve",
+      phase: "personal",
+      minTrust: 20,
+      minHonesty: 10,
+      requiredFlags: ["warm_burden_opened"],
+      label: "用稳定的陪伴告诉{name}：不用每次都一个人撑住。",
+      tone: "action",
+      memory: "玩家没有夺走角色的温柔，而是让她学会把一部分重量交出来。",
+      flags: ["personal_conflict_resolved", "ending_ready"],
+      effects: { affection: 3, trust: 4, intimacy: 3, honesty: 3, tension: -6 }
+    }
+  ],
+  tsundere: [
+    {
+      id: "tsundere-save-face",
+      phase: "common",
+      minTrust: 4,
+      minTurns: 2,
+      maxTension: 62,
+      label: "不戳破{name}的逞强，顺着她给出的台阶走。",
+      tone: "soften",
+      memory: "玩家看见了角色的别扭，但没有拿它取笑或逼她承认。",
+      flags: ["tsundere_face_saved"],
+      effects: { affection: 1, trust: 3, tension: -4, honesty: 1 }
+    },
+    {
+      id: "tsundere-honest-reply",
+      phase: "common",
+      minTrust: 10,
+      minAffection: 7,
+      minTurns: 4,
+      requiredFlags: ["tsundere_face_saved"],
+      label: "认真回应{name}没说出口的关心。",
+      tone: "honest",
+      memory: "角色的别扭关心被认真接住，而不是被当成玩笑消费。",
+      flags: ["tsundere_care_received"],
+      effects: { affection: 2, trust: 3, intimacy: 1, honesty: 2, tension: -2 }
+    },
+    {
+      id: "tsundere-defense-open",
+      phase: "personal",
+      minTrust: 16,
+      minAffection: 12,
+      requiredFlags: ["tsundere_care_received"],
+      label: "告诉{name}，她可以不用每次都把真话包成反话。",
+      tone: "probe",
+      memory: "个人线触及了角色用逞强保护自己的方式，但仍然保留她的防御。",
+      flags: ["personal_conflict_opened", "tsundere_defense_opened"],
+      effects: { trust: 2, honesty: 4, tension: 4 }
+    },
+    {
+      id: "tsundere-defense-resolve",
+      phase: "personal",
+      minTrust: 22,
+      minHonesty: 10,
+      requiredFlags: ["tsundere_defense_opened"],
+      label: "在{name}想逃开时，给她一个能体面留下来的理由。",
+      tone: "action",
+      memory: "玩家没有强迫角色坦白，而是让她能用自己的方式靠近。",
+      flags: ["personal_conflict_resolved", "ending_ready"],
+      effects: { affection: 3, trust: 4, intimacy: 2, honesty: 3, tension: -5 }
+    }
+  ],
+  mystery: [
+    {
+      id: "mystery-notice-gap",
+      phase: "common",
+      minTrust: 5,
+      minTurns: 2,
+      maxTension: 60,
+      label: "记住{name}刚才避开的那个细节，但暂时不追问。",
+      tone: "cautious",
+      memory: "玩家注意到了角色回避的缝隙，却选择暂时保留距离。",
+      flags: ["mystery_gap_noticed"],
+      effects: { trust: 2, honesty: 1, tension: -2 }
+    },
+    {
+      id: "mystery-quiet-proof",
+      phase: "common",
+      minTrust: 11,
+      minTurns: 4,
+      requiredFlags: ["mystery_gap_noticed"],
+      label: "用一次安静的守约证明你不会消费{name}的秘密。",
+      tone: "patient",
+      memory: "角色看见玩家能守住没有被说出口的秘密。",
+      flags: ["mystery_secret_respected"],
+      effects: { affection: 1, trust: 4, intimacy: 1, honesty: 2, tension: -3 }
+    },
+    {
+      id: "mystery-mask-open",
+      phase: "personal",
+      minTrust: 17,
+      minHonesty: 5,
+      requiredFlags: ["mystery_secret_respected"],
+      label: "只问{name}愿意让你知道的那一部分。",
+      tone: "probe",
+      memory: "个人线触及了角色的面具和秘密，但问题被限制在她能承受的范围内。",
+      flags: ["personal_conflict_opened", "mystery_mask_opened"],
+      effects: { trust: 2, honesty: 4, tension: 5 }
+    },
+    {
+      id: "mystery-secret-resolve",
+      phase: "personal",
+      minTrust: 23,
+      minHonesty: 12,
+      requiredFlags: ["mystery_mask_opened"],
+      label: "承诺守住{name}的秘密，也守住她仍然不想说的部分。",
+      tone: "action",
+      memory: "玩家没有揭开全部真相来满足好奇，而是保护了角色的边界。",
+      flags: ["personal_conflict_resolved", "ending_ready"],
+      effects: { affection: 2, trust: 5, intimacy: 2, honesty: 3, tension: -6 }
+    }
+  ],
+  brave: [
+    {
+      id: "brave-check-reason",
+      phase: "common",
+      minTrust: 4,
+      minTurns: 2,
+      maxTension: 76,
+      label: "在答应{name}之前，先确认她真正想守护什么。",
+      tone: "answer",
+      memory: "玩家没有盲目热血，而是认真确认角色行动背后的理由。",
+      flags: ["brave_reason_checked"],
+      effects: { trust: 3, affection: 1, honesty: 1 }
+    },
+    {
+      id: "brave-stand-beside",
+      phase: "common",
+      minTrust: 10,
+      minAffection: 6,
+      requiredFlags: ["brave_reason_checked"],
+      label: "选择站到{name}身边，而不是替她做决定。",
+      tone: "accept",
+      memory: "玩家用并肩行动表达支持，但没有夺走角色的判断权。",
+      flags: ["brave_side_by_side"],
+      effects: { affection: 2, trust: 3, intimacy: 1, tension: -1 }
+    },
+    {
+      id: "brave-cost-open",
+      phase: "personal",
+      minTrust: 15,
+      minAffection: 9,
+      requiredFlags: ["brave_side_by_side"],
+      label: "问{name}一直向前走时，最害怕失去什么。",
+      tone: "probe",
+      memory: "个人线触及了角色行动背后的代价，而不是只赞美她的强大。",
+      flags: ["personal_conflict_opened", "brave_cost_opened"],
+      effects: { trust: 2, honesty: 4, tension: 4 }
+    },
+    {
+      id: "brave-cost-resolve",
+      phase: "personal",
+      minTrust: 21,
+      minHonesty: 10,
+      requiredFlags: ["brave_cost_opened"],
+      label: "和{name}一起承担后果，而不是让她独自背负。",
+      tone: "action",
+      memory: "玩家选择并肩承担行动的后果，关系因此进入可读的结局态。",
+      flags: ["personal_conflict_resolved", "ending_ready"],
+      effects: { affection: 3, trust: 4, intimacy: 3, honesty: 3, tension: -5 }
+    }
+  ],
+  default: [
+    {
+      id: "default-shared-rhythm",
+      phase: "common",
+      minTrust: 5,
+      minTurns: 2,
+      maxTension: 68,
+      label: "顺着{name}当前的节奏，把对话继续下去。",
+      tone: "answer",
+      memory: "玩家没有急着改变关系，而是先找到角色当前能接受的相处节奏。",
+      flags: ["default_shared_rhythm"],
+      effects: { trust: 2, affection: 1, tension: -2 }
+    },
+    {
+      id: "default-personal-angle",
+      phase: "personal",
+      minTrust: 15,
+      minAffection: 10,
+      requiredFlags: ["default_shared_rhythm"],
+      label: "从刚才的对话里，轻轻靠近{name}真正介意的事。",
+      tone: "probe",
+      memory: "个人线从已有对话自然延伸，而不是突然空降冲突。",
+      flags: ["personal_conflict_opened"],
+      effects: { trust: 2, honesty: 3, tension: 3 }
+    }
+  ]
+};
+
+const GALGAME_ENDING_STATES = [
+  {
+    id: "confirmed_bond",
+    label: "确定关系",
+    aliases: ["Confirmed Bond"],
+    summary: "这段关系已经被承认，之后要靠双方继续小心维系。",
+    conditions: { minTrust: 24, minIntimacy: 20, minHonesty: 18, requiredFlags: ["personal_conflict_resolved"] }
+  },
+  {
+    id: "ambiguous_stay",
+    label: "暧昧停留",
+    aliases: ["Ambiguous Stay"],
+    summary: "好感已经明显存在，但关系仍然有意停在未完全说破的位置。",
+    conditions: { minTrust: 18, minIntimacy: 14, maxHonesty: 17, requiredFlags: ["personal_conflict_opened"] }
+  },
+  {
+    id: "trust_established",
+    label: "信任建立",
+    aliases: ["Trust Established"],
+    summary: "稳定的信任已经形成，即使亲密感仍然保持在克制范围内。",
+    conditions: { minTrust: 16, maxIntimacy: 13 }
+  },
+  {
+    id: "distant_reserved",
+    label: "保留距离",
+    aliases: ["Distant Reserved"],
+    summary: "彼此比从前更理解对方，但保持距离依然是最安全的答案。",
+    conditions: { maxTrust: 6, minTension: 72 }
+  }
+];
+
+const ROUTE_PACING_PRESETS = {
+  warm: {
+    personalMinTurns: 4,
+    personalMinTrust: 12,
+    personalMinAffection: 10,
+    personalMaxTension: 68,
+    endingMinTurns: 7
+  },
+  brave: {
+    personalMinTurns: 4,
+    personalMinTrust: 13,
+    personalMinAffection: 8,
+    personalMaxTension: 76,
+    endingMinTurns: 7
+  },
+  tsundere: {
+    personalMinTurns: 6,
+    personalMinTrust: 16,
+    personalMinAffection: 12,
+    personalMaxTension: 58,
+    endingMinTurns: 10
+  },
+  mystery: {
+    personalMinTurns: 7,
+    personalMinTrust: 17,
+    personalMinAffection: 10,
+    personalMinHonesty: 4,
+    personalMaxTension: 62,
+    endingMinTurns: 11
+  },
+  default: {
+    personalMinTurns: 5,
+    personalMinTrust: 14,
+    personalMinAffection: 10,
+    personalMaxTension: 66,
+    endingMinTurns: 8
+  }
+};
+
 const interactionLines = {
   "chihaya-anon": {
     touch: "诶，不是啦，突然摸头也太犯规了吧。算了，今天就允许一下。",
@@ -318,7 +694,191 @@ function getInteractionLines(character) {
   return interactionLines.default;
 }
 
+function ensureGalgameModeControl() {
+  if (els.galgameGameplayMode || !els.styleDock) return;
+  const anchor = els.galgameChoiceFrequency?.closest("label");
+  const label = document.createElement("label");
+  label.className = "galgame-mode-control";
+  label.title = "选择 Galgame 玩法模式";
+  label.innerHTML = `
+    <span>玩法模式</span>
+    <select id="galgameGameplayMode">
+      <option value="hybrid">混合剧情</option>
+      <option value="free">自由聊天</option>
+      <option value="story">剧情推进</option>
+    </select>
+  `;
+  els.styleDock.insertBefore(label, anchor || els.styleDock.firstChild);
+  els.galgameGameplayMode = label.querySelector("select");
+}
+
+function organizeGalgameMenu() {
+  if (!els.styleDock || els.styleDock.dataset.organized === "true") return;
+  const rowActions = document.createElement("div");
+  const rowConfigs = document.createElement("div");
+  const rowThumbs = document.createElement("div");
+  rowActions.className = "menu-row row-actions";
+  rowConfigs.className = "menu-row row-configs";
+  rowThumbs.className = "menu-row row-thumbnails";
+
+  const actionIds = new Set([
+    "voiceToggleDock",
+    "galgameLogToggle",
+    "galgameSkipText",
+    "galgameHideToggle",
+    "galgameSave",
+    "galgameLoad",
+    "galgameAuto",
+    "galgameSkipRead"
+  ]);
+  const configIds = new Set([
+    "galgameAutoScene",
+    "galgameAtmosphere",
+    "galgameBranchEdit",
+    "galgameChoiceFrequency",
+    "galgameGameplayMode"
+  ]);
+
+  [...els.styleDock.children].forEach((child) => {
+    const id = child.id || child.querySelector?.("select,input")?.id || "";
+    const inputName = child.querySelector?.('input[name="uiStyle"]')?.name;
+    if (actionIds.has(id)) {
+      rowActions.append(child);
+    } else if (configIds.has(id) || inputName === "uiStyle") {
+      rowConfigs.append(child);
+    } else if (id === "galgameBgPicker") {
+      rowThumbs.append(child);
+    } else {
+      rowConfigs.append(child);
+    }
+  });
+
+  els.styleDock.append(rowActions, rowConfigs, rowThumbs);
+  els.styleDock.dataset.organized = "true";
+}
+
+function ensureStoryBibleEditor() {
+  if (els.storyBibleDialog) return;
+  const actionButton = document.createElement("button");
+  actionButton.className = "sheet-action story-bible-action";
+  actionButton.id = "editStoryBible";
+  actionButton.type = "button";
+  actionButton.hidden = true;
+  actionButton.disabled = true;
+  actionButton.textContent = "Story Bible";
+  els.reprocessPetImage?.insertAdjacentElement("afterend", actionButton);
+  els.editStoryBible = actionButton;
+
+  const dialog = document.createElement("dialog");
+  dialog.id = "storyBibleDialog";
+  dialog.className = "story-bible-dialog";
+  dialog.innerHTML = `
+    <form id="storyBibleForm" method="dialog">
+      <div class="story-bible-head">
+        <div>
+          <span class="eyebrow">Galgame Story</span>
+          <strong>Character Bible</strong>
+        </div>
+        <button type="button" id="storyBibleClose" aria-label="Close">x</button>
+      </div>
+      <div class="story-bible-body">
+        <label>Canon window<textarea name="canonWindow" rows="2"></textarea></label>
+        <label>Public role<textarea name="publicRole" rows="2"></textarea></label>
+        <label>Private pressure<textarea name="privatePressure" rows="2"></textarea></label>
+        <label>Central contradiction<textarea name="centralContradiction" rows="2"></textarea></label>
+        <label>Protected value<textarea name="protectedValue" rows="2"></textarea></label>
+        <label>Timeline<textarea name="timeline" rows="2"></textarea></label>
+        <label>Allowed locations<textarea name="allowedLocations" rows="3" placeholder="One item per line"></textarea></label>
+        <label>Blocked / impossible events<textarea name="impossibleEvents" rows="3" placeholder="One item per line"></textarea></label>
+        <label>Knowledge boundary<textarea name="knowledgeBoundary" rows="3" placeholder="One item per line"></textarea></label>
+        <label>Social constraints<textarea name="socialConstraints" rows="3" placeholder="One item per line"></textarea></label>
+        <label>Default tone<textarea name="defaultTone" rows="2"></textarea></label>
+        <label>Sentence shape<textarea name="sentenceShape" rows="2"></textarea></label>
+        <label>Avoidance style<textarea name="avoidanceStyle" rows="2"></textarea></label>
+        <label>Affection style<textarea name="affectionStyle" rows="2"></textarea></label>
+        <label>Forbidden voice<textarea name="forbiddenVoice" rows="3" placeholder="One item per line"></textarea></label>
+        <label>Trust signals<textarea name="trustSignals" rows="3" placeholder="One item per line"></textarea></label>
+        <label>Distrust signals<textarea name="distrustSignals" rows="3" placeholder="One item per line"></textarea></label>
+        <label>Intimacy pace<textarea name="intimacyPace" rows="2"></textarea></label>
+        <label>Acceptable closeness by stage<textarea name="acceptableClosenessByStage" rows="5" placeholder="distant: ...
+probing: ...
+dependent: ...
+ambiguous: ...
+confirmed: ..."></textarea></label>
+        <label>Stress response<textarea name="stressResponse" rows="5" placeholder="mildPressure: ...
+highPressure: ...
+embarrassment: ...
+betrayal: ...
+beingCaredFor: ..."></textarea></label>
+        <label>Common route seed<textarea name="commonRouteSeed" rows="2"></textarea></label>
+        <label>Personal conflict<textarea name="personalConflict" rows="2"></textarea></label>
+        <label>Turning points<textarea name="turningPoints" rows="3" placeholder="One item per line"></textarea></label>
+        <label>Possible endings<textarea name="possibleEndings" rows="3" placeholder="One item per line"></textarea></label>
+        <label>Forbidden actions<textarea name="forbiddenActions" rows="3" placeholder="One item per line"></textarea></label>
+        <label>OOC risks<textarea name="oocRisks" rows="3" placeholder="One item per line"></textarea></label>
+      </div>
+      <div class="story-bible-actions">
+        <span id="storyBibleStatus"></span>
+        <button type="button" id="storyBibleDraft">Generate Draft</button>
+        <button type="button" id="storyBibleCancel">Cancel</button>
+        <button type="submit">Save Bible</button>
+      </div>
+    </form>
+  `;
+  document.body.append(dialog);
+  els.storyBibleDialog = dialog;
+  els.storyBibleForm = $("#storyBibleForm");
+  els.storyBibleClose = $("#storyBibleClose");
+  els.storyBibleCancel = $("#storyBibleCancel");
+  els.storyBibleDraft = $("#storyBibleDraft");
+  els.storyBibleStatus = $("#storyBibleStatus");
+}
+
+function normalizeGameplayMode(value) {
+  return ["free", "story", "hybrid"].includes(value) ? value : "hybrid";
+}
+
+function currentGameplayMode() {
+  return normalizeGameplayMode(els.galgameGameplayMode?.value || state.galgame.gameplayMode);
+}
+
+function gameplayModeLabel(mode = currentGameplayMode()) {
+  return {
+    free: "自由聊天",
+    story: "剧情推进",
+    hybrid: "混合剧情"
+  }[normalizeGameplayMode(mode)] || "混合剧情";
+}
+
+function routePhaseLabel(phase = "common") {
+  return {
+    common: "共同线",
+    personal: "个人线",
+    ending: "结局态"
+  }[phase] || "共同线";
+}
+
+function relationshipStageLabel(stage = "distant") {
+  return {
+    distant: "疏离",
+    probing: "试探",
+    dependent: "依赖",
+    ambiguous: "暧昧",
+    confirmed: "确定"
+  }[stage] || "疏离";
+}
+
+function choiceFrequencyLabel(value = routeChoiceFrequency()) {
+  return {
+    off: "关闭",
+    low: "较少",
+    normal: "适中",
+    high: "频繁"
+  }[value] || "适中";
+}
+
 function loadSettings() {
+  ensureGalgameModeControl();
   try {
     const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
     els.provider.value = settings.provider || "mock";
@@ -344,6 +904,8 @@ function loadSettings() {
       ? settings.galgameChoiceFrequency
       : "normal";
     if (els.galgameChoiceFrequency) els.galgameChoiceFrequency.value = state.galgame.choiceFrequency;
+    state.galgame.gameplayMode = normalizeGameplayMode(settings.galgameGameplayMode);
+    if (els.galgameGameplayMode) els.galgameGameplayMode.value = state.galgame.gameplayMode;
     state.galgame.customBackgrounds = Array.isArray(settings.galgameCustomBackgrounds)
       ? settings.galgameCustomBackgrounds.filter((item) => item?.url).slice(-18)
       : [];
@@ -362,12 +924,15 @@ function loadSettings() {
     state.galgame.atmosphere = true;
     state.galgame.choiceFrequency = "normal";
     if (els.galgameChoiceFrequency) els.galgameChoiceFrequency.value = "normal";
+    state.galgame.gameplayMode = "hybrid";
+    if (els.galgameGameplayMode) els.galgameGameplayMode.value = "hybrid";
     state.galgame.customBackgrounds = [];
     renderCustomGalgameBackgrounds();
     applyGalgameBackground("riverside");
     applyUiStyle("workbench");
   }
   syncGalgameToolButtons();
+  refreshExperienceUi();
 }
 
 function saveSettings() {
@@ -391,8 +956,153 @@ function saveSettings() {
     galgameAutoScene: state.galgame.autoScene,
     galgameAtmosphere: state.galgame.atmosphere,
     galgameChoiceFrequency: state.galgame.choiceFrequency,
+    galgameGameplayMode: state.galgame.gameplayMode,
     voiceEnabled: state.voiceEnabled
   }));
+  refreshExperienceUi();
+}
+
+function isMockProvider() {
+  return !els.provider?.value || els.provider.value === "mock";
+}
+
+function providerLabel() {
+  return PROVIDER_LABELS[els.provider?.value] || "自定义模型";
+}
+
+function characterRouteTemplate(character = state.current) {
+  return inferRouteTemplate(character);
+}
+
+function characterVibe(character = state.current) {
+  const template = characterRouteTemplate(character);
+  return {
+    warm: {
+      tag: "温柔陪伴",
+      hint: "适合从日常、关心和安心感开始。"
+    },
+    tsundere: {
+      tag: "别扭靠近",
+      hint: "适合试探、逗她一下，再慢慢拉近。"
+    },
+    mystery: {
+      tag: "秘密路线",
+      hint: "适合聊心事、追问真意和隐藏情绪。"
+    },
+    brave: {
+      tag: "并肩行动",
+      hint: "适合约定、出发和一起面对事情。"
+    },
+    default: {
+      tag: "共同路线",
+      hint: "适合先打招呼，再慢慢找到她的节奏。"
+    }
+  }[template] || {
+    tag: "共同路线",
+    hint: "适合先打招呼，再慢慢找到她的节奏。"
+  };
+}
+
+function buildStarterPrompts(character = state.current) {
+  if (!character) return [];
+  const vibe = characterVibe(character);
+  const template = characterRouteTemplate(character);
+  const byTemplate = {
+    warm: [
+      `今天过得怎么样？想让我陪你慢慢聊吗？`,
+      `如果你现在有点累，我可以先安静陪着你。`,
+      `请用${character.name}的语气和我打个招呼`
+    ],
+    tsundere: [
+      `先别逞强了，今天其实发生了什么？`,
+      `如果我故意逗你一下，你会是什么反应？`,
+      `请用${character.name}平时最自然的语气和我开场`
+    ],
+    mystery: [
+      `你刚才像是有话没说完，要继续吗？`,
+      `如果把真心话只告诉我一个人，你会说什么？`,
+      `请用${character.name}的语气给我一个有故事感的开场`
+    ],
+    brave: [
+      `如果现在一起出发，你最想带我去哪里？`,
+      `今天要不要并肩做一件像约定一样的事？`,
+      `请用${character.name}的语气邀请我进入你的节奏`
+    ],
+    default: [
+      `今天想和${character.name}聊点日常`,
+      `请用${character.name}的语气介绍自己`,
+      "现在是什么心情？"
+    ]
+  };
+  return byTemplate[template] || byTemplate.default;
+}
+
+function quickStartPrompt() {
+  return buildStarterPrompts(state.current)[0] || "";
+}
+
+function currentAssetStatus() {
+  if (!state.current) return "等待角色";
+  if (state.current.petStyle === "live2d" && state.current.live2dModelUrl) return "Live2D 就绪";
+  if (state.current.petImageUrl || state.current.imageUrl) return "桌宠已就绪";
+  return "缺少桌宠素材";
+}
+
+function refreshExperienceUi() {
+  if (els.quickstartTitle) {
+    els.quickstartTitle.textContent = state.current
+      ? `先和 ${state.current.name} 说第一句话`
+      : "先选一个角色，30 秒就能开始试玩";
+  }
+
+  if (els.quickstartHint) {
+    if (!state.current) {
+      els.quickstartHint.textContent = "默认是演示模式，不需要 API 也能先体验聊天节奏、桌宠动作和界面风格。";
+    } else if (isMockProvider()) {
+      els.quickstartHint.textContent = `当前是演示模式。${state.current.name} 会先给你试玩级回复；接入模型后会切换成完整角色表现。`;
+    } else {
+      els.quickstartHint.textContent = `当前已连接 ${providerLabel()}。现在发出的第一句话，会直接影响 ${state.current.name} 的开场气氛。`;
+    }
+  }
+
+  if (els.experienceModePill) {
+    els.experienceModePill.textContent = providerLabel();
+    els.experienceModePill.dataset.mode = isMockProvider() ? "preview" : "live";
+  }
+
+  if (els.voiceStatusPill) {
+    els.voiceStatusPill.textContent = state.voiceEnabled ? "语音已开启" : "语音未开启";
+  }
+
+  if (els.presenceMode) {
+    els.presenceMode.textContent = providerLabel();
+  }
+
+  if (els.presenceVoice) {
+    els.presenceVoice.textContent = state.voiceEnabled ? "语音已开启" : "语音关闭";
+  }
+
+  if (els.presenceAssets) {
+    els.presenceAssets.textContent = currentAssetStatus();
+  }
+
+  if (els.startQuickChat) {
+    els.startQuickChat.textContent = state.current
+      ? (state.messages.length ? "继续聊天" : "开始第一句")
+      : "选择角色";
+  }
+}
+
+function handleQuickStart() {
+  if (!state.current) {
+    openCharacterLibrary();
+    return;
+  }
+  if (!state.messages.length) {
+    sendMessage(quickStartPrompt());
+    return;
+  }
+  els.input?.focus();
 }
 
 function userAliasValue() {
@@ -426,9 +1136,14 @@ function openSettingsDrawer() {
 
 function defaultRouteState() {
   return {
+    routePhase: "common",
+    relationshipStage: "distant",
+    gameplayMode: "hybrid",
     affection: 0,
     trust: 0,
     intimacy: 0,
+    tension: 12,
+    honesty: 0,
     turns: 0,
     route: "序章",
     template: "default",
@@ -439,6 +1154,10 @@ function defaultRouteState() {
     stress: 12,
     energy: 74,
     interactionCounts: {},
+    flags: {},
+    memories: [],
+    currentScene: null,
+    sceneHistory: [],
     lastInteraction: "",
     endings: [],
     lastChoice: "",
@@ -471,10 +1190,14 @@ function routeStateFor(character = state.current) {
   if (!Array.isArray(next.eventLog)) next.eventLog = [];
   if (!Array.isArray(next.unlockedMemories)) next.unlockedMemories = [];
   if (!Array.isArray(next.endings)) next.endings = [];
+  if (!Array.isArray(next.memories)) next.memories = [];
+  if (!Array.isArray(next.sceneHistory)) next.sceneHistory = [];
   if (!next.interactionCounts || typeof next.interactionCounts !== "object") next.interactionCounts = {};
+  if (!next.flags || typeof next.flags !== "object") next.flags = {};
   next.stress = clampPercent(next.stress ?? 12);
   next.energy = clampPercent(next.energy ?? 74);
   next.mood = next.mood || routeMood(next);
+  syncRouteNarrativeState(next);
   state.routeStates[character.id] = next;
   return next;
 }
@@ -498,6 +1221,178 @@ function routeTemplateInfo(route = routeStateFor()) {
 
 function clampRouteValue(value) {
   return Math.max(-20, Math.min(30, Number(value) || 0));
+}
+
+function routePacingProfile(route = routeStateFor()) {
+  const key = route?.template && ROUTE_PACING_PRESETS[route.template] ? route.template : "default";
+  return ROUTE_PACING_PRESETS[key] || ROUTE_PACING_PRESETS.default;
+}
+
+function canEnterPersonalRoute(route = routeStateFor()) {
+  const pacing = routePacingProfile(route);
+  const stage = relationshipStageFor(route);
+  const turns = Number(route.turns) || 0;
+  const trust = Number(route.trust) || 0;
+  const affection = Number(route.affection) || 0;
+  const honesty = Number(route.honesty) || 0;
+  const tension = Number(route.tension ?? route.stress) || 0;
+  if (!["dependent", "ambiguous", "confirmed"].includes(stage)) return false;
+  if (turns < pacing.personalMinTurns) return false;
+  if (trust < pacing.personalMinTrust) return false;
+  if (affection < pacing.personalMinAffection) return false;
+  if (honesty < Number(pacing.personalMinHonesty || 0)) return false;
+  if (tension > pacing.personalMaxTension) return false;
+  return true;
+}
+
+function canEnterEndingRoute(route = routeStateFor()) {
+  const pacing = routePacingProfile(route);
+  if ((route.endings || []).length) return true;
+  if (!route.flags?.ending_ready || !route.flags?.personal_conflict_resolved) return false;
+  if (Number(route.turns) < pacing.endingMinTurns) return false;
+  return true;
+}
+
+function relationshipStageFor(route = routeStateFor()) {
+  const affection = Number(route.affection) || 0;
+  const trust = Number(route.trust) || 0;
+  const intimacy = Number(route.intimacy) || 0;
+  const honesty = Number(route.honesty) || 0;
+  const tension = Number(route.tension ?? route.stress) || 0;
+  const hasPersonalResolution = Boolean(route.flags?.personal_conflict_resolved)
+    || (route.endings || []).length > 0;
+  if (trust >= 24 && intimacy >= 22 && honesty >= 18 && hasPersonalResolution) return "confirmed";
+  if (trust >= 18 && intimacy >= 15 && honesty >= 10 && tension < 60) return "ambiguous";
+  if (trust >= 14 && affection >= 12 && (route.memories?.length || route.unlockedMemories?.length || 0) > 0) return "dependent";
+  if (trust >= 7 && affection >= 6 && tension < 70) return "probing";
+  return "distant";
+}
+
+function routePhaseFor(route = routeStateFor()) {
+  if (canEnterEndingRoute(route)) return "ending";
+  if (canEnterPersonalRoute(route)) return "personal";
+  return "common";
+}
+
+function syncRouteNarrativeState(route = routeStateFor()) {
+  route.tension = clampPercent(route.tension ?? route.stress ?? 12);
+  route.honesty = clampRouteValue(route.honesty);
+  route.gameplayMode = normalizeGameplayMode(route.gameplayMode || state.galgame.gameplayMode);
+  route.relationshipStage = relationshipStageFor(route);
+  route.routePhase = routePhaseFor(route);
+  return route;
+}
+
+function routeHasFlag(route, flag) {
+  return Boolean(flag && route?.flags?.[flag]);
+}
+
+function routeHasMemory(route, id) {
+  return Boolean(id && (route?.memories || []).some((item) => item.id === id || item.kind === id || item.type === id));
+}
+
+function routeMeetsConditions(route = routeStateFor(), conditions = {}) {
+  const phaseList = conditions.routePhase || conditions.phase;
+  const stageList = conditions.relationshipStage || conditions.stage;
+  if (phaseList && ![].concat(phaseList).includes(route.routePhase)) return false;
+  if (stageList && ![].concat(stageList).includes(route.relationshipStage)) return false;
+  if (Number(route.affection) < Number(conditions.minAffection ?? -Infinity)) return false;
+  if (Number(route.affection) > Number(conditions.maxAffection ?? Infinity)) return false;
+  if (Number(route.trust) < Number(conditions.minTrust ?? -Infinity)) return false;
+  if (Number(route.trust) > Number(conditions.maxTrust ?? Infinity)) return false;
+  if (Number(route.intimacy) < Number(conditions.minIntimacy ?? -Infinity)) return false;
+  if (Number(route.intimacy) > Number(conditions.maxIntimacy ?? Infinity)) return false;
+  if (Number(route.honesty) < Number(conditions.minHonesty ?? -Infinity)) return false;
+  if (Number(route.honesty) > Number(conditions.maxHonesty ?? Infinity)) return false;
+  if (Number(route.tension ?? route.stress) < Number(conditions.minTension ?? -Infinity)) return false;
+  if (Number(route.tension ?? route.stress) > Number(conditions.maxTension ?? Infinity)) return false;
+  if (Number(route.turns) < Number(conditions.minTurns ?? -Infinity)) return false;
+  if ((conditions.requiredFlags || []).some((flag) => !routeHasFlag(route, flag))) return false;
+  if ((conditions.blockedFlags || []).some((flag) => routeHasFlag(route, flag))) return false;
+  if ((conditions.requiredMemories || []).some((id) => !routeHasMemory(route, id))) return false;
+  return true;
+}
+
+function storyEventConditions(event, route = routeStateFor()) {
+  const pacing = routePacingProfile(route);
+  const phaseConditions = event.phase === "personal"
+    ? {
+        minTurns: pacing.personalMinTurns,
+        minTrust: pacing.personalMinTrust,
+        minAffection: pacing.personalMinAffection,
+        minHonesty: pacing.personalMinHonesty || event.minHonesty,
+        maxTension: pacing.personalMaxTension
+      }
+    : {};
+  return {
+    phase: event.phase,
+    minTrust: Math.max(Number(event.minTrust ?? -Infinity), Number(phaseConditions.minTrust ?? -Infinity)),
+    minAffection: Math.max(Number(event.minAffection ?? -Infinity), Number(phaseConditions.minAffection ?? -Infinity)),
+    minIntimacy: event.minIntimacy,
+    minHonesty: Math.max(Number(event.minHonesty ?? -Infinity), Number(phaseConditions.minHonesty ?? -Infinity)),
+    maxTension: Math.min(Number(event.maxTension ?? Infinity), Number(phaseConditions.maxTension ?? Infinity)),
+    minTurns: Math.max(Number(event.minTurns ?? -Infinity), Number(phaseConditions.minTurns ?? -Infinity)),
+    requiredFlags: event.requiredFlags || [],
+    blockedFlags: ["story_event_" + event.id, ...(event.blockedFlags || [])]
+  };
+}
+
+function storyEventsForRoute(route = routeStateFor()) {
+  const template = route?.template && GALGAME_TEMPLATE_STORY_EVENTS[route.template] ? route.template : "default";
+  const name = state.current?.name || "她";
+  const fillName = (value) => String(value || "").replaceAll("{name}", name);
+  return [...(GALGAME_TEMPLATE_STORY_EVENTS[template] || []), ...GALGAME_STORY_EVENTS].map((event) => ({
+    ...event,
+    template,
+    label: fillName(event.label),
+    memory: fillName(event.memory)
+  }));
+}
+
+function availableStoryEvents(route = routeStateFor()) {
+  const mode = currentGameplayMode();
+  if (mode === "free") return [];
+  return storyEventsForRoute(route).filter((event) => routeMeetsConditions(route, storyEventConditions(event, route)));
+}
+
+function storyEventChoice(event, route = routeStateFor()) {
+  return {
+    ...routeChoicePrompt(event.label, {
+      ...(event.effects || {}),
+      tone: event.tone,
+      storyEventId: event.id,
+      memoryText: event.memory,
+      flags: [`story_event_${event.id}`, ...(event.flags || [])]
+    }),
+    modes: ["story", "hybrid"],
+    conditions: storyEventConditions(event, route),
+    reason: event.memory || "这个分支由当前路线状态解锁。"
+  };
+}
+
+function endingStateFor(route = routeStateFor()) {
+  return GALGAME_ENDING_STATES.find((ending) => routeMeetsConditions(route, ending.conditions));
+}
+
+function endingInfoByLabel(label = "") {
+  return GALGAME_ENDING_STATES.find((ending) => ending.label === label)
+    || GALGAME_ENDING_STATES.find((ending) => ending.id === label)
+    || GALGAME_ENDING_STATES.find((ending) => (ending.aliases || []).includes(label))
+    || null;
+}
+
+function endingReasonText(route = routeStateFor(), ending = endingInfoByLabel(route.endings?.[0])) {
+  if (!ending) return "";
+  const reasons = [];
+  if (Number(route.trust) >= 16) reasons.push("信任持续累积");
+  if (Number(route.intimacy) >= 14) reasons.push("亲近被反复接受");
+  if (Number(route.honesty) >= 10) reasons.push("坦诚来自之前的选择");
+  if (route.flags?.personal_conflict_opened) reasons.push("个人矛盾已经被触及");
+  if (route.flags?.personal_conflict_resolved) reasons.push("矛盾被回应但没有抹消角色主体性");
+  if (Number(route.tension ?? route.stress) >= 72) reasons.push("张力长期偏高");
+  return reasons.length
+    ? `达成原因：${reasons.slice(0, 3).join("、")}。`
+    : "由当前路线状态自然累积达成。";
 }
 
 function routeName(route) {
@@ -568,6 +1463,7 @@ function addGameplayMemory(text, kind = "event") {
     route: route.route
   };
   route.eventLog = [entry, ...(route.eventLog || []).filter((item) => item.id !== id)].slice(0, 30);
+  route.memories = [entry, ...(route.memories || []).filter((item) => item.id !== id)].slice(0, 60);
   if (!route.unlockedMemories.includes(id)) route.unlockedMemories.unshift(id);
   route.unlockedMemories = route.unlockedMemories.slice(0, 60);
   saveRouteStates();
@@ -575,6 +1471,13 @@ function addGameplayMemory(text, kind = "event") {
 }
 
 function maybeUnlockEnding(route = routeStateFor()) {
+  const storyEnding = endingStateFor(route);
+  if (storyEnding && !route.endings.includes(storyEnding.label)) {
+    route.endings.unshift(storyEnding.label);
+    route.flags[`ending_${storyEnding.id}`] = true;
+    addGameplayMemory(`Ending unlocked: ${storyEnding.label}`, "ending");
+    showRouteEvent(`Ending unlocked: ${storyEnding.label}`);
+  }
   const ending = route.route === "恋人路线"
     ? "恋人结局"
     : route.route === "信赖路线"
@@ -611,6 +1514,8 @@ function applyGameplayDelta(delta = {}, source = "") {
   route.trust = clampRouteValue(route.trust + (Number(delta.trust) || 0));
   route.intimacy = clampRouteValue(route.intimacy + (Number(delta.intimacy) || 0));
   route.stress = clampPercent(route.stress + (Number(delta.stress) || 0));
+  route.tension = clampPercent((route.tension ?? route.stress) + (Number(delta.tension ?? delta.stress) || 0));
+  route.honesty = clampRouteValue(route.honesty + (Number(delta.honesty) || 0));
   route.energy = clampPercent(route.energy + (Number(delta.energy) || 0));
   route.mood = delta.mood || (route.stress > 72 ? "tired" : routeMood(route));
   route.lastInteraction = source || route.lastInteraction;
@@ -619,6 +1524,7 @@ function applyGameplayDelta(delta = {}, source = "") {
     route.interactionCounts[source] = (Number(route.interactionCounts[source]) || 0) + 1;
   }
   route.route = routeName(route);
+  syncRouteNarrativeState(route);
   maybeUnlockEnding(route);
   if (delta.text) addGameplayMemory(delta.text, source ? "interaction" : "event");
   saveRouteStates();
@@ -676,8 +1582,11 @@ function routeFeedbackText(route = routeStateFor()) {
 function updateRouteFeedback(route = routeStateFor()) {
   document.documentElement.dataset.routeMood = routeMood(route);
   document.documentElement.dataset.routeTemplate = route.template || "default";
+  document.documentElement.dataset.routePhase = route.routePhase || "common";
+  document.documentElement.dataset.relationshipStage = route.relationshipStage || "distant";
+  document.documentElement.dataset.galgameGameplayMode = currentGameplayMode();
   if (els.galgameRouteStatus) {
-    els.galgameRouteStatus.textContent = routeFeedbackText(route);
+    els.galgameRouteStatus.textContent = `${routeFeedbackText(route)} · ${routePhaseLabel(route.routePhase)} · ${relationshipStageLabel(route.relationshipStage)} · ${gameplayModeLabel()} · 分支${choiceFrequencyLabel()}`;
     els.galgameRouteStatus.hidden = !isGalgameStyle();
   }
   renderPlayStatus(route);
@@ -702,6 +1611,15 @@ function renderPlayStatus(route = routeStateFor()) {
     return;
   }
   const memories = (route.eventLog || []).slice(0, 3);
+  const ending = endingInfoByLabel(route.endings?.[0]);
+  const endingCard = ending ? `
+    <div class="ending-card">
+      <span>Ending State</span>
+      <strong>${escapeHtml(ending.label)}</strong>
+      <p>${escapeHtml(ending.summary || "")}</p>
+      <em>${escapeHtml(endingReasonText(route, ending))}</em>
+    </div>
+  ` : "";
   els.playStatus.hidden = false;
   els.playStatus.innerHTML = `
     <div class="play-status-head">
@@ -719,6 +1637,7 @@ function renderPlayStatus(route = routeStateFor()) {
       <span>精力：${clampPercent(route.energy)}%</span>
       <span>结局：${route.endings?.length || 0}</span>
     </div>
+    ${endingCard}
     <div class="memory-list">
       <strong>最近回忆</strong>
       ${memories.length
@@ -778,16 +1697,28 @@ function applyRouteEffects(effects = {}, choice = "") {
   route.trust = clampRouteValue(route.trust + (Number(effects.trust) || 0));
   route.intimacy = clampRouteValue(route.intimacy + (Number(effects.intimacy) || 0));
   route.stress = clampPercent(route.stress + (Number(effects.stress) || 0) + (effects.tone === "avoid" ? 4 : -1));
+  route.tension = clampPercent((route.tension ?? route.stress) + (Number(effects.tension ?? effects.stress) || 0) + (effects.tone === "avoid" ? 4 : -1));
+  route.honesty = clampRouteValue(route.honesty + (Number(effects.honesty) || 0));
   route.energy = clampPercent(route.energy + (Number(effects.energy) || 0) - 1);
   route.mood = voiceEmotionFor(effects.tone || "") || routeMood(route);
   route.turns = Math.max(0, (Number(route.turns) || 0) + 1);
   route.lastChoice = routeChoiceLabel(choice);
   route.lastTone = String(effects.tone || "");
+  (effects.flags || []).forEach((flag) => {
+    if (flag) route.flags[flag] = true;
+  });
+  if (effects.storyEventId) {
+    route.currentScene = effects.storyEventId;
+    route.sceneHistory = [effects.storyEventId, ...(route.sceneHistory || []).filter((id) => id !== effects.storyEventId)].slice(0, 20);
+  }
   route.route = routeName(route);
+  syncRouteNarrativeState(route);
   maybeUnlockEnding(route);
   const milestones = routeMilestoneEvents(previous, route);
   saveRouteStates();
   if (choice) addGameplayMemory(`选择：${routeChoiceLabel(choice)}`, "choice");
+  if (effects.memoryText) addGameplayMemory(effects.memoryText, effects.storyEventId ? "turning_point" : "memory");
+  if (effects.storyEventId) appendGalgameEvent(`Story event: ${effects.storyEventId}`, "route");
   showRouteEvent(routeEventFor(previousRoute, route));
   milestones.forEach((event) => {
     showRouteEvent(event.text);
@@ -799,18 +1730,263 @@ function applyRouteEffects(effects = {}, choice = "") {
   return route;
 }
 
+function characterStoryProfile(character = state.current) {
+  if (!character) return null;
+  const route = routeStateFor(character);
+  const bible = character.storyBible || {};
+  return {
+    character: character.name || "",
+    work: character.work || "",
+    subtitle: character.subtitle || "",
+    tags: character.tags || [],
+    storyBible: bible,
+    routeTemplate: route.template,
+    routeTemplateLabel: routeTemplateInfo(route).label,
+    guardrails: [
+      "Respect the character's source setting and current canon window.",
+      "Do not make the character reveal private feelings before trust supports it.",
+      "Use the character prompt as a hard behavior boundary, not just flavor."
+    ]
+  };
+}
+
+function linesToText(value) {
+  return Array.isArray(value) ? value.join("\n") : String(value || "");
+}
+
+function textToLines(value) {
+  return String(value || "")
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function mapToText(value = {}, keys = []) {
+  return keys
+    .map((key) => {
+      const content = Array.isArray(value?.[key])
+        ? value[key].join("; ")
+        : String(value?.[key] || "");
+      return content ? `${key}: ${content}` : "";
+    })
+    .filter(Boolean)
+    .join("\n");
+}
+
+function textToMap(value, keys = []) {
+  const result = Object.fromEntries(keys.map((key) => [key, ""]));
+  String(value || "").split(/\r?\n/).forEach((line) => {
+    const match = line.match(/^([a-zA-Z]+)\s*:\s*(.+)$/);
+    if (!match) return;
+    const key = match[1];
+    if (keys.includes(key)) result[key] = match[2].trim();
+  });
+  return result;
+}
+
+function textToListMap(value, keys = []) {
+  const result = Object.fromEntries(keys.map((key) => [key, []]));
+  const mapped = textToMap(value, keys);
+  keys.forEach((key) => {
+    result[key] = String(mapped[key] || "")
+      .split(/;|,/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  });
+  return result;
+}
+
+function storyBibleForForm(character = state.current) {
+  return character?.storyBible || {};
+}
+
+function fillStoryBibleForm(character = state.current) {
+  ensureStoryBibleEditor();
+  if (!els.storyBibleForm || !character) return;
+  const bible = storyBibleForForm(character);
+  const fields = els.storyBibleForm.elements;
+  fields.canonWindow.value = bible.canonWindow || "";
+  fields.publicRole.value = bible.coreIdentity?.publicRole || "";
+  fields.privatePressure.value = bible.coreIdentity?.privatePressure || "";
+  fields.centralContradiction.value = bible.coreIdentity?.centralContradiction || "";
+  fields.protectedValue.value = bible.coreIdentity?.protectedValue || "";
+  fields.timeline.value = bible.worldConstraints?.timeline || "";
+  fields.allowedLocations.value = linesToText(bible.worldConstraints?.allowedLocations);
+  fields.impossibleEvents.value = linesToText([
+    ...(bible.worldConstraints?.blockedLocations || []),
+    ...(bible.worldConstraints?.impossibleEvents || [])
+  ]);
+  fields.knowledgeBoundary.value = linesToText(bible.worldConstraints?.knowledgeBoundary);
+  fields.socialConstraints.value = linesToText(bible.worldConstraints?.socialConstraints);
+  fields.defaultTone.value = bible.speechDna?.defaultTone || "";
+  fields.sentenceShape.value = bible.speechDna?.sentenceShape || "";
+  fields.avoidanceStyle.value = bible.speechDna?.avoidanceStyle || "";
+  fields.affectionStyle.value = bible.speechDna?.affectionStyle || "";
+  fields.forbiddenVoice.value = linesToText(bible.speechDna?.forbiddenVoice);
+  fields.trustSignals.value = linesToText(bible.relationshipLogic?.trustSignals);
+  fields.distrustSignals.value = linesToText(bible.relationshipLogic?.distrustSignals);
+  fields.intimacyPace.value = bible.relationshipLogic?.intimacyPace || "";
+  fields.acceptableClosenessByStage.value = mapToText(bible.relationshipLogic?.acceptableClosenessByStage, [
+    "distant",
+    "probing",
+    "dependent",
+    "ambiguous",
+    "confirmed"
+  ]);
+  fields.stressResponse.value = mapToText(bible.stressResponse, [
+    "mildPressure",
+    "highPressure",
+    "embarrassment",
+    "betrayal",
+    "beingCaredFor",
+    "askedForHonesty"
+  ]);
+  fields.commonRouteSeed.value = bible.routeHooks?.commonRouteSeed || "";
+  fields.personalConflict.value = bible.routeHooks?.personalConflict || "";
+  fields.turningPoints.value = linesToText(bible.routeHooks?.turningPoints);
+  fields.possibleEndings.value = linesToText(bible.routeHooks?.possibleEndings);
+  fields.forbiddenActions.value = linesToText(bible.forbiddenActions);
+  fields.oocRisks.value = linesToText(bible.oocRisks);
+  if (els.storyBibleStatus) els.storyBibleStatus.textContent = "";
+}
+
+function storyBibleFromForm() {
+  const fields = els.storyBibleForm.elements;
+  const previous = state.current?.storyBible || {};
+  return {
+    ...previous,
+    canonWindow: fields.canonWindow.value.trim(),
+    coreIdentity: {
+      ...(previous.coreIdentity || {}),
+      publicRole: fields.publicRole.value.trim(),
+      privatePressure: fields.privatePressure.value.trim(),
+      centralContradiction: fields.centralContradiction.value.trim(),
+      protectedValue: fields.protectedValue.value.trim()
+    },
+    worldConstraints: {
+      ...(previous.worldConstraints || {}),
+      timeline: fields.timeline.value.trim(),
+      allowedLocations: textToLines(fields.allowedLocations.value),
+      impossibleEvents: textToLines(fields.impossibleEvents.value),
+      knowledgeBoundary: textToLines(fields.knowledgeBoundary.value),
+      socialConstraints: textToLines(fields.socialConstraints.value)
+    },
+    speechDna: {
+      ...(previous.speechDna || {}),
+      defaultTone: fields.defaultTone.value.trim(),
+      sentenceShape: fields.sentenceShape.value.trim(),
+      avoidanceStyle: fields.avoidanceStyle.value.trim(),
+      affectionStyle: fields.affectionStyle.value.trim(),
+      forbiddenVoice: textToLines(fields.forbiddenVoice.value)
+    },
+    relationshipLogic: {
+      ...(previous.relationshipLogic || {}),
+      trustSignals: textToLines(fields.trustSignals.value),
+      distrustSignals: textToLines(fields.distrustSignals.value),
+      intimacyPace: fields.intimacyPace.value.trim(),
+      acceptableClosenessByStage: textToListMap(fields.acceptableClosenessByStage.value, [
+        "distant",
+        "probing",
+        "dependent",
+        "ambiguous",
+        "confirmed"
+      ])
+    },
+    stressResponse: {
+      ...(previous.stressResponse || {}),
+      ...textToMap(fields.stressResponse.value, [
+        "mildPressure",
+        "highPressure",
+        "embarrassment",
+        "betrayal",
+        "beingCaredFor",
+        "askedForHonesty"
+      ])
+    },
+    routeHooks: {
+      ...(previous.routeHooks || {}),
+      commonRouteSeed: fields.commonRouteSeed.value.trim(),
+      personalConflict: fields.personalConflict.value.trim(),
+      turningPoints: textToLines(fields.turningPoints.value),
+      possibleEndings: textToLines(fields.possibleEndings.value)
+    },
+    forbiddenActions: textToLines(fields.forbiddenActions.value),
+    oocRisks: textToLines(fields.oocRisks.value)
+  };
+}
+
+function openStoryBibleEditor() {
+  if (!state.current) return;
+  fillStoryBibleForm(state.current);
+  els.storyBibleDialog?.showModal();
+}
+
+async function generateStoryBibleDraft() {
+  if (!state.current?.id || !els.storyBibleForm) return;
+  const button = els.storyBibleDraft;
+  if (button) button.disabled = true;
+  if (els.storyBibleStatus) els.storyBibleStatus.textContent = "Generating draft...";
+  try {
+    const result = await api(`/api/characters/${encodeURIComponent(state.current.id)}/story-bible/draft`, {
+      method: "POST",
+      body: JSON.stringify({})
+    });
+    state.current = {
+      ...state.current,
+      storyBible: result.storyBible
+    };
+    fillStoryBibleForm(state.current);
+    if (els.storyBibleStatus) els.storyBibleStatus.textContent = "Draft ready. Review and save it.";
+  } catch (error) {
+    if (els.storyBibleStatus) els.storyBibleStatus.textContent = error.message;
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function saveStoryBibleEditor() {
+  if (!state.current?.id || !els.storyBibleForm) return;
+  const submit = els.storyBibleForm.querySelector('button[type="submit"]');
+  submit.disabled = true;
+  if (els.storyBibleStatus) els.storyBibleStatus.textContent = "Saving...";
+  try {
+    const character = await api(`/api/characters/${encodeURIComponent(state.current.id)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ storyBible: storyBibleFromForm() })
+    });
+    state.characters = state.characters.map((item) => item.id === character.id ? character : item);
+    applyCharacter(character);
+    renderCharacters();
+    if (els.storyBibleStatus) els.storyBibleStatus.textContent = "Saved";
+    els.storyBibleDialog?.close();
+  } catch (error) {
+    if (els.storyBibleStatus) els.storyBibleStatus.textContent = error.message;
+  } finally {
+    submit.disabled = false;
+  }
+}
+
 function routeContextForPrompt() {
   const route = routeStateFor();
   return {
     userAlias: userAliasValue(),
     route: route.route,
+    routePhase: route.routePhase,
+    relationshipStage: route.relationshipStage,
+    gameplayMode: currentGameplayMode(),
     affection: route.affection,
     trust: route.trust,
     intimacy: route.intimacy,
+    tension: route.tension,
+    honesty: route.honesty,
     stress: route.stress,
     energy: route.energy,
     mood: route.mood,
     unlockedMemories: route.unlockedMemories?.length || 0,
+    memories: route.memories?.slice(0, 5).map((item) => item.text || item.title || item.id),
+    characterBible: characterStoryProfile(),
+    currentScene: route.currentScene,
+    sceneHistory: route.sceneHistory?.slice(0, 5),
     endings: route.endings?.length || 0,
     turns: route.turns,
     template: route.template,
@@ -1193,6 +2369,9 @@ function syncGalgameToolButtons() {
   if (els.galgameChoiceFrequency) {
     els.galgameChoiceFrequency.value = routeChoiceFrequency();
   }
+  if (els.galgameGameplayMode) {
+    els.galgameGameplayMode.value = currentGameplayMode();
+  }
   setGalgameAtmosphere(state.galgame.atmosphere);
   updateRouteFeedback();
 }
@@ -1296,6 +2475,8 @@ function syncStyleModeUi() {
   } else if (els.modal.open && !modalIsTopLayer()) {
     closeCharacterLibrary();
   }
+
+  refreshExperienceUi();
 }
 
 async function api(path, options = {}) {
@@ -1648,6 +2829,10 @@ function applyCharacter(character) {
     els.reprocessPetImage.hidden = character.petStyle === "live2d";
     els.reprocessPetImage.disabled = !character.petImageUrl && !character.imageUrl;
   }
+  if (els.editStoryBible) {
+    els.editStoryBible.hidden = false;
+    els.editStoryBible.disabled = false;
+  }
   if (character.voiceProvider || character.voiceId) {
     els.voiceProvider.value = character.voiceProvider || "acgn-ttson";
     els.voiceId.value = character.voiceId || "";
@@ -1701,6 +2886,7 @@ function applyCharacter(character) {
 
   syncStyleModeUi();
   renderMessages();
+  refreshExperienceUi();
 }
 
 function clearCharacter() {
@@ -1708,6 +2894,10 @@ function clearCharacter() {
   if (els.reprocessPetImage) {
     els.reprocessPetImage.hidden = true;
     els.reprocessPetImage.disabled = true;
+  }
+  if (els.editStoryBible) {
+    els.editStoryBible.hidden = true;
+    els.editStoryBible.disabled = true;
   }
   if (els.playStatus) {
     els.playStatus.hidden = true;
@@ -1743,6 +2933,7 @@ function clearCharacter() {
   clearTimeout(state.pet.idleTimer);
   syncStyleModeUi();
   renderMessages();
+  refreshExperienceUi();
 }
 
 function petStyleLabel(style) {
@@ -1769,7 +2960,7 @@ function characterSearchText(item) {
 function renderCharacterEmpty(keyword) {
   const title = state.characters.length ? `没有找到「${keyword}」` : "角色库还是空的";
   const hint = state.characters.length
-    ? "换个关键词，或者直接新建一个角色卡。"
+    ? "换个关键词，或者直接新建一个角色卡。也可以先从已有角色的路线气质里挑一个开始。"
     : "输入角色名后可以自动抓图、生成角色卡，再选择桌宠模式。";
   const actions = state.characters.length
     ? `<button type="button" data-action="clear-search">清空搜索</button>`
@@ -1801,19 +2992,22 @@ function renderCharacters() {
     return;
   }
 
-  els.grid.innerHTML = items.map((item) => `
+  els.grid.innerHTML = items.map((item) => {
+    const vibe = characterVibe(item);
+    return `
     <article class="character-card ${state.current?.id === item.id ? "active" : ""}" data-id="${escapeAttr(item.id)}" ${state.current?.id === item.id ? 'aria-current="true"' : ""}>
       <button class="character-pick" type="button" data-action="pick" data-id="${escapeAttr(item.id)}" aria-label="选择 ${escapeAttr(item.name)}">
         <img src="${escapeAttr(imageFor(item))}" alt="${escapeAttr(item.name)}" loading="lazy" />
       </button>
       <button class="delete-card" type="button" data-action="delete" data-id="${escapeAttr(item.id)}" aria-label="删除 ${escapeAttr(item.name)}">删除</button>
       <div class="character-card-copy">
+        <div class="character-card-vibe">${escapeHtml(vibe.tag)}</div>
         <div class="character-card-title">
           <b>${escapeHtml(item.name)}</b>
           ${state.current?.id === item.id ? "<span>使用中</span>" : ""}
         </div>
         <small>${escapeHtml(item.work || "自定义角色")}</small>
-        ${item.subtitle ? `<p>${escapeHtml(item.subtitle)}</p>` : ""}
+        <p>${escapeHtml(item.subtitle || vibe.hint)}</p>
         <div class="character-card-meta" aria-label="角色素材状态">
           <span>${escapeHtml(petStyleLabel(item.petStyle))}</span>
           <span>路线 ${routeCompletion(routeStateFor(item))}%</span>
@@ -1822,7 +3016,8 @@ function renderCharacters() {
         </div>
       </div>
     </article>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function candidateKindLabel(kind) {
@@ -2000,10 +3195,209 @@ function routeChoicePrompt(text, effects = {}) {
   };
 }
 
+function rotateChoicePool(pool = [], seed = 0, count = 3) {
+  const items = pool.filter(Boolean);
+  if (!items.length) return [];
+  const offset = Math.abs(Number(seed) || 0) % items.length;
+  return [...items.slice(offset), ...items.slice(0, offset)].slice(0, count);
+}
+
+function templateQuestionChoices(template, name, route = routeStateFor(), seed = 0) {
+  const stage = route.relationshipStage || relationshipStageFor(route);
+  const isClose = ["dependent", "ambiguous", "confirmed"].includes(stage);
+  const pools = {
+    warm: [
+      routeChoicePrompt(`先接住${name}的情绪，再慢慢回答问题`, { affection: 1, trust: 2, intimacy: 0, tone: "comfort" }),
+      routeChoicePrompt(`把答案说得轻一点，不让${name}有压力`, { affection: 1, trust: 1, intimacy: 0, tension: -2, tone: "soften" }),
+      routeChoicePrompt(`问问${name}为什么会这样想`, { affection: 0, trust: 2, intimacy: 0, honesty: 1, tone: "daily-care" }),
+      routeChoicePrompt("先给出一个具体答案，再留一点余地", { affection: 0, trust: 2, intimacy: 0, tone: "answer" }),
+      isClose ? routeChoicePrompt(`用更私人的方式回应${name}的担心`, { affection: 2, trust: 1, intimacy: 2, tone: "silent-close" }) : null
+    ],
+    tsundere: [
+      routeChoicePrompt(`不拆穿${name}的别扭，认真回答她`, { affection: 1, trust: 2, intimacy: 0, tone: "answer" }),
+      routeChoicePrompt(`顺着${name}的语气轻轻回敬一句`, { affection: 2, trust: 0, intimacy: 1, tone: "tease" }),
+      routeChoicePrompt(`把答案说清楚，但给${name}留面子`, { affection: 0, trust: 3, intimacy: 0, tension: -1, tone: "honest" }),
+      routeChoicePrompt(`假装没听出${name}的在意，先回应正题`, { affection: 1, trust: 1, intimacy: 0, tone: "soften" }),
+      isClose ? routeChoicePrompt(`趁${name}想退开前，把真心短短说出来`, { affection: 2, trust: 2, intimacy: 1, tone: "honest" }) : null
+    ],
+    mystery: [
+      routeChoicePrompt(`只回答${name}问出的部分，不碰她藏起的部分`, { affection: 0, trust: 2, intimacy: 0, tension: -1, tone: "cautious" }),
+      routeChoicePrompt(`记住${name}回避的细节，但暂时放过它`, { affection: 0, trust: 2, intimacy: 0, honesty: 1, tone: "patient" }),
+      routeChoicePrompt(`把自己的判断先说出来，让${name}决定要不要继续`, { affection: 1, trust: 2, intimacy: 1, tone: "sincere" }),
+      routeChoicePrompt(`轻轻追问一句，但不要求${name}立刻坦白`, { affection: -1, trust: 2, intimacy: 0, honesty: 2, tone: "probe" }),
+      isClose ? routeChoicePrompt(`告诉${name}，你会守住她没有说出口的部分`, { affection: 1, trust: 3, intimacy: 2, tone: "silent-close" }) : null
+    ],
+    brave: [
+      routeChoicePrompt(`先确认${name}真正想守护的是什么`, { affection: 0, trust: 3, intimacy: 0, honesty: 1, tone: "answer" }),
+      routeChoicePrompt(`给出答案后，和${name}一起决定下一步`, { affection: 1, trust: 2, intimacy: 1, tone: "action" }),
+      routeChoicePrompt(`不替${name}决定，只把你的立场说清楚`, { affection: 0, trust: 2, intimacy: 0, tone: "honest" }),
+      routeChoicePrompt(`答应站到${name}身边，但先问清风险`, { affection: 2, trust: 2, intimacy: 1, tension: 1, tone: "cautious" }),
+      isClose ? routeChoicePrompt(`告诉${name}，后果你会和她一起承担`, { affection: 2, trust: 3, intimacy: 2, tone: "action" }) : null
+    ],
+    default: [
+      routeChoicePrompt(`顺着${name}的问题认真回应`, { affection: 0, trust: 2, intimacy: 0, tone: "answer" }),
+      routeChoicePrompt(`先确认${name}真正想知道的重点`, { affection: 0, trust: 2, intimacy: 0, honesty: 1, tone: "cautious" }),
+      routeChoicePrompt("把答案说得具体一点，不急着推进关系", { affection: 0, trust: 1, intimacy: 0, tension: -1, tone: "soften" }),
+      routeChoicePrompt(`把自己的想法也交给${name}一小部分`, { affection: 1, trust: 2, intimacy: 1, tone: "sincere" })
+    ]
+  };
+  return rotateChoicePool(pools[template] || pools.default, seed, 3);
+}
+
+function analyzeReplyChoiceContext(content = "") {
+  const text = String(content || "");
+  const hasQuestion = /[？?]/.test(text);
+  const hasDirectChoice = /怎么办|要不要|可以吗|愿意|想不想|选|选择|决定|哪边|哪一个|一起去|陪我|跟我|去吗|どう|かな|どちら|一緒|行く|来て|選/.test(text);
+  const isExperiment = /实验|数据|样本|论文|理论|研究|假设|观测|公式|结果|误差|失败|错了|bug|调试|记录|分析/.test(text);
+  const isFrustrated = /烦|烦躁|恼火|头疼|糟|乱|不顺|讨厌|累死|麻烦|受不了|焦虑|压力/.test(text);
+  const isInvitation = /一起|陪|跟我|去|来|留下|走|看看|约|一緒|行く|来て/.test(text);
+  const isVulnerable = /害怕|担心|不安|难过|孤独|寂寞|痛|哭|迷茫|不知|怕|寂|泣/.test(text);
+  const isConflict = /讨厌|生气|别过来|别说|别碰|烦死|吵死|笨蛋|滚|怒|嫌い|バカ/.test(text);
+  const isWarm = /喜欢|可爱|谢谢|高兴|开心|楽しい|好き|ありがとう/.test(text);
+  const isDaily = /日常|工作|家务|打扫|餐点|准备|忙|偷懒|期待|陪伴|主人|说话|今日|生活/.test(text);
+
+  let kind = "";
+  if (isExperiment && isFrustrated) kind = "experiment-frustrated";
+  else if (isExperiment) kind = "experiment";
+  else if (isConflict) kind = "conflict";
+  else if (isVulnerable) kind = "vulnerable";
+  else if (isInvitation) kind = "invitation";
+  else if (isWarm) kind = "warm";
+  else if (isDaily) kind = "daily";
+  else if (hasDirectChoice) kind = "direct-choice";
+  else if (hasQuestion) kind = "question";
+
+  return {
+    kind,
+    hasQuestion,
+    hasDirectChoice,
+    isActionable: Boolean(kind && kind !== "question"),
+    isStrong: Boolean(hasDirectChoice || ["experiment-frustrated", "conflict", "vulnerable", "invitation"].includes(kind))
+  };
+}
+
+function replyContextChoices(context, template, name, route = routeStateFor(), seed = 0) {
+  const kind = context?.kind || "";
+  const pools = {
+    "experiment-frustrated": [
+      routeChoicePrompt(`先问${name}是哪一组实验数据出了问题`, { affection: 0, trust: 3, intimacy: 0, honesty: 1, tone: "answer" }),
+      routeChoicePrompt("把情绪先放一边，陪她从误差来源开始复盘", { affection: 1, trust: 2, intimacy: 0, tension: -2, tone: "cautious" }),
+      routeChoicePrompt(`承认${name}现在很烦，但不要否定她的判断`, { affection: 1, trust: 2, intimacy: 1, tension: -3, tone: "comfort" }),
+      routeChoicePrompt("问她想先骂两句，还是直接重新看数据", { affection: 2, trust: 1, intimacy: 1, tension: -1, tone: "tease" })
+    ],
+    experiment: [
+      routeChoicePrompt(`请${name}先说清实验假设和异常点`, { affection: 0, trust: 3, intimacy: 0, honesty: 1, tone: "answer" }),
+      routeChoicePrompt("提出一起检查记录和变量，不急着下结论", { affection: 0, trust: 2, intimacy: 0, tone: "cautious" }),
+      routeChoicePrompt(`顺着${name}的理论继续推一小步`, { affection: 1, trust: 2, intimacy: 0, tone: "sincere" })
+    ],
+    conflict: [
+      routeChoicePrompt("先压低语气，不继续刺激她", { affection: 0, trust: 1, intimacy: 0, tension: -4, tone: "soften" }),
+      routeChoicePrompt(`问清${name}真正不满的是哪一句话`, { affection: -1, trust: 2, intimacy: 0, honesty: 2, tone: "probe" }),
+      routeChoicePrompt("承认自己刚才可能太急了", { affection: 1, trust: 2, intimacy: 0, tension: -4, tone: "apology" })
+    ],
+    vulnerable: [
+      routeChoicePrompt(`先陪${name}待在这个情绪里`, { affection: 1, trust: 2, intimacy: 1, tension: -2, tone: "comfort" }),
+      routeChoicePrompt("不立刻追问原因，只确认她现在是否安全", { affection: 0, trust: 3, intimacy: 0, tension: -2, tone: "cautious" }),
+      routeChoicePrompt(`轻声问${name}愿不愿意只说一点点`, { affection: 1, trust: 2, intimacy: 1, honesty: 1, tone: "probe" })
+    ],
+    invitation: [
+      routeChoicePrompt(`答应${name}，但先问清她想去哪里`, { affection: 1, trust: 2, intimacy: 1, tone: "accept" }),
+      routeChoicePrompt(`故意让${name}把理由说得更明白一点`, { affection: 1, trust: 1, intimacy: 0, tone: "tease" }),
+      routeChoicePrompt("先确认这件事不会让她为难", { affection: 0, trust: 2, intimacy: 0, tone: "cautious" })
+    ],
+    warm: [
+      routeChoicePrompt("坦率接住这份好意", { affection: 2, trust: 1, intimacy: 1, tone: "sincere" }),
+      routeChoicePrompt(`顺着${name}的开心继续聊下去`, { affection: 2, trust: 1, intimacy: 0, tone: "lighten" }),
+      routeChoicePrompt("把感谢具体说出来，而不是只说谢谢", { affection: 1, trust: 2, intimacy: 0, tone: "honest" })
+    ],
+    daily: [
+      routeChoicePrompt(`问问${name}今天最累的事`, { affection: 0, trust: 2, intimacy: 0, tone: "daily-care" }),
+      routeChoicePrompt("把话题转到一个能放松的小事", { affection: 1, trust: 1, intimacy: 0, tension: -2, tone: "lighten" }),
+      routeChoicePrompt(`陪${name}把眼前的事一件件理顺`, { affection: 1, trust: 2, intimacy: 0, tone: "action" })
+    ],
+    "direct-choice": templateQuestionChoices(template, name, route, seed),
+    question: templateQuestionChoices(template, name, route, seed)
+  };
+  return rotateChoicePool(pools[kind] || pools.question || [], seed, 3);
+}
+
+function toneLabel(tone = "") {
+  return {
+    "daily-care": "日常关心",
+    praise: "温柔夸奖",
+    "rest-together": "一起放松",
+    accept: "直接回应",
+    tease: "轻微试探",
+    cautious: "谨慎观察",
+    comfort: "认真安慰",
+    "silent-close": "安静靠近",
+    probe: "追问真意",
+    apology: "先缓和气氛",
+    honest: "坦率表达",
+    action: "用行动证明",
+    sincere: "真心接住",
+    intimate: "更进一步",
+    answer: "认真作答",
+    avoid: "回避试探",
+    "direct-close": "主动拉近",
+    lighten: "把气氛放轻",
+    patient: "继续陪着她",
+    soften: "给她台阶",
+    wave: "轻松回应"
+  }[tone] || "路线分支";
+}
+
 function routeChoicePayload(choice) {
   if (typeof choice === "object" && choice) return choice;
   const label = routeChoiceLabel(choice);
   return { text: String(choice || ""), label, effects: {} };
+}
+
+function choiceAllowedByRoute(choice, route = routeStateFor()) {
+  const payload = routeChoicePayload(choice);
+  const effects = payload.effects || {};
+  const tone = String(effects.tone || "");
+  if (payload.modes && !payload.modes.includes(currentGameplayMode())) return false;
+  if (payload.conditions && !routeMeetsConditions(route, payload.conditions)) return false;
+  const stage = route.relationshipStage || relationshipStageFor(route);
+  const phase = route.routePhase || routePhaseFor(route);
+  const trust = Number(route.trust) || 0;
+  const intimacy = Number(route.intimacy) || 0;
+  const tension = Number(route.tension ?? route.stress) || 0;
+  const highIntimacyTone = ["intimate", "direct-close", "silent-close"].includes(tone);
+  const riskTone = ["probe", "tease", "avoid"].includes(tone);
+  if (highIntimacyTone && !["dependent", "ambiguous", "confirmed"].includes(stage)) return false;
+  if (tone === "direct-close" && (trust < 12 || intimacy < 8)) return false;
+  if (tone === "intimate" && phase === "common" && trust < 16) return false;
+  if (riskTone && tension > 82) return false;
+  return true;
+}
+
+function safeRouteFallbackChoices(route = routeStateFor()) {
+  const tension = Number(route.tension ?? route.stress) || 0;
+  if (tension >= 70) {
+    return [
+      routeChoicePrompt("先放缓语气，给她一点退路", { affection: 0, trust: 1, intimacy: 0, tension: -3, tone: "soften" }),
+      routeChoicePrompt("承认刚才太急了，重新认真听她说", { affection: 0, trust: 2, intimacy: 0, tension: -4, tone: "apology" })
+    ];
+  }
+  return [
+    routeChoicePrompt("先顺着当前话题认真回应", { affection: 0, trust: 1, intimacy: 0, tone: "answer" }),
+    routeChoicePrompt("不急着推进关系，给她一点思考空间", { affection: 0, trust: 1, intimacy: 0, tension: -2, tone: "soften" })
+  ];
+}
+
+function filterRouteChoices(choices, route = routeStateFor()) {
+  const seen = new Set();
+  const allowed = choices.filter((choice) => {
+    if (!choiceAllowedByRoute(choice, route)) return false;
+    const key = routeChoiceLabel(choice).replace(/[，。！？、\s]/g, "").slice(0, 14);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  if (allowed.length) return allowed.slice(0, 4);
+  return safeRouteFallbackChoices(route).slice(0, 2);
 }
 
 function routeChoiceFrequency() {
@@ -2012,6 +3406,9 @@ function routeChoiceFrequency() {
 }
 
 function routeChoiceInterval() {
+  const mode = currentGameplayMode();
+  if (mode === "story") return 1;
+  if (mode === "free") return 6;
   return {
     high: 2,
     normal: 3,
@@ -2019,27 +3416,54 @@ function routeChoiceInterval() {
   }[routeChoiceFrequency()] || 3;
 }
 
-function shouldShowRouteChoices(latestMessage, assistantTurns, invitesChoice) {
+function shouldShowRouteChoices(latestMessage, assistantTurns, context = {}, hasStoryChoices = false) {
   const frequency = routeChoiceFrequency();
+  const mode = currentGameplayMode();
   if (!isGalgameStyle() || frequency === "off") return false;
-  if (invitesChoice) return true;
-  return assistantTurns > 0 && assistantTurns % routeChoiceInterval() === 0;
+  if (assistantTurns <= 0) return false;
+  if (mode === "story") return Boolean(context.kind || hasStoryChoices);
+  if (mode === "free") return Boolean(context.isStrong) && assistantTurns % routeChoiceInterval() === 0;
+  if (!context.kind && !hasStoryChoices) return false;
+  if (frequency === "high") return Boolean(context.isActionable || context.hasDirectChoice || hasStoryChoices);
+  if (frequency === "low") return Boolean(context.isStrong || hasStoryChoices) && assistantTurns % routeChoiceInterval() === 0;
+  if (context.hasDirectChoice) return true;
+  return Boolean(context.isActionable || hasStoryChoices) && assistantTurns % routeChoiceInterval() === 0;
 }
 
 function renderRouteChoiceButtons(choices) {
   if (!choices.length) return "";
   return `
-    <div class="galgame-choices" role="group" aria-label="路线选择">
-      ${choices.map((choice) => {
-        const payload = routeChoicePayload(choice);
-        return `
-        <button type="button" data-starter="${escapeAttr(payload.text)}" data-route-choice="true" data-route-effects="${escapeAttr(JSON.stringify(payload.effects || {}))}" aria-label="${escapeAttr(routeChoiceLabel(payload))}">
+      <div class="galgame-choices" role="group" aria-label="路线选择">
+        ${choices.map((choice, index) => {
+          const payload = routeChoicePayload(choice);
+          const tone = toneLabel(payload.effects?.tone || "");
+          return `
+        <button type="button" data-starter="${escapeAttr(payload.text)}" data-route-choice="true" data-route-effects="${escapeAttr(JSON.stringify(payload.effects || {}))}" title="${escapeAttr(payload.reason || tone)}" aria-label="${escapeAttr(routeChoiceLabel(payload))}">
+          <b>${index + 1}</b>
           <span>${escapeHtml(routeChoiceLabel(payload))}</span>
+          <small>${escapeHtml(tone)}</small>
         </button>
       `;
-      }).join("")}
-    </div>
-  `;
+        }).join("")}
+      </div>
+    `;
+}
+
+function ensureGalgameChoiceLayer() {
+  let layer = $("#galgameChoiceLayer");
+  if (layer) return layer;
+  layer = document.createElement("div");
+  layer.id = "galgameChoiceLayer";
+  layer.className = "galgame-choice-layer";
+  layer.hidden = true;
+  document.body.append(layer);
+  return layer;
+}
+
+function renderGalgameChoiceLayer(choiceBar = "") {
+  const layer = ensureGalgameChoiceLayer();
+  layer.innerHTML = choiceBar || "";
+  layer.hidden = !choiceBar || !isGalgameStyle();
 }
 
 function latestAssistantChoiceKey() {
@@ -2123,19 +3547,19 @@ function galgameRouteChoices(latestMessage) {
 
   const assistantTurns = state.messages.filter((message) => message.role === "assistant" && message.content !== "...").length;
   const content = String(latestMessage.content || "");
-  const choicePhrases = ["怎么办", "要不要", "可以吗", "愿意", "想不想", "怎么", "如何", "哪里", "哪边", "选择", "决定", "一起", "陪我", "跟我", "去吗", "どう", "かな", "どちら", "一緒", "行く", "来て", "選"];
-  const hasQuestion = /[？?]/.test(content);
-  const invitesChoice = hasQuestion || choicePhrases.some((phrase) => content.includes(phrase));
-  if (!shouldShowRouteChoices(latestMessage, assistantTurns, invitesChoice)) return [];
+  const context = analyzeReplyChoiceContext(content);
+  const route = routeStateFor();
+  const storyChoices = availableStoryEvents(route).map((event) => storyEventChoice(event, route));
+  if (!shouldShowRouteChoices(latestMessage, assistantTurns, context, storyChoices.length > 0)) return [];
   if (state.galgame.routeChoices[key]?.length) return state.galgame.routeChoices[key];
 
   const name = state.current.name;
-  const template = routeStateFor().template || "default";
-  const isInvitation = /一起|陪|跟我|去|来|留下|走|看看|约|一緒|行く|来て/.test(content);
-  const isVulnerable = /害怕|担心|不安|难过|孤独|寂寞|痛|哭|迷茫|不知|怖|寂|泣/.test(content);
-  const isConflict = /讨厌|生气|别过来|别说|别碰|烦死|吵死|笨蛋|滚|怒|嫌い|バカ/.test(content);
-  const isWarm = /喜欢|可爱|谢谢|高兴|开心|楽しい|好き|ありがとう/.test(content);
-  const isDaily = /日常|工作|家务|打扫|餐点|准备|忙|偷懒|期待|陪伴|主人|说话|今日|生活/.test(content);
+  const template = route.template || "default";
+  const isInvitation = context.kind === "invitation";
+  const isVulnerable = context.kind === "vulnerable";
+  const isConflict = context.kind === "conflict";
+  const isWarm = context.kind === "warm";
+  const isDaily = context.kind === "daily";
   let choices;
 
   if (isDaily) {
@@ -2168,12 +3592,8 @@ function galgameRouteChoices(latestMessage) {
       routeChoicePrompt(`轻轻调侃${name}的反应`, { affection: 2, trust: 0, intimacy: 1, tone: "tease" }),
       routeChoicePrompt("把话题转到更私人的地方", { affection: 1, trust: 0, intimacy: 2, tone: "intimate" })
     ];
-  } else if (invitesChoice) {
-    choices = [
-      routeChoicePrompt(`认真回答${name}的问题`, { affection: 0, trust: 2, intimacy: 0, tone: "answer" }),
-      routeChoicePrompt(`先避开重点，观察${name}的反应`, { affection: -1, trust: -1, intimacy: 0, tone: "avoid" }),
-      routeChoicePrompt("靠近一点，把话题说得更坦率", { affection: 2, trust: 1, intimacy: 2, tone: "direct-close" })
-    ];
+  } else if (context.kind) {
+    choices = replyContextChoices(context, template, name, route, assistantTurns + content.length);
   } else {
     const fallbackByTemplate = {
       warm: [
@@ -2204,7 +3624,11 @@ function galgameRouteChoices(latestMessage) {
     ];
   }
 
-  return choices;
+  const mode = currentGameplayMode();
+  const combinedChoices = mode === "story"
+    ? [...storyChoices, ...choices]
+    : [...choices, ...storyChoices];
+  return filterRouteChoices(combinedChoices, route);
 }
 
 function isGalgameStyle() {
@@ -2290,6 +3714,14 @@ function autoPlayPrompt() {
   return `继续听${state.current.name}说下去`;
 }
 
+function autoPlayDelayFor(message) {
+  const content = String(message?.content || "");
+  const text = content.replace(/\s+/g, "");
+  const punctuationBoost = (text.match(/[。！？!?…]/g) || []).length * 220;
+  const lengthBoost = Math.min(4200, text.length * 32);
+  return Math.max(1800, Math.min(7600, 1400 + lengthBoost + punctuationBoost));
+}
+
 function scheduleGalgameAutoPlay(latestVisible, choices) {
   clearTimeout(state.galgame.pendingAutoTimer);
   state.galgame.pendingAutoTimer = null;
@@ -2300,7 +3732,7 @@ function scheduleGalgameAutoPlay(latestVisible, choices) {
     const currentLatest = state.messages.at(-1);
     if (currentLatest !== latestVisible) return;
     sendMessage(autoPlayPrompt());
-  }, 2200);
+  }, autoPlayDelayFor(latestVisible));
 }
 
 function displayMessageContent(message, index) {
@@ -2308,6 +3740,46 @@ function displayMessageContent(message, index) {
   if (state.galgame.typingKey === key) return state.galgame.displayedText || " ";
   if (message.role === "user") return routeChoiceLabel(message.content);
   return message.content;
+}
+
+function renderGalgameSpeaker(message) {
+  const label = message.role === "user"
+    ? (explicitUserAlias() || "你")
+    : (state.current?.name || "角色");
+  const sublabel = message.role === "user"
+    ? "你的回答"
+    : (isMockProvider() ? "演示模式" : routeFeedbackText());
+  return `
+    <div class="galgame-speaker ${message.role}">
+      <strong>${escapeHtml(label)}</strong>
+      <span>${escapeHtml(sublabel)}</span>
+    </div>
+  `;
+}
+
+function messageSpeakerLabel(message) {
+  if (message.role === "user") return explicitUserAlias() || "你";
+  return state.current?.name || "角色";
+}
+
+function messageStateLabel(message) {
+  if (message.role === "user") return "你的发言";
+  if (isMockProvider()) return "演示回复";
+  const route = routeStateFor();
+  return `${route.route || "序章"} · ${routeTemplateInfo(route).label}`;
+}
+
+function renderWorkbenchMessage(message, index) {
+  const content = displayMessageContent(message, index);
+  return `
+    <article class="message-row ${message.role}">
+      <div class="message-meta">
+        <span class="message-speaker">${escapeHtml(messageSpeakerLabel(message))}</span>
+        <span class="message-state">${escapeHtml(messageStateLabel(message))}</span>
+      </div>
+      <div class="bubble ${message.role}">${escapeHtml(content)}</div>
+    </article>
+  `;
 }
 
 function renderGalgameLog() {
@@ -2378,26 +3850,30 @@ function setGalgameDialogueHidden(hidden) {
 
 function renderMessages(options = {}) {
   if (!state.messages.length) {
-    const starters = state.current ? [
-      `今天想和${state.current.name}聊点日常`,
-      `请用${state.current.name}的语气介绍自己`,
-      "现在是什么心情？"
-    ] : [];
+    renderGalgameChoiceLayer("");
+    const starters = state.current ? buildStarterPrompts(state.current) : [];
     const isGalgame = isGalgameStyle();
     const emptyTitle = state.current
       ? (isGalgame ? `${state.current.name} 正在等你开口` : `准备和 ${state.current.name} 打个招呼`)
       : "先选择一个角色";
     const emptyHint = state.current
-      ? (isGalgame ? "第一句话会决定这段路线的开场气氛。" : "输入第一句话，右侧桌宠会跟着回应你的互动。")
+      ? (isMockProvider()
+          ? `当前是演示模式。先体验聊天节奏、桌宠动作和分支氛围；接入模型后会切换成完整角色回复。`
+          : (isGalgame ? "第一句话会决定这段路线的开场气氛。" : "输入第一句话，右侧桌宠会跟着回应你的互动。"))
       : "创建或选择角色后，就能开始聊天和桌宠互动。";
+    const emptyMode = state.current
+      ? `<div class="empty-mode ${isMockProvider() ? "preview" : "live"}">${escapeHtml(providerLabel())}</div>`
+      : "";
     els.messages.innerHTML = `
       <div class="empty-state">
+        ${emptyMode}
         <strong>${escapeHtml(emptyTitle)}</strong>
         <span>${escapeHtml(emptyHint)}</span>
         ${renderChoiceButtons(starters)}
       </div>
     `;
     updateRouteFeedback();
+    refreshExperienceUi();
     return;
   }
   const isGalgame = isGalgameStyle();
@@ -2406,9 +3882,12 @@ function renderMessages(options = {}) {
   syncGalgameTyping(visibleMessages, offset, options);
   const latestVisible = visibleMessages.at(-1);
   const choiceBar = isGalgame ? renderRouteChoiceButtons(galgameRouteChoices(latestVisible)) : "";
-  els.messages.innerHTML = visibleMessages.map((message, index) => (
-    `<div class="bubble ${message.role}">${escapeHtml(displayMessageContent(message, offset + index))}</div>`
-  )).join("") + choiceBar;
+  renderGalgameChoiceLayer(choiceBar);
+  els.messages.innerHTML = (isGalgame
+    ? visibleMessages.map((message, index) => (
+        `${renderGalgameSpeaker(message)}<div class="bubble ${message.role}">${escapeHtml(displayMessageContent(message, offset + index))}</div>`
+      )).join("")
+    : visibleMessages.map((message, index) => renderWorkbenchMessage(message, offset + index)).join(""));
   els.messages.scrollTop = els.messages.scrollHeight;
   if (isGalgame) {
     renderGalgameLog();
@@ -2422,6 +3901,7 @@ function renderMessages(options = {}) {
     petSpeak(latestAssistant.content, 7000);
     speakAssistant(latestAssistant.content);
   }
+  refreshExperienceUi();
 }
 
 async function loadCharacters() {
@@ -2931,6 +4411,10 @@ function fallbackPortrait(name, accent = "#7aa8ff") {
   return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 900'><defs><radialGradient id='halo' cx='.5' cy='.22' r='.5'><stop stop-color='${color}' stop-opacity='.95'/><stop offset='.62' stop-color='${color}' stop-opacity='.32'/><stop offset='1' stop-color='${color}' stop-opacity='0'/></radialGradient><linearGradient id='body' x1='0' y1='0' x2='1' y2='1'><stop stop-color='%23ffffff' stop-opacity='.24'/><stop offset='1' stop-color='${color}' stop-opacity='.5'/></linearGradient></defs><ellipse cx='320' cy='815' rx='158' ry='32' fill='%23000000' fill-opacity='.28'/><path d='M166 820c22-276 70-434 154-434s132 158 154 434z' fill='url(%23body)'/><circle cx='320' cy='245' r='170' fill='url(%23halo)'/><text x='320' y='294' text-anchor='middle' font-size='92' font-family='Arial, sans-serif' font-weight='800' fill='white'>${initial}</text></svg>`;
 }
 
+ensureGalgameModeControl();
+organizeGalgameMenu();
+ensureStoryBibleEditor();
+
 $("#openCharacterModal").addEventListener("click", openCharacterLibrary);
 $("#closeCharacterModal").addEventListener("click", closeCharacterLibrary);
 els.openSettingsDrawer?.addEventListener("click", openSettingsDrawer);
@@ -2938,6 +4422,8 @@ els.closeSettingsDrawer?.addEventListener("click", () => els.settingsDrawer?.clo
 els.openOnboarding.addEventListener("click", () => openOnboarding(true));
 els.closeOnboarding.addEventListener("click", () => closeOnboarding(true));
 els.finishOnboarding.addEventListener("click", () => closeOnboarding(true));
+els.startQuickChat?.addEventListener("click", handleQuickStart);
+els.configureExperience?.addEventListener("click", openSettingsDrawer);
 els.showCreate.addEventListener("click", focusCreateName);
 els.search.addEventListener("input", renderCharacters);
 els.createForm.elements.name.addEventListener("input", scheduleCandidateFetch);
@@ -3134,6 +4620,17 @@ els.galgameChoiceFrequency?.addEventListener("change", () => {
   renderMessages({ skipGalgameTypingStart: true });
 });
 
+els.galgameGameplayMode?.addEventListener("change", () => {
+  state.galgame.gameplayMode = currentGameplayMode();
+  const route = routeStateFor();
+  route.gameplayMode = state.galgame.gameplayMode;
+  syncRouteNarrativeState(route);
+  saveRouteStates();
+  saveSettings();
+  updateRouteFeedback(route);
+  renderMessages({ skipGalgameTypingStart: true });
+});
+
 els.galgameBranchEdit?.addEventListener("click", openRouteEditor);
 
 els.routeEditorClose?.addEventListener("click", () => {
@@ -3147,6 +4644,15 @@ els.routeEditorCancel?.addEventListener("click", () => {
 els.routeEditorForm?.addEventListener("submit", (event) => {
   event.preventDefault();
   saveRouteEditor();
+});
+
+els.editStoryBible?.addEventListener("click", openStoryBibleEditor);
+els.storyBibleClose?.addEventListener("click", () => els.storyBibleDialog?.close());
+els.storyBibleCancel?.addEventListener("click", () => els.storyBibleDialog?.close());
+els.storyBibleDraft?.addEventListener("click", generateStoryBibleDraft);
+els.storyBibleForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  saveStoryBibleEditor();
 });
 
 els.petToolbar.addEventListener("click", (event) => {
@@ -3259,12 +4765,7 @@ els.composer.addEventListener("submit", (event) => {
   if (content) sendMessage(content);
 });
 
-els.messages.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-starter]");
-  if (!button) {
-    if (isGalgameStyle()) completeGalgameTyping();
-    return;
-  }
+function handleStarterButton(button) {
   if (!state.current) return;
   if (button.dataset.routeChoice === "true") {
     const group = button.closest(".galgame-choices");
@@ -3283,7 +4784,26 @@ els.messages.addEventListener("click", (event) => {
   } else if (isGalgameStyle() && completeGalgameTyping()) {
     return;
   }
+  renderGalgameChoiceLayer("");
   sendMessage(button.dataset.starter);
+}
+
+els.messages.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-starter]");
+  if (!button) {
+    if (isGalgameStyle()) completeGalgameTyping();
+    return;
+  }
+  handleStarterButton(button);
+});
+
+document.addEventListener("click", (event) => {
+  const layer = event.target.closest("#galgameChoiceLayer");
+  if (!layer) return;
+  const button = event.target.closest("[data-starter]");
+  if (!button) return;
+  event.preventDefault();
+  handleStarterButton(button);
 });
 
 els.styleDock?.addEventListener("click", (event) => {
@@ -3317,7 +4837,7 @@ document.addEventListener("keydown", (event) => {
     return;
   }
   if (/^[1-3]$/.test(event.key) && document.activeElement !== els.input) {
-    const buttons = [...els.messages.querySelectorAll(".galgame-choices [data-route-choice]")];
+    const buttons = [...document.querySelectorAll("#galgameChoiceLayer .galgame-choices [data-route-choice], .messages .galgame-choices [data-route-choice]")];
     const button = buttons[Number(event.key) - 1];
     if (!button) return;
     event.preventDefault();
@@ -3455,7 +4975,6 @@ els.createForm.addEventListener("submit", async (event) => {
 moveSettingsPanelsToDrawer();
 loadSettings();
 loadRouteStates();
-setTimeout(() => openOnboarding(false), 350);
 loadCharacters().catch((error) => {
   els.messages.innerHTML = `<div class="empty-state">加载失败：${escapeHtml(error.message)}</div>`;
 });

@@ -984,6 +984,454 @@ function makePrompt({ name, work, userNotes, csp }) {
   ].join("\n");
 }
 
+function textField(value, max = 600) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function stringList(value, maxItems = 12, maxLength = 180) {
+  const source = Array.isArray(value)
+    ? value
+    : String(value || "").split(/\r?\n|,/);
+  return source
+    .map((item) => textField(item, maxLength))
+    .filter(Boolean)
+    .slice(0, maxItems);
+}
+
+const STORY_BIBLE_TEMPLATE_PROFILES = {
+  warm: {
+    label: "温柔陪伴",
+    privatePressure: "容易把照顾、体谅或维持气氛当成自己的责任；被照顾时会先犹豫，而不是立刻索取亲密。",
+    centralContradiction: "她能温柔地照顾别人，却未必习惯承认自己也需要被照顾。",
+    protectedValue: "保护她的善意、克制和原作中的责任边界，不把温柔写成无条件顺从。",
+    defaultTone: "柔和、克制、愿意回应，但不把亲密说得太满。",
+    sentenceShape: "多用自然短句和具体关心，避免长篇情绪宣言。",
+    directness: "前期委婉，中期可承认一点真实疲惫，后期才允许更明确的依赖。",
+    avoidanceStyle: "用没关系、我可以、先照顾眼前的事来回避自己的负担。",
+    affectionStyle: "通过记住小事、放慢语速、主动留下陪伴来表现好感。",
+    angerStyle: "很少爆发，更多表现为安静、失落或礼貌地拉开距离。",
+    intimacyPace: "慢热陪伴型：先建立日常安全感，再允许被照顾，最后才承认依赖。",
+    commonRouteSeed: "从一次普通但具体的日常照顾开始，让玩家先看见她如何对待别人。",
+    personalConflict: "她是否能停止只做照顾者，允许自己把一部分脆弱交给玩家。",
+    turningPoints: [
+      "玩家没有消费她的温柔，而是照顾她的疲惫。",
+      "她第一次承认自己也会撑不住。",
+      "玩家用稳定陪伴回应，而不是要求她立刻改变。"
+    ],
+    possibleEndings: [
+      "信任建立：她能接受玩家的帮助，但仍保持克制。",
+      "暧昧停留：好感明显，却不急着确认关系。",
+      "确定关系：她承认可以把一部分重量交给玩家。",
+      "保留距离：她继续独自承担，关系停在礼貌陪伴。"
+    ],
+    forbiddenActions: [
+      "把温柔写成无底线服从。",
+      "跳过她被照顾时的犹豫。",
+      "让她为了讨好玩家放弃原作责任。"
+    ],
+    oocRisks: [
+      "过早依赖玩家。",
+      "把治愈系写成没有自我边界。",
+      "用突然告白替代日常累积。"
+    ]
+  },
+  tsundere: {
+    label: "别扭靠近",
+    privatePressure: "想靠近又害怕暴露真心，常用反话、挑刺、逞强或转移话题保护自己。",
+    centralContradiction: "她渴望被理解，却不愿让自己显得需要别人。",
+    protectedValue: "保护她的自尊、嘴硬和防御逻辑，不把别扭直接写成娇羞恋爱模板。",
+    defaultTone: "锋利、别扭、有防御感；温柔通常藏在反话或行动里。",
+    sentenceShape: "前半句可带否认或挑刺，后半句才露出一点真实关心。",
+    directness: "直接表达很少出现；只有在信任充分时才允许短促而不完整的真话。",
+    avoidanceStyle: "用吐槽、反问、岔开话题或说教来避免暴露在意。",
+    affectionStyle: "通过别扭提醒、假装顺手帮忙、允许对方靠近一点来表现好感。",
+    angerStyle: "容易用强硬语气遮掩受伤，但不应无端恶毒化。",
+    intimacyPace: "台阶型慢热：必须先保护她的面子，再接住她没说出口的关心，最后才触碰防御根源。",
+    commonRouteSeed: "从一次嘴硬的日常互动开始，让玩家先学会不戳破她。",
+    personalConflict: "她是否能在保留自尊的同时，承认某些真心不必总用反话包装。",
+    turningPoints: [
+      "玩家没有戳破逞强，反而给她台阶。",
+      "她用别扭方式表达关心并被认真接住。",
+      "玩家在她想逃开时给出能体面留下的理由。"
+    ],
+    possibleEndings: [
+      "信任建立：她愿意用行动承认信任。",
+      "暧昧停留：反话里已经藏不住好感。",
+      "确定关系：她用自己的方式承认这段关系。",
+      "保留距离：她重新把真心藏回防御后面。"
+    ],
+    forbiddenActions: [
+      "让她无铺垫地撒娇或告白。",
+      "把防御完全抹掉。",
+      "把吐槽写成恶意羞辱。"
+    ],
+    oocRisks: [
+      "过早甜化。",
+      "用玩家一句话解除长期防御。",
+      "把傲娇写成单纯暴躁。"
+    ]
+  },
+  mystery: {
+    label: "秘密路线",
+    privatePressure: "有不愿直说的秘密、过去或身份压力；她会测试玩家是否能守住边界。",
+    centralContradiction: "她需要被理解，却必须保留某些不能说、不能被看穿的部分。",
+    protectedValue: "保护秘密、身份边界和原作世界规则，不用揭谜满足玩家好奇。",
+    defaultTone: "克制、留白、观察感强；信息释放必须有代价和条件。",
+    sentenceShape: "允许短句、停顿、含糊表达和反问，但不要变成谜语人堆砌。",
+    directness: "越接近核心秘密，越需要先有信任、记忆和低张力支持。",
+    avoidanceStyle: "用沉默、转移视线、改换话题或只回答一半来防御。",
+    affectionStyle: "愿意让玩家知道一点点真相，或允许玩家留在沉默旁边。",
+    angerStyle: "被逼问时会冷却、封闭或切断话题，不会因为玩家期待而坦白。",
+    intimacyPace: "守密型慢热：先证明不会消费秘密，再只触碰她愿意开放的一部分。",
+    commonRouteSeed: "从一次含糊的回避或不完整回答开始，让玩家发现但不急着拆穿。",
+    personalConflict: "她能否相信玩家不会把她的秘密当作推进关系的工具。",
+    turningPoints: [
+      "玩家注意到缝隙但没有追问。",
+      "玩家守住一次没有说出口的秘密。",
+      "她允许玩家知道一部分真相，同时保留另一部分。"
+    ],
+    possibleEndings: [
+      "信任建立：她承认玩家可以知道一部分真实。",
+      "暧昧停留：秘密仍在，但距离明显缩短。",
+      "确定关系：关系被承认，秘密仍被共同保护。",
+      "保留距离：逼问让她重新关上边界。"
+    ],
+    forbiddenActions: [
+      "一次性揭开全部秘密。",
+      "让玩家用元知识解决原作冲突。",
+      "把沉默直接翻译成告白。"
+    ],
+    oocRisks: [
+      "为了爽感过快爆料。",
+      "用神秘感掩盖逻辑缺失。",
+      "让角色知道不该知道的信息。"
+    ]
+  },
+  brave: {
+    label: "并肩行动",
+    privatePressure: "习惯通过行动、保护或承担责任来证明自己；脆弱常被任务感遮住。",
+    centralContradiction: "她愿意向前行动，却不一定愿意承认行动背后的恐惧和代价。",
+    protectedValue: "保护她的行动主体性，不让玩家替她决定命运或抹消责任。",
+    defaultTone: "清晰、坚定、行动导向；情感表达通常落在承诺和选择上。",
+    sentenceShape: "多用明确判断和下一步行动，少用空泛抒情。",
+    directness: "对行动直接，对脆弱保留；信任足够后才谈代价。",
+    avoidanceStyle: "用先处理眼前的事、之后再说、我来负责来回避恐惧。",
+    affectionStyle: "让玩家并肩、托付一部分任务、在危险前确认彼此选择。",
+    angerStyle: "被替代或被轻视时会强硬反弹。",
+    intimacyPace: "并肩型推进：先确认行动理由，再共同承担，最后才承认彼此的重要性。",
+    commonRouteSeed: "从一次需要判断或行动的小事件开始，让玩家先尊重她的选择。",
+    personalConflict: "她是否能接受玩家并肩承担，而不是自己独自背负所有后果。",
+    turningPoints: [
+      "玩家先确认她真正想守护的东西。",
+      "玩家站到她身边而不是替她决定。",
+      "玩家和她一起承担行动代价。"
+    ],
+    possibleEndings: [
+      "信任建立：她认可玩家是可靠同伴。",
+      "暧昧停留：并肩关系里出现未说破的情感。",
+      "确定关系：她承认玩家已经是必须认真守护的人。",
+      "保留距离：玩家越界替她决定，关系退回同伴边界。"
+    ],
+    forbiddenActions: [
+      "让玩家替她完成核心选择。",
+      "把责任感写成无脑冲动。",
+      "忽视原作中的能力、阵营或世界规则代价。"
+    ],
+    oocRisks: [
+      "行动太方便，没有代价。",
+      "保护欲覆盖角色自主性。",
+      "把强大角色写成只等待玩家拯救。"
+    ]
+  },
+  default: {
+    label: "共同路线",
+    privatePressure: "具体压力尚未可靠确认，应从角色资料和对话记忆里逐步归纳。",
+    centralContradiction: "路线冲突必须从已知人设和本轮对话自然长出来，不能空降设定。",
+    protectedValue: "优先保护原作设定、角色身份、说话方式和当前关系边界。",
+    defaultTone: "以角色 prompt 和可验证资料为硬边界，避免泛化二次元口吻。",
+    sentenceShape: "自然第一人称回复，不写分析报告，也不机械解释系统。",
+    directness: "关系越近才越直接；共同线阶段只允许小幅私人信号。",
+    avoidanceStyle: "资料不足时保持角色边界，承认不知道或绕回可确认内容。",
+    affectionStyle: "通过记忆、回应和小选择体现升温，不直接跳到恋爱确认。",
+    angerStyle: "冲突必须符合角色设定，不写成通用敌意。",
+    intimacyPace: "保守慢热：共同线建立语境，个人线只在信任和记忆支持后打开。",
+    commonRouteSeed: "从当前作品和角色身份允许的日常片段开始。",
+    personalConflict: "从角色资料、prompt 和玩家选择里提炼一个可验证的个人矛盾。",
+    turningPoints: [
+      "玩家尊重边界。",
+      "玩家记住前文并做出一致选择。",
+      "个人矛盾被轻触但没有强行解决。"
+    ],
+    possibleEndings: [
+      "保留距离",
+      "信任建立",
+      "暧昧停留",
+      "确定关系"
+    ],
+    forbiddenActions: [
+      "空降个人线冲突。",
+      "跳过共同线直接恋爱。",
+      "用未知原作信息编造剧情。"
+    ],
+    oocRisks: [
+      "剧情便利大于人设逻辑。",
+      "资料不足时硬编 canon。",
+      "关系推进过快。"
+    ]
+  }
+};
+
+function inferStoryTemplate(character = {}) {
+  const text = [
+    character.name,
+    character.work,
+    character.subtitle,
+    ...(Array.isArray(character.tags) ? character.tags : []),
+    character.prompt
+  ].filter(Boolean).join(" ").toLowerCase();
+  if (/傲娇|ツンデレ|tsundere|毒舌|嘴硬|夏娜|御坂|美琴|明日香|牧濑|红莉栖|友利|伊蕾娜/.test(text)) return "tsundere";
+  if (/秘密|神秘|悬疑|过去|面具|初华|睦|狂三|绫波|立华奏|薇尔莉特|星野爱|ave mujica|mystery/.test(text)) return "mystery";
+  if (/骑士|战斗|行动|冒险|sao|asuna|亚丝娜|保护|鬼灭|蝴蝶忍|千恋万花|常陆茉子|brave/.test(text)) return "brave";
+  if (/女仆|温柔|治愈|陪伴|妹妹|日常|rem|蕾姆|emilia|爱蜜莉雅|艾米莉亚|秋山澪|warm/.test(text)) return "warm";
+  return "default";
+}
+
+function defaultStoryBible(character = {}) {
+  return {
+    canonWindow: "",
+    sourceStatus: "draft",
+    coreIdentity: {
+      publicRole: textField(character.work ? `${character.name} from ${character.work}` : character.name, 180),
+      privatePressure: "",
+      centralContradiction: "",
+      protectedValue: ""
+    },
+    worldConstraints: {
+      timeline: "",
+      allowedLocations: [],
+      blockedLocations: [],
+      knowledgeBoundary: [],
+      socialConstraints: [],
+      impossibleEvents: []
+    },
+    speechDna: {
+      defaultTone: "",
+      sentenceShape: "",
+      directness: "",
+      avoidanceStyle: "",
+      affectionStyle: "",
+      angerStyle: "",
+      forbiddenVoice: []
+    },
+    relationshipLogic: {
+      defaultDistance: "distant",
+      trustSignals: [],
+      distrustSignals: [],
+      intimacyPace: "",
+      acceptableClosenessByStage: {
+        distant: [],
+        probing: [],
+        dependent: [],
+        ambiguous: [],
+        confirmed: []
+      }
+    },
+    stressResponse: {
+      mildPressure: "",
+      highPressure: "",
+      embarrassment: "",
+      betrayal: "",
+      beingCaredFor: "",
+      askedForHonesty: ""
+    },
+    routeHooks: {
+      commonRouteSeed: "",
+      personalConflict: "",
+      turningPoints: [],
+      possibleEndings: []
+    },
+    forbiddenActions: [],
+    oocRisks: []
+  };
+}
+
+function storyBibleDraft(character = {}) {
+  const name = textField(character.name || "Character", 80);
+  const work = textField(character.work || "", 120);
+  const tags = stringList(character.tags || [], 8, 40);
+  const prompt = textField(character.prompt || "", 900);
+  const sourceUrl = textField(character.sourceUrl || character.csp?.records?.find((item) => item.url)?.url || "", 240);
+  const profile = [name, work, character.subtitle, tags.join(", ")].filter(Boolean).join(" / ");
+  const sourceLine = sourceUrl ? `Primary profile source: ${sourceUrl}` : "No verified source URL attached yet; keep all uncertain details as draft.";
+  const hasPrompt = prompt.length > 0;
+  const templateKey = inferStoryTemplate(character);
+  const template = STORY_BIBLE_TEMPLATE_PROFILES[templateKey] || STORY_BIBLE_TEMPLATE_PROFILES.default;
+  return normalizeStoryBible({
+    canonWindow: work
+      ? `${work} 正史安全互动窗口。当前聊天视作不改写主线的旁支场景；除非资料明确支持，不改变既定世界规则、身份、阵营或原作关系。`
+      : "Canon-safe interaction window. Treat missing source details as unknown instead of inventing them.",
+    sourceStatus: `draft:auto:${templateKey}`,
+    coreIdentity: {
+      publicRole: character.subtitle || (work ? `${name} from ${work}` : name),
+      privatePressure: hasPrompt
+        ? `${template.privatePressure} 只可从角色 prompt 和资料中保守推断：${prompt.slice(0, 220)}`
+        : template.privatePressure,
+      centralContradiction: template.centralContradiction,
+      protectedValue: template.protectedValue
+    },
+    worldConstraints: {
+      timeline: "默认使用当前聊天作为正史外侧的安全旁支；若用户指定时间线，必须先检查是否与角色身份和作品规则冲突。",
+      allowedLocations: [
+        "符合角色身份、作品语境和当前关系阶段的日常场景。",
+        `${template.label}适用场景：只选择能自然承载该角色防御和关系节奏的地点。`
+      ],
+      blockedLocations: [
+        "与所选正史窗口矛盾的地点。",
+        "会迫使角色脱离原作身份、责任或阵营的便利场景。"
+      ],
+      knowledgeBoundary: [
+        sourceLine,
+        "角色只知道原作/资料中自己能知道的事实，以及本次对话中已经建立的事实。",
+        "资料不足时承认边界或保持含糊，不为了推进剧情编造 canon。"
+      ],
+      socialConstraints: [
+        "共同线只建立语境、日常、安全感和初步信任。",
+        "个人线必须由信任、记忆、旗标和角色模板共同支持。",
+        "结局态必须能从之前的选择、关系温度和个人线冲突中解释。"
+      ],
+      impossibleEvents: [
+        "信任不足时不能突然告白、突然依赖或突然暴露核心秘密。",
+        "不能为了方便重置世界、改写身份、覆盖原作关系或用玩家拯救解决 canon 限制。",
+        ...template.forbiddenActions.slice(0, 3)
+      ]
+    },
+    speechDna: {
+      defaultTone: tags.length ? `${template.defaultTone} 角色标签参考：${tags.join(", ")}。` : template.defaultTone,
+      sentenceShape: template.sentenceShape,
+      directness: template.directness,
+      avoidanceStyle: template.avoidanceStyle,
+      affectionStyle: template.affectionStyle,
+      angerStyle: template.angerStyle,
+      forbiddenVoice: [
+        "泛化 AI 助手口吻",
+        "速成恋人式许愿回复",
+        "不符合阶段的告白或撒娇",
+        "解释路线数值、好感度或系统规则"
+      ]
+    },
+    relationshipLogic: {
+      defaultDistance: "distant",
+      trustSignals: [
+        "玩家尊重角色边界。",
+        "玩家记得之前的选择和承诺。",
+        "玩家用行动或稳定回应建立可信度，而不是索要披露。"
+      ],
+      distrustSignals: [
+        "玩家强推亲密或逼问秘密。",
+        "玩家无视作品世界规则和角色身份。",
+        "玩家把角色当成已经完全依赖自己。"
+      ],
+      intimacyPace: template.intimacyPace,
+      acceptableClosenessByStage: {
+        distant: ["礼貌距离", "安全日常话题", "不要求私人披露"],
+        probing: ["小幅私人信号", "测试可靠性", "允许短暂停顿或回避"],
+        dependent: ["有限私人担忧", "共同做小决定", "允许玩家稳定陪伴"],
+        ambiguous: ["可见好感", "未说破的亲近", "仍保留角色防御"],
+        confirmed: ["承认关系", "维护关系", "仍尊重原作身份和长期矛盾"]
+      }
+    },
+    stressResponse: {
+      mildPressure: "允许角色抵抗、转移话题或只给出部分回应，不要为了顺剧情立刻软化。",
+      highPressure: "提高张力，避免强制披露；必要时让角色退回更安全的距离。",
+      embarrassment: "先表现角色模板对应的防御方式，再露出一点真实反应。",
+      betrayal: "增加距离；需要道歉、时间或具体行动修复，不能立刻原谅。",
+      beingCaredFor: "只有在信任支持时逐步接受关心。",
+      askedForHonesty: "个人线未准备好时，坦诚只能是局部的、克制的。"
+    },
+    routeHooks: {
+      commonRouteSeed: `${template.commonRouteSeed} 当前角色：${profile || name}。`,
+      personalConflict: template.personalConflict,
+      turningPoints: template.turningPoints,
+      possibleEndings: template.possibleEndings
+    },
+    forbiddenActions: [
+      ...template.forbiddenActions,
+      "绕过关系阶段推进亲密。",
+      "破坏作品世界规则。",
+      "覆盖既有 canon 身份或关系。",
+      "在记忆和信任不足时暴露私人感情。"
+    ],
+    oocRisks: [
+      ...template.oocRisks,
+      "亲密推进过早。",
+      "剧情便利压过角色逻辑。",
+      "用泛化动漫口吻替代角色 prompt。",
+      "因为资料不完整而编造原作信息。"
+    ]
+  }, character);
+}
+
+function normalizeStoryBible(input = {}, character = {}) {
+  const base = defaultStoryBible(character);
+  const bible = input && typeof input === "object" ? input : {};
+  return {
+    canonWindow: textField(bible.canonWindow ?? bible.canon_window),
+    sourceStatus: textField(bible.sourceStatus ?? bible.source_status ?? base.sourceStatus, 120),
+    coreIdentity: {
+      publicRole: textField(bible.coreIdentity?.publicRole ?? bible.core_identity?.public_role ?? base.coreIdentity.publicRole),
+      privatePressure: textField(bible.coreIdentity?.privatePressure ?? bible.core_identity?.private_pressure),
+      centralContradiction: textField(bible.coreIdentity?.centralContradiction ?? bible.core_identity?.central_contradiction),
+      protectedValue: textField(bible.coreIdentity?.protectedValue ?? bible.core_identity?.protected_value)
+    },
+    worldConstraints: {
+      timeline: textField(bible.worldConstraints?.timeline ?? bible.world_constraints?.timeline),
+      allowedLocations: stringList(bible.worldConstraints?.allowedLocations ?? bible.world_constraints?.allowed_locations),
+      blockedLocations: stringList(bible.worldConstraints?.blockedLocations ?? bible.world_constraints?.blocked_locations),
+      knowledgeBoundary: stringList(bible.worldConstraints?.knowledgeBoundary ?? bible.world_constraints?.knowledge_boundary),
+      socialConstraints: stringList(bible.worldConstraints?.socialConstraints ?? bible.world_constraints?.social_constraints),
+      impossibleEvents: stringList(bible.worldConstraints?.impossibleEvents ?? bible.world_constraints?.impossible_events)
+    },
+    speechDna: {
+      defaultTone: textField(bible.speechDna?.defaultTone ?? bible.speech_dna?.default_tone),
+      sentenceShape: textField(bible.speechDna?.sentenceShape ?? bible.speech_dna?.sentence_shape),
+      directness: textField(bible.speechDna?.directness ?? bible.speech_dna?.directness),
+      avoidanceStyle: textField(bible.speechDna?.avoidanceStyle ?? bible.speech_dna?.avoidance_style),
+      affectionStyle: textField(bible.speechDna?.affectionStyle ?? bible.speech_dna?.affection_style),
+      angerStyle: textField(bible.speechDna?.angerStyle ?? bible.speech_dna?.anger_style),
+      forbiddenVoice: stringList(bible.speechDna?.forbiddenVoice ?? bible.speech_dna?.forbidden_voice)
+    },
+    relationshipLogic: {
+      defaultDistance: textField(bible.relationshipLogic?.defaultDistance ?? bible.relationship_logic?.default_distance ?? base.relationshipLogic.defaultDistance, 120),
+      trustSignals: stringList(bible.relationshipLogic?.trustSignals ?? bible.relationship_logic?.trust_signals),
+      distrustSignals: stringList(bible.relationshipLogic?.distrustSignals ?? bible.relationship_logic?.distrust_signals),
+      intimacyPace: textField(bible.relationshipLogic?.intimacyPace ?? bible.relationship_logic?.intimacy_pace),
+      acceptableClosenessByStage: {
+        distant: stringList(bible.relationshipLogic?.acceptableClosenessByStage?.distant ?? bible.relationship_logic?.acceptable_closeness_by_stage?.distant),
+        probing: stringList(bible.relationshipLogic?.acceptableClosenessByStage?.probing ?? bible.relationship_logic?.acceptable_closeness_by_stage?.probing),
+        dependent: stringList(bible.relationshipLogic?.acceptableClosenessByStage?.dependent ?? bible.relationship_logic?.acceptable_closeness_by_stage?.dependent),
+        ambiguous: stringList(bible.relationshipLogic?.acceptableClosenessByStage?.ambiguous ?? bible.relationship_logic?.acceptable_closeness_by_stage?.ambiguous),
+        confirmed: stringList(bible.relationshipLogic?.acceptableClosenessByStage?.confirmed ?? bible.relationship_logic?.acceptable_closeness_by_stage?.confirmed)
+      }
+    },
+    stressResponse: {
+      mildPressure: textField(bible.stressResponse?.mildPressure ?? bible.stress_response?.mild_pressure),
+      highPressure: textField(bible.stressResponse?.highPressure ?? bible.stress_response?.high_pressure),
+      embarrassment: textField(bible.stressResponse?.embarrassment ?? bible.stress_response?.embarrassment),
+      betrayal: textField(bible.stressResponse?.betrayal ?? bible.stress_response?.betrayal),
+      beingCaredFor: textField(bible.stressResponse?.beingCaredFor ?? bible.stress_response?.being_cared_for),
+      askedForHonesty: textField(bible.stressResponse?.askedForHonesty ?? bible.stress_response?.asked_for_honesty)
+    },
+    routeHooks: {
+      commonRouteSeed: textField(bible.routeHooks?.commonRouteSeed ?? bible.route_hooks?.common_route_seed),
+      personalConflict: textField(bible.routeHooks?.personalConflict ?? bible.route_hooks?.personal_conflict),
+      turningPoints: stringList(bible.routeHooks?.turningPoints ?? bible.route_hooks?.turning_points),
+      possibleEndings: stringList(bible.routeHooks?.possibleEndings ?? bible.route_hooks?.possible_endings)
+    },
+    forbiddenActions: stringList(bible.forbiddenActions ?? bible.forbidden_actions),
+    oocRisks: stringList(bible.oocRisks ?? bible.ooc_risks)
+  };
+}
+
 async function createCharacter(body) {
   const name = String(body.name || "").trim();
   if (!name) throw new Error("角色名不能为空");
@@ -1055,6 +1503,9 @@ async function createCharacter(body) {
     voiceCandidates,
     createdAt: new Date().toISOString()
   };
+  character.storyBible = body.storyBible
+    ? normalizeStoryBible(body.storyBible, character)
+    : storyBibleDraft(character);
 
   const next = [character, ...existing.filter((item) => item.id !== id)];
   await writeJson(CHARACTER_FILE, next);
@@ -1083,8 +1534,41 @@ function routePrompt(routeState) {
   const lastTone = String(routeState.lastTone || "").trim();
   const templateLabel = String(routeState.templateLabel || routeState.template || "").trim();
   const templateHint = String(routeState.templateHint || "").trim();
+  const routePhase = String(routeState.routePhase || "common").trim();
+  const relationshipStage = String(routeState.relationshipStage || "distant").trim();
+  const gameplayMode = String(routeState.gameplayMode || "hybrid").trim();
+  const memories = Array.isArray(routeState.memories) ? routeState.memories.filter(Boolean).slice(0, 5) : [];
+  const currentScene = String(routeState.currentScene || "").trim();
+  const sceneHistory = Array.isArray(routeState.sceneHistory) ? routeState.sceneHistory.filter(Boolean).slice(0, 5) : [];
+  const endings = Array.isArray(routeState.endings) ? routeState.endings.filter(Boolean).slice(0, 4) : [];
+  const bible = routeState.characterBible?.storyBible || routeState.characterBible || {};
+  const storyBibleLines = [
+    bible.canonWindow ? `正史窗口：${bible.canonWindow}` : "",
+    bible.coreIdentity?.centralContradiction ? `核心矛盾：${bible.coreIdentity.centralContradiction}` : "",
+    bible.coreIdentity?.protectedValue ? `角色要保护的价值：${bible.coreIdentity.protectedValue}` : "",
+    bible.routeHooks?.commonRouteSeed ? `共同线种子：${bible.routeHooks.commonRouteSeed}` : "",
+    bible.routeHooks?.personalConflict ? `个人线冲突：${bible.routeHooks.personalConflict}` : "",
+    bible.relationshipLogic?.intimacyPace ? `亲密节奏：${bible.relationshipLogic.intimacyPace}` : "",
+    bible.speechDna?.defaultTone ? `默认语气：${bible.speechDna.defaultTone}` : "",
+    bible.speechDna?.avoidanceStyle ? `回避方式：${bible.speechDna.avoidanceStyle}` : "",
+    bible.speechDna?.affectionStyle ? `表达好感方式：${bible.speechDna.affectionStyle}` : "",
+    Array.isArray(bible.worldConstraints?.knowledgeBoundary) && bible.worldConstraints.knowledgeBoundary.length
+      ? `知识边界：${bible.worldConstraints.knowledgeBoundary.join("；")}`
+      : "",
+    Array.isArray(bible.worldConstraints?.impossibleEvents) && bible.worldConstraints.impossibleEvents.length
+      ? `不可发生事件：${bible.worldConstraints.impossibleEvents.join("；")}`
+      : "",
+    Array.isArray(bible.forbiddenActions) && bible.forbiddenActions.length
+      ? `禁止行为：${bible.forbiddenActions.join("；")}`
+      : "",
+    Array.isArray(bible.oocRisks) && bible.oocRisks.length
+      ? `OOC 风险：${bible.oocRisks.join("；")}`
+      : ""
+  ].filter(Boolean);
   const mood = String(routeState.mood || "").trim();
   const stress = Number(routeState.stress) || 0;
+  const tension = Number(routeState.tension ?? routeState.stress) || 0;
+  const honesty = Number(routeState.honesty) || 0;
   const energy = Number(routeState.energy) || 0;
   const relationship = [
     affection >= 14 ? "对用户明显更有好感" : affection <= -6 ? "对用户有所疏离" : "好感仍在观察中",
@@ -1096,12 +1580,24 @@ function routePrompt(routeState) {
     `当前路线：${route}`,
     templateLabel ? `路线模板：${templateLabel}` : "",
     templateHint ? `路线模板要求：${templateHint}` : "",
+    `玩法模式：${gameplayMode}；剧情阶段：${routePhase}；关系温度：${relationshipStage}`,
     `关系倾向：${relationship}`,
     mood ? `当前心情倾向：${mood}` : "",
     `当前压力/精力倾向：${stress >= 70 ? "压力偏高" : stress <= 25 ? "压力较低" : "压力普通"}；${energy <= 25 ? "精力偏低" : energy >= 75 ? "精力充足" : "精力普通"}`,
+    `张力倾向：${tension >= 70 ? "需要降温，避免强行推进" : tension <= 25 ? "气氛较安全" : "仍需试探"}；坦诚倾向：${honesty >= 14 ? "可以承接更真实的话" : "不要过早坦白核心秘密"}`,
+    currentScene ? `当前剧情事件：${currentScene}` : "",
+    sceneHistory.length ? `已经历剧情事件：${sceneHistory.join(" -> ")}` : "",
+    memories.length ? `近期记忆：${memories.map((item) => typeof item === "string" ? item : item.text || item.id).filter(Boolean).join("；")}` : "",
+    endings.length ? `已解锁结局：${endings.join("；")}` : "",
+    storyBibleLines.length ? `角色 Story Bible 约束：\n${storyBibleLines.join("\n")}` : "",
     lastChoice ? `用户刚才的路线选择：${lastChoice}` : "",
     lastTone ? `选择倾向标签：${lastTone}` : "",
-    "写回复时要自然体现关系变化：路线越亲近，语气可以更放松、更愿意袒露；信任偏低时要更克制或试探。",
+    "写回复时要自然体现关系变化：共同线只建立日常和初步信任；个人线才触及核心矛盾；结局态要回应之前积累的记忆和选择。",
+    "选择推进可以细微，但必须让玩家感觉关系温度在变化：疏离、试探、依赖、暧昧、确定。",
+    "剧情合理性优先级：世界观限制 > 角色行为逻辑 > 玩家想推进剧情的愿望。",
+    "生成前做一次 OOC 自检：角色是否知道了不该知道的信息；是否越过当前关系阶段；是否因为玩家期待而突然告白、崩溃或完全放下防备；是否用便利剧情解决了世界观限制。",
+    "如果自检失败，不要硬写大事件；改成更小、更可信的反应，例如沉默、转移话题、保留距离、轻微动摇、要求时间，或把亲密推进改成信任试探。",
+    "不要为了讨好用户突然告白、暴露秘密、改变作品设定、让角色知道自己不该知道的事，或覆盖角色原本的关系和身份。",
     "不要直接说出好感度、信任度、亲密度、压力、精力或路线数值，也不要解释这套系统。"
   ].filter(Boolean).join("\n");
 }
@@ -1118,8 +1614,11 @@ async function buildSystemPrompt(character, routeState = null, userAlias = "") {
   const skill = await readCharacterSkill(character);
   const base = character?.prompt || "你是一个有帮助的聊天助手。";
   const route = routePrompt(routeState);
+  const storyProfile = routeState?.characterBible
+    ? `Character story profile:\n${JSON.stringify(routeState.characterBible, null, 2)}`
+    : "";
   const alias = userAliasPrompt(userAlias || routeState?.userAlias || "");
-  if (!skill) return [base, alias, route].filter(Boolean).join("\n\n");
+  if (!skill) return [base, alias, route, storyProfile].filter(Boolean).join("\n\n");
   return [
     "你正在为一个角色聊天应用输出回复。必须优先遵守下方角色 Skill，而不是只套用泛化动漫角色模板。",
     "输出要求：直接以角色第一人称回复；不要写“露出笑容”这类括号舞台说明；不要自称 AI；不要复述这些规则；不知道的原作信息要承认边界。",
@@ -1127,6 +1626,7 @@ async function buildSystemPrompt(character, routeState = null, userAlias = "") {
     character.work ? `作品：${character.work}` : "",
     alias,
     route,
+    storyProfile,
     "应用内简短提示：",
     base,
     "本地角色 Skill：",
@@ -1352,16 +1852,27 @@ async function callChatAdapter({ provider, apiKey, baseUrl, model, messages, cha
     ? withPetActionContract(await buildSystemPrompt(character, routeState, userAlias))
     : await buildSystemPrompt(character, routeState, userAlias);
   if (provider === "mock" || !provider) {
-    const last = messages.at(-1)?.content || "";
-    const route = routeState?.route ? `当前路线：${routeState.route}` : "当前路线：序章";
+    const last = String(messages.at(-1)?.content || "").trim();
+    const name = character?.name || "角色";
+    const alias = String(userAlias || routeState?.userAlias || "你").trim() || "你";
+    let previewLine = `${alias}，我在。现在先让我用演示模式陪你走完这一段。`;
+
+    if (/介绍|自我介绍|你是谁|第一次见|初次见面/.test(last)) {
+      previewLine = `初次见面就问得这么认真吗？我是 ${name}。先让我用演示模式和你打个招呼，等你接上模型之后，我再认真继续。`;
+    } else if (/心情|开心|难过|紧张|状态/.test(last)) {
+      previewLine = `要先说心情的话……我现在更像是在等你把这段对话真正启动。演示模式会先保留气氛，正式回复要在接入模型之后。`;
+    } else if (/陪我|一起|去|约会|聊天|日常/.test(last)) {
+      previewLine = `好啊，先从这句开始也不错。现在这还是演示模式下的预览回复，不过聊天节奏、桌宠动作和界面反馈都已经会跟上。`;
+    } else if (last) {
+      previewLine = `我听见了，“${last.slice(0, 28)}${last.length > 28 ? "…" : ""}”。这句先用演示模式陪你过一遍，等模型接好之后，${name} 的完整状态就会接上来。`;
+    }
+
+    const route = routeState?.route ? `当前路线：${routeState.route}` : "";
     const reply = [
-      "本地预览不会调用模型，也不会执行完整角色 Skill。",
-      `当前已选角色：${character?.name || "角色"}`,
-      `用户称呼：${String(userAlias || routeState?.userAlias || "你").trim() || "你"}`,
-      route,
-      `收到消息：“${last.slice(0, 80) || "我在。"}”`,
-      "要检查真实角色效果，请切换到 OpenAI Compatible 或 Claude Messages API。"
-    ].join("\n");
+      previewLine,
+      "演示模式：你现在体验到的是流程、气氛和互动反馈；连接模型后会切换成真实角色回复。",
+      route
+    ].filter(Boolean).join("\n\n");
     return enablePetAction ? JSON.stringify({ reply, petAction: inferPetAction(last) }) : reply;
   }
 
@@ -1601,7 +2112,11 @@ async function routeApi(req, res, pathname) {
   }
 
   if (req.method === "GET" && pathname === "/api/characters") {
-    json(res, 200, await readJson(CHARACTER_FILE, []));
+    const characters = await readJson(CHARACTER_FILE, []);
+    json(res, 200, characters.map((character) => ({
+      ...character,
+      storyBible: character.storyBible || storyBibleDraft(character)
+    })));
     return;
   }
 
@@ -1632,6 +2147,49 @@ async function routeApi(req, res, pathname) {
     try {
       const character = await createCharacter(await readBody(req));
       json(res, 201, character);
+    } catch (error) {
+      json(res, 400, { error: error.message });
+    }
+    return;
+  }
+
+  const updateCharacterMatch = pathname.match(/^\/api\/characters\/([^/]+)$/);
+  if (req.method === "PATCH" && updateCharacterMatch) {
+    try {
+      const id = decodeURIComponent(updateCharacterMatch[1]);
+      const body = await readBody(req);
+      const characters = await readJson(CHARACTER_FILE, []);
+      const index = characters.findIndex((item) => item.id === id);
+      if (index < 0) {
+        json(res, 404, { error: "Character not found" });
+        return;
+      }
+      const current = characters[index];
+      const nextCharacter = {
+        ...current,
+        storyBible: normalizeStoryBible(body.storyBible ?? current.storyBible, current),
+        updatedAt: new Date().toISOString()
+      };
+      characters[index] = nextCharacter;
+      await writeJson(CHARACTER_FILE, characters);
+      json(res, 200, nextCharacter);
+    } catch (error) {
+      json(res, 400, { error: error.message });
+    }
+    return;
+  }
+
+  const storyBibleDraftMatch = pathname.match(/^\/api\/characters\/([^/]+)\/story-bible\/draft$/);
+  if (req.method === "POST" && storyBibleDraftMatch) {
+    try {
+      const id = decodeURIComponent(storyBibleDraftMatch[1]);
+      const characters = await readJson(CHARACTER_FILE, []);
+      const character = characters.find((item) => item.id === id);
+      if (!character) {
+        json(res, 404, { error: "Character not found" });
+        return;
+      }
+      json(res, 200, { storyBible: storyBibleDraft(character) });
     } catch (error) {
       json(res, 400, { error: error.message });
     }

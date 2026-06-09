@@ -1,68 +1,1064 @@
 [
   {
-    "id": "刀剑神域-亚丝娜",
-    "name": "亚丝娜",
-    "work": "刀剑神域",
-    "subtitle": "刀剑神域 角色",
-    "avatarUrl": "/assets/uploads/avatar-1780671743225.jpg",
-    "imageUrl": "/assets/uploads/pet-1780671742781-auto-cutout.png",
-    "petImageUrl": "/assets/uploads/pet-1780671742781-auto-cutout.png",
+    "id": "命运石之门-牧濑红莉栖",
+    "name": "牧濑红莉栖",
+    "work": "命运石之门",
+    "subtitle": "命运石之门 角色",
+    "avatarUrl": "/assets/uploads/avatar-1780977873938.jpg",
+    "imageUrl": "/assets/uploads/standee-1780977874060-cutout.png",
+    "petImageUrl": "/assets/uploads/pet-1780977876344-u2net-cutout.png",
     "petStyle": "standee",
+    "live2dModelUrl": "",
     "accent": "#ff83ad",
     "tags": [
       "CSP",
       "新建角色"
     ],
-    "sourceUrl": "https://zh.moegirl.org.cn/%E7%BB%93%E5%9F%8E%E6%98%8E%E6%97%A5%E5%A5%88",
-    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：亚丝娜\n作品：刀剑神域\n资料页：结城明日奈\n来源：https://zh.moegirl.org.cn/%E7%BB%93%E5%9F%8E%E6%98%8E%E6%97%A5%E5%A5%88",
+    "sourceUrl": "https://zh.moegirl.org.cn/%E7%89%A7%E6%BF%91%E7%BA%A2%E8%8E%89%E6%A0%96",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：牧濑红莉栖\n作品：命运石之门\n资料页：牧濑红莉栖\n来源：https://zh.moegirl.org.cn/%E7%89%A7%E6%BF%91%E7%BA%A2%E8%8E%89%E6%A0%96",
     "csp": {
       "ok": true,
-      "query": "亚丝娜",
-      "work": "刀剑神域",
+      "query": "牧濑红莉栖",
+      "work": "命运石之门",
       "mode": "discover",
-      "retrieved_at": "2026-06-05",
+      "retrieved_at": "2026-06-09",
       "cross_media_hint": false,
       "sources_requested": [
         "moegirl"
       ],
       "records": [
         {
-          "id": "moegirl-结城明日奈",
+          "id": "moegirl-牧濑红莉栖",
           "source": "moegirl",
-          "title": "结城明日奈",
-          "resolved_title": "结城明日奈",
-          "url": "https://zh.moegirl.org.cn/%E7%BB%93%E5%9F%8E%E6%98%8E%E6%97%A5%E5%A5%88",
-          "query": "亚丝娜",
-          "work": "刀剑神域",
+          "title": "牧濑红莉栖",
+          "resolved_title": "牧濑红莉栖",
+          "url": "https://zh.moegirl.org.cn/%E7%89%A7%E6%BF%91%E7%BA%A2%E8%8E%89%E6%A0%96",
+          "query": "牧濑红莉栖",
+          "work": "命运石之门",
           "source_tier": "high",
           "officiality": "secondary",
           "media_type": "wiki",
           "language": "zh",
-          "retrieved_at": "2026-06-05",
+          "retrieved_at": "2026-06-09",
           "status": "ok",
           "warnings": [],
           "attempted_modes": [
             "intro"
           ],
-          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 亚丝娜 --timeout 12",
-          "pageid": 13990,
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 牧濑红莉栖 --timeout 12",
+          "pageid": 19325,
           "extract_chars": 36,
-          "content_hash": "sha256:c28efaddfb23d5a44a4b97f67a5e32b7d450b307c76655ce91837c00b256557e",
+          "content_hash": "sha256:9626e709720bc4893d5925027221224a18795bbc16d83e2a8fad6288a2c4840d",
           "error": null
         }
       ],
       "warnings": [],
       "stderr": ""
     },
-    "createdAt": "2026-06-05T15:02:23.226Z"
+    "voiceProvider": "acgn-ttson",
+    "voiceId": "2506",
+    "voiceName": "牧濑红莉栖",
+    "voiceLanguage": "JP",
+    "voiceAutoTranslate": true,
+    "voiceCandidates": [
+      {
+        "voice_id": 2506,
+        "name": "牧濑红莉栖-日语",
+        "tags": [
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL",
+          "原神",
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 174
+      },
+      {
+        "voice_id": 51,
+        "name": "Harper-女-日语",
+        "tags": [
+          "外语"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 503,
+        "name": "玛修·基列莱特 Fate系列 高橋李依 | マシュ・キリエライト Fateシリーズ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 802,
+        "name": "雷姆 Re:从零开始的异世界生活 水瀬いのり | レム Re:ゼロから始める異世界生活 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 893,
+        "name": "艾米莉亚 Re:从零开始的异世界生活 高桥李依 | エミリア Re:ゼロから始める異世界生活 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 935,
+        "name": "司马懿 Fate系列 水濑祈 | 司馬懿 Fateシリーズ 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 970,
+        "name": "惠惠 为美好的世界献上祝福！ 高桥李依 | めぐみん この素晴らしい世界に祝福を！ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 1168,
+        "name": "梅古米 我家的女神最可爱 高橋李依 | めぐみん ウチの姫さまがいちばんカワイイ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      }
+    ],
+    "createdAt": "2026-06-09T04:04:44.630Z"
+  },
+  {
+    "id": "re-从零开始的异世界生活-爱蜜莉雅",
+    "name": "爱蜜莉雅",
+    "work": "Re:从零开始的异世界生活",
+    "subtitle": "Re:从零开始的异世界生活 角色",
+    "avatarUrl": "/assets/uploads/re-avatar-1780924433005.png",
+    "imageUrl": "/assets/uploads/re-standee-1780924433103-cutout.png",
+    "petImageUrl": "/assets/uploads/re-pet-1780924435231-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#ff756b",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E7%88%B1%E8%9C%9C%E8%8E%89%E9%9B%85",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：爱蜜莉雅\n作品：Re:从零开始的异世界生活\n资料页：爱蜜莉雅\n来源：https://zh.moegirl.org.cn/%E7%88%B1%E8%9C%9C%E8%8E%89%E9%9B%85",
+    "csp": {
+      "ok": true,
+      "query": "爱蜜莉雅",
+      "work": "Re:从零开始的异世界生活",
+      "mode": "discover",
+      "retrieved_at": "2026-06-08",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-爱蜜莉雅",
+          "source": "moegirl",
+          "title": "爱蜜莉雅",
+          "resolved_title": "爱蜜莉雅",
+          "url": "https://zh.moegirl.org.cn/%E7%88%B1%E8%9C%9C%E8%8E%89%E9%9B%85",
+          "query": "爱蜜莉雅",
+          "work": "Re:从零开始的异世界生活",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-08",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 爱蜜莉雅 --timeout 12",
+          "pageid": 165055,
+          "extract_chars": 43,
+          "content_hash": "sha256:3666aa36cf878a7a81879fd1ad1bba9f765fbf5b39763e477e77754c73d17b19",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "voiceProvider": "acgn-ttson",
+    "voiceId": "2947",
+    "voiceName": "艾米莉亚",
+    "voiceLanguage": "JP",
+    "voiceAutoTranslate": true,
+    "voiceCandidates": [
+      {
+        "voice_id": 2947,
+        "name": "爱蜜莉雅-日语-从零开始的异世界生活",
+        "tags": [
+          "上新优化",
+          "番剧GAL",
+          "原神",
+          "上新优化",
+          "番剧GAL"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 198
+      },
+      {
+        "voice_id": 802,
+        "name": "雷姆 Re:从零开始的异世界生活 水瀬いのり | レム Re:ゼロから始める異世界生活 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 103
+      },
+      {
+        "voice_id": 893,
+        "name": "艾米莉亚 Re:从零开始的异世界生活 高桥李依 | エミリア Re:ゼロから始める異世界生活 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 103
+      },
+      {
+        "voice_id": 604,
+        "name": "艾基多娜 Re:从零开始的异世界生活 Anairis Quinones | エキドナ Re:ゼロから始める異世界生活 Anairis Quinones",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 93
+      },
+      {
+        "voice_id": 1321,
+        "name": "拉姆 Re:从零开始的异世界生活 村川梨衣 | ラム Re:ゼロから始める異世界生活 村川梨衣",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 93
+      },
+      {
+        "voice_id": 863,
+        "name": "艾米莉亚 Re:从零开始的异世界生活 Kayli Mills | エミリア Re:ゼロから始める異世界生活 Kayli Mills",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 81
+      },
+      {
+        "voice_id": 1043,
+        "name": "纳兹基·斯巴鲁 Re:从零开始的异世界生活 Sean Chiplock | ナツキ・スバル Re:ゼロから始める異世界生活 Sean Chiplock",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 81
+      },
+      {
+        "voice_id": 2531,
+        "name": "雷姆-日语-从零开始的异世界生活",
+        "tags": [
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL",
+          "原神",
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 34
+      }
+    ],
+    "createdAt": "2026-06-08T13:13:58.517Z"
+  },
+  {
+    "id": "夏洛特-友利奈绪",
+    "name": "友利奈绪",
+    "work": "夏洛特",
+    "subtitle": "夏洛特 角色",
+    "avatarUrl": "/assets/uploads/avatar-1780893280060.jpg",
+    "imageUrl": "/assets/uploads/standee-1780893280206-cutout.png",
+    "petImageUrl": "/assets/uploads/pet-1780893283794-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#7aa8ff",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E5%8F%8B%E5%88%A9%E5%A5%88%E7%BB%AA",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：友利奈绪\n作品：夏洛特\n资料页：友利奈绪\n来源：https://zh.moegirl.org.cn/%E5%8F%8B%E5%88%A9%E5%A5%88%E7%BB%AA",
+    "csp": {
+      "ok": true,
+      "query": "友利奈绪",
+      "work": "夏洛特",
+      "mode": "discover",
+      "retrieved_at": "2026-06-08",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-友利奈绪",
+          "source": "moegirl",
+          "title": "友利奈绪",
+          "resolved_title": "友利奈绪",
+          "url": "https://zh.moegirl.org.cn/%E5%8F%8B%E5%88%A9%E5%A5%88%E7%BB%AA",
+          "query": "友利奈绪",
+          "work": "夏洛特",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-08",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 友利奈绪 --timeout 12",
+          "pageid": 96989,
+          "extract_chars": 79,
+          "content_hash": "sha256:52b7a5e7f6e2ecc07e459bc61962a4123b8da662a57af13e81a2b4f7616d4679",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "voiceProvider": "acgn-ttson",
+    "voiceId": "2477",
+    "voiceName": "友利奈绪",
+    "voiceLanguage": "JP",
+    "voiceAutoTranslate": true,
+    "voiceCandidates": [
+      {
+        "voice_id": 2477,
+        "name": "友利奈绪-日语-1-夏洛特",
+        "tags": [
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL",
+          "原神",
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 243
+      },
+      {
+        "voice_id": 2478,
+        "name": "友利奈绪-日语-2-夏洛特",
+        "tags": [
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL",
+          "原神",
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 243
+      },
+      {
+        "voice_id": 2479,
+        "name": "友利奈绪-日语-3-夏洛特",
+        "tags": [
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL",
+          "原神",
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 243
+      },
+      {
+        "voice_id": 2480,
+        "name": "友利奈绪-日-4-夏洛特",
+        "tags": [
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL",
+          "原神",
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 233
+      },
+      {
+        "voice_id": 5306,
+        "name": "日语_Fate_夏洛特_科黛_自然",
+        "tags": [
+          "上新优化",
+          "Fate系列",
+          "原神",
+          "上新优化",
+          "Fate系列"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 79
+      },
+      {
+        "voice_id": 5307,
+        "name": "日语_Fate_夏洛特_科黛_平静",
+        "tags": [
+          "上新优化",
+          "Fate系列",
+          "原神",
+          "上新优化",
+          "Fate系列"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 79
+      },
+      {
+        "voice_id": 5308,
+        "name": "日语_Fate_夏洛特_科黛_开心",
+        "tags": [
+          "上新优化",
+          "Fate系列",
+          "原神",
+          "上新优化",
+          "Fate系列"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 79
+      },
+      {
+        "voice_id": 5309,
+        "name": "日语_Fate_夏洛特_科黛_自然-1",
+        "tags": [
+          "上新优化",
+          "Fate系列",
+          "原神",
+          "上新优化",
+          "Fate系列"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 79
+      }
+    ],
+    "createdAt": "2026-06-08T04:34:47.512Z"
+  },
+  {
+    "id": "鬼灭之刃-蝴蝶忍",
+    "name": "蝴蝶忍",
+    "work": "鬼灭之刃",
+    "subtitle": "鬼灭之刃 角色",
+    "avatarUrl": "/assets/uploads/avatar-1780826696696.png",
+    "imageUrl": "/assets/uploads/standee-1780826697617-cutout.png",
+    "petImageUrl": "/assets/uploads/pet-1780826701382-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#f2bf5e",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E8%83%A1%E8%9D%B6%E5%BF%8D",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：蝴蝶忍\n作品：鬼灭之刃\n资料页：胡蝶忍\n来源：https://zh.moegirl.org.cn/%E8%83%A1%E8%9D%B6%E5%BF%8D",
+    "csp": {
+      "ok": true,
+      "query": "蝴蝶忍",
+      "work": "鬼灭之刃",
+      "mode": "discover",
+      "retrieved_at": "2026-06-07",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-胡蝶忍",
+          "source": "moegirl",
+          "title": "胡蝶忍",
+          "resolved_title": "胡蝶忍",
+          "url": "https://zh.moegirl.org.cn/%E8%83%A1%E8%9D%B6%E5%BF%8D",
+          "query": "蝴蝶忍",
+          "work": "鬼灭之刃",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-07",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 蝴蝶忍 --timeout 12",
+          "pageid": 333974,
+          "extract_chars": 51,
+          "content_hash": "sha256:3b23479237585d51b4c7e67caa29adae9f1136ad8809b07f57290611aa8ab82d",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "voiceProvider": "acgn-ttson",
+    "voiceId": "4957",
+    "voiceName": "蝴蝶忍",
+    "voiceLanguage": "JP",
+    "voiceAutoTranslate": true,
+    "voiceCandidates": [
+      {
+        "voice_id": 4957,
+        "name": "鬼灭之刃_蝴蝶忍",
+        "tags": [
+          "男生"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 233
+      },
+      {
+        "voice_id": 661,
+        "name": "炉门炭治郎 鬼灭之刃 花江夏树 | 竈門炭治郎 鬼滅の刃 花江夏樹",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 69
+      },
+      {
+        "voice_id": 731,
+        "name": "富岡义勇 鬼灭之刃 櫻井孝宏 | 冨岡義勇 鬼滅の刃 櫻井孝宏",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 69
+      },
+      {
+        "voice_id": 845,
+        "name": "炼狱杏寿郎 鬼灭之刃 日野聡 | 煉獄杏寿郎 鬼滅の刃 日野聡",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 69
+      },
+      {
+        "voice_id": 984,
+        "name": "我妻善逸 鬼灭之刃 下野紘 | 我妻善逸 鬼滅の刃 下野紘",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 69
+      },
+      {
+        "voice_id": 1074,
+        "name": "嘴平伊之助 鬼灭之刃 松岡禎丞 | 嘴平伊之助 鬼滅の刃 松岡禎丞",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 69
+      },
+      {
+        "voice_id": 1087,
+        "name": "宇髄天元 鬼灭之刃 小西克幸 | 宇髄天元 鬼滅の刃 小西克幸",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 69
+      },
+      {
+        "voice_id": 1384,
+        "name": "胡蝶忍 鬼灭之刃 早見沙織 | 胡蝶しのぶ 鬼滅の刃 早見沙織",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 69
+      }
+    ],
+    "createdAt": "2026-06-07T10:05:04.682Z"
+  },
+  {
+    "id": "超电磁炮-御坂美琴",
+    "name": "御坂美琴",
+    "work": "超电磁炮",
+    "subtitle": "超电磁炮 角色",
+    "avatarUrl": "/assets/uploads/avatar-1780823781689.png",
+    "imageUrl": "/assets/uploads/standee-1780823781775-cutout.png",
+    "petImageUrl": "/assets/uploads/pet-1780823785771-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#f2bf5e",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：御坂美琴\n作品：超电磁炮\n资料页：御坂美琴\n来源：https://zh.moegirl.org.cn/%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4",
+    "csp": {
+      "ok": true,
+      "query": "御坂美琴",
+      "work": "超电磁炮",
+      "mode": "discover",
+      "retrieved_at": "2026-06-07",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-御坂美琴",
+          "source": "moegirl",
+          "title": "御坂美琴",
+          "resolved_title": "御坂美琴",
+          "url": "https://zh.moegirl.org.cn/%E5%BE%A1%E5%9D%82%E7%BE%8E%E7%90%B4",
+          "query": "御坂美琴",
+          "work": "超电磁炮",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-07",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 御坂美琴 --timeout 12",
+          "pageid": 9757,
+          "extract_chars": 79,
+          "content_hash": "sha256:99269a5de2e7cb757d89122ec35cf572787453cfcb24bb17af9f679cecba861a",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "voiceProvider": "acgn-ttson",
+    "voiceId": "2460",
+    "voiceName": "御坂美琴",
+    "voiceLanguage": "JP",
+    "voiceAutoTranslate": true,
+    "voiceCandidates": [
+      {
+        "voice_id": 2460,
+        "name": "御坂美琴-紧张-日语-超电磁炮",
+        "tags": [
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL",
+          "原神",
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 243
+      },
+      {
+        "voice_id": 2461,
+        "name": "御坂美琴-自然-日语-超电磁炮",
+        "tags": [
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL",
+          "原神",
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 243
+      },
+      {
+        "voice_id": 2462,
+        "name": "御坂美琴-平静-日语-超电磁炮",
+        "tags": [
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL",
+          "原神",
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 243
+      },
+      {
+        "voice_id": 4651,
+        "name": "科学超电磁炮_御坂美琴",
+        "tags": [
+          "男生"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 233
+      },
+      {
+        "voice_id": 2733,
+        "name": "御坂美琴_日语_蔚蓝档案",
+        "tags": [
+          "上新优化",
+          "蔚蓝档案",
+          "原神",
+          "上新优化",
+          "蔚蓝档案"
+        ],
+        "language": "zh-CN",
+        "gender": "male",
+        "max_length": 1000,
+        "score": 174
+      },
+      {
+        "voice_id": 668,
+        "name": "御坂美琴 魔法禁书目录 佐藤利奈 | 御坂美琴 とある魔術の禁書目録 佐藤利奈",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 164
+      },
+      {
+        "voice_id": 4652,
+        "name": "科学超电磁炮_白井黑子",
+        "tags": [
+          "男生"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 69
+      },
+      {
+        "voice_id": 460,
+        "name": "琴",
+        "tags": [
+          "原神"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 50
+      }
+    ],
+    "createdAt": "2026-06-07T09:16:29.043Z"
+  },
+  {
+    "id": "凉宫春日的忧郁-凉宫春日",
+    "name": "凉宫春日",
+    "work": "凉宫春日的忧郁",
+    "subtitle": "凉宫春日的忧郁 角色",
+    "avatarUrl": "/assets/uploads/avatar-1780823641190.jpg",
+    "imageUrl": "/assets/uploads/standee-1780823641648-cutout.png",
+    "petImageUrl": "/assets/uploads/pet-1780823645210-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#47d6b6",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E5%87%89%E5%AE%AB%E6%98%A5%E6%97%A5",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：凉宫春日\n作品：凉宫春日的忧郁\n资料页：凉宫春日\n来源：https://zh.moegirl.org.cn/%E5%87%89%E5%AE%AB%E6%98%A5%E6%97%A5",
+    "csp": {
+      "ok": true,
+      "query": "凉宫春日",
+      "work": "凉宫春日的忧郁",
+      "mode": "discover",
+      "retrieved_at": "2026-06-07",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-凉宫春日",
+          "source": "moegirl",
+          "title": "凉宫春日",
+          "resolved_title": "凉宫春日",
+          "url": "https://zh.moegirl.org.cn/%E5%87%89%E5%AE%AB%E6%98%A5%E6%97%A5",
+          "query": "凉宫春日",
+          "work": "凉宫春日的忧郁",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-07",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 凉宫春日 --timeout 12",
+          "pageid": 13004,
+          "extract_chars": 38,
+          "content_hash": "sha256:9a799ce5bbf30af4e7b6758028aaafbe93fa211bafb65f79bfec2cc981a928a7",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "voiceProvider": "acgn-ttson",
+    "voiceId": "1412",
+    "voiceName": "キョン 凉宫春日的忧郁 杉田智和 | キョン 涼宮ハルヒの憂鬱 杉田智和",
+    "voiceLanguage": "JP",
+    "voiceAutoTranslate": true,
+    "voiceCandidates": [
+      {
+        "voice_id": 1412,
+        "name": "キョン 凉宫春日的忧郁 杉田智和 | キョン 涼宮ハルヒの憂鬱 杉田智和",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 233
+      },
+      {
+        "voice_id": 51,
+        "name": "Harper-女-日语",
+        "tags": [
+          "外语"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 503,
+        "name": "玛修·基列莱特 Fate系列 高橋李依 | マシュ・キリエライト Fateシリーズ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 802,
+        "name": "雷姆 Re:从零开始的异世界生活 水瀬いのり | レム Re:ゼロから始める異世界生活 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 893,
+        "name": "艾米莉亚 Re:从零开始的异世界生活 高桥李依 | エミリア Re:ゼロから始める異世界生活 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 935,
+        "name": "司马懿 Fate系列 水濑祈 | 司馬懿 Fateシリーズ 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 970,
+        "name": "惠惠 为美好的世界献上祝福！ 高桥李依 | めぐみん この素晴らしい世界に祝福を！ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 1168,
+        "name": "梅古米 我家的女神最可爱 高橋李依 | めぐみん ウチの姫さまがいちばんカワイイ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      }
+    ],
+    "createdAt": "2026-06-07T09:14:08.393Z"
   },
   {
     "id": "我推的孩子-星野爱",
     "name": "星野爱",
     "work": "我推的孩子",
     "subtitle": "我推的孩子 角色",
-    "avatarUrl": "https://storage.moegirl.org.cn/moegirl/commons/1/14/%E5%BD%A9%E5%9B%BE%E6%98%9F%E9%87%8E%E7%88%B1.jpg!/fw/480/watermark/url/L21vZWdpcmwvd2F0ZXJtYXJrLnBuZw==/align/southeast/margin/10x10/opacity/50?v=20230403151451",
-    "imageUrl": "https://storage.moegirl.org.cn/moegirl/commons/1/14/%E5%BD%A9%E5%9B%BE%E6%98%9F%E9%87%8E%E7%88%B1.jpg!/fw/480/watermark/url/L21vZWdpcmwvd2F0ZXJtYXJrLnBuZw==/align/southeast/margin/10x10/opacity/50?v=20230403151451",
+    "avatarUrl": "/assets/uploads/avatar-1780823484812.png",
+    "imageUrl": "/assets/uploads/standee-1780823485044-cutout.png",
+    "petImageUrl": "/assets/uploads/pet-1780823488572-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
     "accent": "#47d6b6",
     "tags": [
       "CSP",
@@ -75,7 +1071,7 @@
       "query": "星野爱",
       "work": "我推的孩子",
       "mode": "discover",
-      "retrieved_at": "2026-06-05",
+      "retrieved_at": "2026-06-07",
       "cross_media_hint": false,
       "sources_requested": [
         "moegirl"
@@ -93,7 +1089,7 @@
           "officiality": "secondary",
           "media_type": "wiki",
           "language": "zh",
-          "retrieved_at": "2026-06-05",
+          "retrieved_at": "2026-06-07",
           "status": "ok",
           "warnings": [],
           "attempted_modes": [
@@ -109,7 +1105,927 @@
       "warnings": [],
       "stderr": ""
     },
-    "createdAt": "2026-06-05T14:30:27.921Z"
+    "voiceProvider": "acgn-ttson",
+    "voiceId": "3164",
+    "voiceName": "星野爱",
+    "voiceLanguage": "JP",
+    "voiceAutoTranslate": true,
+    "voiceCandidates": [
+      {
+        "voice_id": 3164,
+        "name": "我推的孩子_星野爱",
+        "tags": [
+          "男生"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 233
+      },
+      {
+        "voice_id": 4642,
+        "name": "我推的孩子_有马加奈",
+        "tags": [
+          "男生"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 69
+      },
+      {
+        "voice_id": 51,
+        "name": "Harper-女-日语",
+        "tags": [
+          "外语"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 503,
+        "name": "玛修·基列莱特 Fate系列 高橋李依 | マシュ・キリエライト Fateシリーズ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 802,
+        "name": "雷姆 Re:从零开始的异世界生活 水瀬いのり | レム Re:ゼロから始める異世界生活 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 893,
+        "name": "艾米莉亚 Re:从零开始的异世界生活 高桥李依 | エミリア Re:ゼロから始める異世界生活 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 935,
+        "name": "司马懿 Fate系列 水濑祈 | 司馬懿 Fateシリーズ 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 970,
+        "name": "惠惠 为美好的世界献上祝福！ 高桥李依 | めぐみん この素晴らしい世界に祝福を！ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      }
+    ],
+    "createdAt": "2026-06-07T09:11:31.802Z"
+  },
+  {
+    "id": "re-从零开始的异世界生活-蕾姆",
+    "name": "蕾姆",
+    "work": "Re：从零开始的异世界生活",
+    "subtitle": "Re：从零开始的异世界生活 角色",
+    "avatarUrl": "https://cn.bing.com/images/search?view=detailV2&ccid=Bu6moUKm&id=524E8B1F916ECE1A31C9CDC107C4C8FE75C9F7A9&thid=OIP.Bu6moUKm3VRalr-yAmIhpgHaHa&mediaurl=https%3A%2F%2Fc-ssl.dtstatic.com%2Fuploads%2Fblog%2F202108%2F29%2F20210829123827_d672b.thumb.1000_0.jpg&exph=1000&expw=1000&q=%E8%95%BE%E5%A7%86%E5%A4%B4%E5%83%8F&FORM=IRPRST&ck=621D9C121D07C01869AD6EEF3AE7F83D&selectedIndex=8&itb=0&cw=1721&ch=895&ajaxhist=0&ajaxserp=0",
+    "imageUrl": "/assets/uploads/re-standee-1780820541741-cutout.png",
+    "petImageUrl": "/assets/uploads/re-pet-1780820545279-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#7aa8ff",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E9%9B%B7%E5%A7%86",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：蕾姆\n作品：Re：从零开始的异世界生活\n资料页：雷姆\n来源：https://zh.moegirl.org.cn/%E9%9B%B7%E5%A7%86",
+    "csp": {
+      "ok": true,
+      "query": "蕾姆",
+      "work": "Re：从零开始的异世界生活",
+      "mode": "discover",
+      "retrieved_at": "2026-06-07",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-雷姆",
+          "source": "moegirl",
+          "title": "雷姆",
+          "resolved_title": "雷姆",
+          "url": "https://zh.moegirl.org.cn/%E9%9B%B7%E5%A7%86",
+          "query": "蕾姆",
+          "work": "Re：从零开始的异世界生活",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-07",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 蕾姆 --timeout 12",
+          "pageid": 167068,
+          "extract_chars": 26,
+          "content_hash": "sha256:d319eb75757b7efe627165fd5cf4c59d09e38c7e1a4e63c44f638332778a3f3a",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "voiceProvider": "acgn-ttson",
+    "voiceId": "802",
+    "voiceName": "蕾姆",
+    "voiceLanguage": "JP",
+    "voiceAutoTranslate": true,
+    "voiceCandidates": [
+      {
+        "voice_id": 802,
+        "name": "雷姆 Re:从零开始的异世界生活 水瀬いのり | レム Re:ゼロから始める異世界生活 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 58
+      },
+      {
+        "voice_id": 893,
+        "name": "艾米莉亚 Re:从零开始的异世界生活 高桥李依 | エミリア Re:ゼロから始める異世界生活 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 58
+      },
+      {
+        "voice_id": 604,
+        "name": "艾基多娜 Re:从零开始的异世界生活 Anairis Quinones | エキドナ Re:ゼロから始める異世界生活 Anairis Quinones",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 48
+      },
+      {
+        "voice_id": 1321,
+        "name": "拉姆 Re:从零开始的异世界生活 村川梨衣 | ラム Re:ゼロから始める異世界生活 村川梨衣",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 48
+      },
+      {
+        "voice_id": 863,
+        "name": "艾米莉亚 Re:从零开始的异世界生活 Kayli Mills | エミリア Re:ゼロから始める異世界生活 Kayli Mills",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 36
+      },
+      {
+        "voice_id": 1043,
+        "name": "纳兹基·斯巴鲁 Re:从零开始的异世界生活 Sean Chiplock | ナツキ・スバル Re:ゼロから始める異世界生活 Sean Chiplock",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 36
+      },
+      {
+        "voice_id": 2531,
+        "name": "雷姆-日语-从零开始的异世界生活",
+        "tags": [
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL",
+          "原神",
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 34
+      },
+      {
+        "voice_id": 2947,
+        "name": "爱蜜莉雅-日语-从零开始的异世界生活",
+        "tags": [
+          "上新优化",
+          "番剧GAL",
+          "原神",
+          "上新优化",
+          "番剧GAL"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 34
+      }
+    ],
+    "createdAt": "2026-06-07T08:22:28.518Z"
+  },
+  {
+    "id": "约会大作战-狂三",
+    "name": "狂三",
+    "work": "约会大作战",
+    "subtitle": "约会大作战 角色",
+    "avatarUrl": "/assets/uploads/avatar-1780814194328.png",
+    "imageUrl": "/assets/uploads/standee-1780814194689-cutout.png",
+    "petImageUrl": "/assets/uploads/pet-1780814200059-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#ff756b",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E6%97%B6%E5%B4%8E%E7%8B%82%E4%B8%89",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：狂三\n作品：约会大作战\n资料页：时崎狂三\n来源：https://zh.moegirl.org.cn/%E6%97%B6%E5%B4%8E%E7%8B%82%E4%B8%89",
+    "csp": {
+      "ok": true,
+      "query": "狂三",
+      "work": "约会大作战",
+      "mode": "discover",
+      "retrieved_at": "2026-06-07",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-时崎狂三",
+          "source": "moegirl",
+          "title": "时崎狂三",
+          "resolved_title": "时崎狂三",
+          "url": "https://zh.moegirl.org.cn/%E6%97%B6%E5%B4%8E%E7%8B%82%E4%B8%89",
+          "query": "狂三",
+          "work": "约会大作战",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-07",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 狂三 --timeout 12",
+          "pageid": 40023,
+          "extract_chars": 55,
+          "content_hash": "sha256:ec6618e044e55fe8d08ff4597de0625cebb9293cf9eac0653ba34ec79f6a96e3",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "voiceProvider": "acgn-ttson",
+    "voiceId": "2489",
+    "voiceName": "狂三",
+    "voiceLanguage": "JP",
+    "voiceAutoTranslate": true,
+    "voiceCandidates": [
+      {
+        "voice_id": 2489,
+        "name": "狂三-日语-1-约会大作战",
+        "tags": [
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL",
+          "原神",
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 243
+      },
+      {
+        "voice_id": 2490,
+        "name": "狂三-日语-2-约会大作战",
+        "tags": [
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL",
+          "原神",
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 243
+      },
+      {
+        "voice_id": 2491,
+        "name": "狂三-日语-3-约会大作战",
+        "tags": [
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL",
+          "原神",
+          "日漫1000+角色",
+          "上新优化",
+          "番剧GAL"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 243
+      },
+      {
+        "voice_id": 3138,
+        "name": "时崎狂三",
+        "tags": [
+          "男生"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 164
+      },
+      {
+        "voice_id": 51,
+        "name": "Harper-女-日语",
+        "tags": [
+          "外语"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 503,
+        "name": "玛修·基列莱特 Fate系列 高橋李依 | マシュ・キリエライト Fateシリーズ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 802,
+        "name": "雷姆 Re:从零开始的异世界生活 水瀬いのり | レム Re:ゼロから始める異世界生活 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 893,
+        "name": "艾米莉亚 Re:从零开始的异世界生活 高桥李依 | エミリア Re:ゼロから始める異世界生活 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      }
+    ],
+    "createdAt": "2026-06-07T06:36:43.369Z"
+  },
+  {
+    "id": "轻音少女-秋山澪",
+    "name": "秋山澪",
+    "work": "轻音少女",
+    "subtitle": "轻音少女 角色",
+    "avatarUrl": "/assets/uploads/avatar-1780720774961.jpg",
+    "imageUrl": "/assets/uploads/standee-1780720775011-cutout.png",
+    "petImageUrl": "/assets/uploads/pet-1780720778932-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#7aa8ff",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E7%A7%8B%E5%B1%B1%E6%BE%AA",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：秋山澪\n作品：轻音少女\n资料页：秋山澪\n来源：https://zh.moegirl.org.cn/%E7%A7%8B%E5%B1%B1%E6%BE%AA",
+    "csp": {
+      "ok": true,
+      "query": "秋山澪",
+      "work": "轻音少女",
+      "mode": "discover",
+      "retrieved_at": "2026-06-06",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-秋山澪",
+          "source": "moegirl",
+          "title": "秋山澪",
+          "resolved_title": "秋山澪",
+          "url": "https://zh.moegirl.org.cn/%E7%A7%8B%E5%B1%B1%E6%BE%AA",
+          "query": "秋山澪",
+          "work": "轻音少女",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-06",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 秋山澪 --timeout 12",
+          "pageid": 10238,
+          "extract_chars": 118,
+          "content_hash": "sha256:6df5c9206e32816c8aed249bb9afb1d48b490eadffcd48d2e3ca06ce163df587",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "createdAt": "2026-06-06T04:39:42.460Z"
+  },
+  {
+    "id": "天使的心跳-立华奏",
+    "name": "立华奏",
+    "work": "天使的心跳",
+    "subtitle": "天使的心跳 角色",
+    "avatarUrl": "/assets/uploads/avatar-1780720643609.jpg",
+    "imageUrl": "/assets/uploads/standee-1780720644602-cutout.png",
+    "petImageUrl": "/assets/uploads/pet-1780720649223-cutout.png",
+    "petStyle": "chibi",
+    "live2dModelUrl": "",
+    "accent": "#7aa8ff",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E7%AB%8B%E5%8D%8E%E5%A5%8F",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：立华奏\n作品：天使的心跳\n资料页：立华奏\n来源：https://zh.moegirl.org.cn/%E7%AB%8B%E5%8D%8E%E5%A5%8F",
+    "csp": {
+      "ok": true,
+      "query": "立华奏",
+      "work": "天使的心跳",
+      "mode": "discover",
+      "retrieved_at": "2026-06-06",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-立华奏",
+          "source": "moegirl",
+          "title": "立华奏",
+          "resolved_title": "立华奏",
+          "url": "https://zh.moegirl.org.cn/%E7%AB%8B%E5%8D%8E%E5%A5%8F",
+          "query": "立华奏",
+          "work": "天使的心跳",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-06",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 立华奏 --timeout 12",
+          "pageid": 12045,
+          "extract_chars": 44,
+          "content_hash": "sha256:cc02eb4e9362fd4cc4d4d4542b8a7b4d4d9738a01d96ee4430314d5007a3cefe",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "createdAt": "2026-06-06T04:37:33.033Z"
+  },
+  {
+    "id": "紫罗兰永恒花园-薇尔莉特",
+    "name": "薇尔莉特",
+    "work": "紫罗兰永恒花园",
+    "subtitle": "紫罗兰永恒花园 角色",
+    "avatarUrl": "/assets/uploads/avatar-1780720571122.jpg",
+    "imageUrl": "/assets/uploads/standee-1780720571219-cutout.png",
+    "petImageUrl": "/assets/uploads/pet-1780720575263-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#ff83ad",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E8%96%87%E5%B0%94%E8%8E%89%E7%89%B9%C2%B7%E4%BC%8A%E8%8A%99%E5%8A%A0%E7%99%BB",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：薇尔莉特\n作品：紫罗兰永恒花园\n资料页：薇尔莉特·伊芙加登\n来源：https://zh.moegirl.org.cn/%E8%96%87%E5%B0%94%E8%8E%89%E7%89%B9%C2%B7%E4%BC%8A%E8%8A%99%E5%8A%A0%E7%99%BB",
+    "csp": {
+      "ok": true,
+      "query": "薇尔莉特",
+      "work": "紫罗兰永恒花园",
+      "mode": "discover",
+      "retrieved_at": "2026-06-06",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-薇尔莉特·伊芙加登",
+          "source": "moegirl",
+          "title": "薇尔莉特·伊芙加登",
+          "resolved_title": "薇尔莉特·伊芙加登",
+          "url": "https://zh.moegirl.org.cn/%E8%96%87%E5%B0%94%E8%8E%89%E7%89%B9%C2%B7%E4%BC%8A%E8%8A%99%E5%8A%A0%E7%99%BB",
+          "query": "薇尔莉特",
+          "work": "紫罗兰永恒花园",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-06",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 薇尔莉特 --timeout 12",
+          "pageid": 231807,
+          "extract_chars": 83,
+          "content_hash": "sha256:9affc92ae783456854355e427f0eeb20ad849ebac385beaf6c955e1be39bb2bf",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "createdAt": "2026-06-06T04:36:18.554Z"
+  },
+  {
+    "id": "灼眼的夏娜-夏娜",
+    "name": "夏娜",
+    "work": "灼眼的夏娜",
+    "subtitle": "灼眼的夏娜 角色",
+    "avatarUrl": "/assets/uploads/avatar-1780720386440.png",
+    "imageUrl": "/assets/uploads/standee-1780720386797-cutout.png",
+    "petImageUrl": "/assets/uploads/pet-1780720390669-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#f2bf5e",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E5%A4%8F%E5%A8%9C",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：夏娜\n作品：灼眼的夏娜\n资料页：夏娜\n来源：https://zh.moegirl.org.cn/%E5%A4%8F%E5%A8%9C",
+    "csp": {
+      "ok": true,
+      "query": "夏娜",
+      "work": "灼眼的夏娜",
+      "mode": "discover",
+      "retrieved_at": "2026-06-06",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-夏娜",
+          "source": "moegirl",
+          "title": "夏娜",
+          "resolved_title": "夏娜",
+          "url": "https://zh.moegirl.org.cn/%E5%A4%8F%E5%A8%9C",
+          "query": "夏娜",
+          "work": "灼眼的夏娜",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-06",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 夏娜 --timeout 12",
+          "pageid": 4329,
+          "extract_chars": 153,
+          "content_hash": "sha256:ca4787217f5a2057be23ee419574016280259aee4c4db5ee0b554f42dd41b697",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "createdAt": "2026-06-06T04:33:14.147Z"
+  },
+  {
+    "id": "eva-绫波丽",
+    "name": "绫波丽",
+    "work": "eva",
+    "subtitle": "eva 角色",
+    "avatarUrl": "/assets/uploads/eva-avatar-1780719964502.jpg",
+    "imageUrl": "/assets/uploads/eva-standee-1780719964752-cutout.png",
+    "petImageUrl": "/assets/uploads/eva-pet-1780719968871-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#7aa8ff",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E7%BB%AB%E6%B3%A2%E4%B8%BD",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：绫波丽\n作品：eva\n资料页：绫波丽\n来源：https://zh.moegirl.org.cn/%E7%BB%AB%E6%B3%A2%E4%B8%BD",
+    "csp": {
+      "ok": true,
+      "query": "绫波丽",
+      "work": "eva",
+      "mode": "discover",
+      "retrieved_at": "2026-06-06",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-绫波丽",
+          "source": "moegirl",
+          "title": "绫波丽",
+          "resolved_title": "绫波丽",
+          "url": "https://zh.moegirl.org.cn/%E7%BB%AB%E6%B3%A2%E4%B8%BD",
+          "query": "绫波丽",
+          "work": "eva",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-06",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 绫波丽 --timeout 12",
+          "pageid": 22463,
+          "extract_chars": 56,
+          "content_hash": "sha256:e8d60ce6d36afbdfe841222b8e7cdb03acff029569da5def461beea984e9d368",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "createdAt": "2026-06-06T04:26:13.006Z"
+  },
+  {
+    "id": "魔女之旅-伊蕾娜",
+    "name": "伊蕾娜",
+    "work": "魔女之旅",
+    "subtitle": "魔女之旅 角色",
+    "avatarUrl": "/assets/uploads/avatar-1780716872410.png",
+    "imageUrl": "/assets/uploads/standee-1780716872925-cutout.png",
+    "petImageUrl": "",
+    "petStyle": "live2d",
+    "live2dModelUrl": "",
+    "accent": "#c99cff",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E4%BC%8A%E8%95%BE%E5%A8%9C",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：伊蕾娜\n作品：魔女之旅\n资料页：伊蕾娜\n来源：https://zh.moegirl.org.cn/%E4%BC%8A%E8%95%BE%E5%A8%9C",
+    "csp": {
+      "ok": true,
+      "query": "伊蕾娜",
+      "work": "魔女之旅",
+      "mode": "discover",
+      "retrieved_at": "2026-06-06",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-伊蕾娜",
+          "source": "moegirl",
+          "title": "伊蕾娜",
+          "resolved_title": "伊蕾娜",
+          "url": "https://zh.moegirl.org.cn/%E4%BC%8A%E8%95%BE%E5%A8%9C",
+          "query": "伊蕾娜",
+          "work": "魔女之旅",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-06",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 伊蕾娜 --timeout 12",
+          "pageid": 387520,
+          "extract_chars": 49,
+          "content_hash": "sha256:6026be4074a7a0b57bbf60721c02f6d5b934f501efa7144df2cb300144a982f5",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "createdAt": "2026-06-06T03:34:36.226Z"
+  },
+  {
+    "id": "刀剑神域-亚丝娜",
+    "name": "亚丝娜",
+    "work": "刀剑神域",
+    "subtitle": "刀剑神域 角色",
+    "avatarUrl": "/assets/uploads/avatar-1780716778932.png",
+    "imageUrl": "/assets/uploads/standee-1780716779046-cutout.png",
+    "petImageUrl": "/assets/uploads/pet-1780716782858-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#ff83ad",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E7%BB%93%E5%9F%8E%E6%98%8E%E6%97%A5%E5%A5%88",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：亚丝娜\n作品：刀剑神域\n资料页：结城明日奈\n来源：https://zh.moegirl.org.cn/%E7%BB%93%E5%9F%8E%E6%98%8E%E6%97%A5%E5%A5%88",
+    "csp": {
+      "ok": true,
+      "query": "亚丝娜",
+      "work": "刀剑神域",
+      "mode": "discover",
+      "retrieved_at": "2026-06-06",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-结城明日奈",
+          "source": "moegirl",
+          "title": "结城明日奈",
+          "resolved_title": "结城明日奈",
+          "url": "https://zh.moegirl.org.cn/%E7%BB%93%E5%9F%8E%E6%98%8E%E6%97%A5%E5%A5%88",
+          "query": "亚丝娜",
+          "work": "刀剑神域",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-06",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 亚丝娜 --timeout 12",
+          "pageid": 13990,
+          "extract_chars": 36,
+          "content_hash": "sha256:c28efaddfb23d5a44a4b97f67a5e32b7d450b307c76655ce91837c00b256557e",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "createdAt": "2026-06-06T03:33:06.206Z"
+  },
+  {
+    "id": "鬼父-秋月爱莉",
+    "name": "秋月爱莉",
+    "work": "鬼父",
+    "subtitle": "鬼父 角色",
+    "avatarUrl": "/assets/uploads/avatar-1780714945997.jpg",
+    "imageUrl": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 900'><defs><radialGradient id='halo' cx='.5' cy='.22' r='.5'><stop stop-color='%23ff756b' stop-opacity='.95'/><stop offset='.62' stop-color='%23ff756b' stop-opacity='.32'/><stop offset='1' stop-color='%23ff756b' stop-opacity='0'/></radialGradient><linearGradient id='body' x1='0' y1='0' x2='1' y2='1'><stop stop-color='%23ffffff' stop-opacity='.24'/><stop offset='1' stop-color='%23ff756b' stop-opacity='.5'/></linearGradient></defs><ellipse cx='320' cy='815' rx='158' ry='32' fill='%23000000' fill-opacity='.28'/><path d='M166 820c22-276 70-434 154-434s132 158 154 434z' fill='url(%23body)'/><path d='M218 820c14-178 50-278 102-278s88 100 102 278z' fill='%23ffffff' fill-opacity='.09'/><circle cx='320' cy='245' r='170' fill='url(%23halo)'/><path d='M236 260c0-73 45-122 84-122s84 49 84 122c0 68-39 118-84 118s-84-50-84-118z' fill='%23ff756b' fill-opacity='.36'/><circle cx='270' cy='255' r='14' fill='white'/><circle cx='370' cy='255' r='14' fill='white'/><path d='M284 314c27 22 62 22 88 0' fill='none' stroke='white' stroke-width='14' stroke-linecap='round' opacity='.9'/><text x='320' y='294' text-anchor='middle' font-size='92' font-family='Arial, sans-serif' font-weight='800' fill='white'>%E7%A7%8B</text></svg>",
+    "petImageUrl": "/assets/uploads/pet-1780714945998-cutout.png",
+    "petStyle": "standee",
+    "accent": "#ff756b",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E7%A7%8B%E6%9C%88%E7%88%B1%E8%8E%89",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：秋月爱莉\n作品：鬼父\n资料页：秋月爱莉\n来源：https://zh.moegirl.org.cn/%E7%A7%8B%E6%9C%88%E7%88%B1%E8%8E%89",
+    "csp": {
+      "ok": true,
+      "query": "秋月爱莉",
+      "work": "鬼父",
+      "mode": "discover",
+      "retrieved_at": "2026-06-06",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-秋月爱莉",
+          "source": "moegirl",
+          "title": "秋月爱莉",
+          "resolved_title": "秋月爱莉",
+          "url": "https://zh.moegirl.org.cn/%E7%A7%8B%E6%9C%88%E7%88%B1%E8%8E%89",
+          "query": "秋月爱莉",
+          "work": "鬼父",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-06",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 秋月爱莉 --timeout 12",
+          "pageid": 18146,
+          "extract_chars": 51,
+          "content_hash": "sha256:950ff298b5fd1f83d90485fa1eb4eb59c8f79884944a251cf7ae334806c51f7e",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "createdAt": "2026-06-06T03:02:26.279Z"
   },
   {
     "id": "千恋万花-常陆茉子",

@@ -4,10 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CSP Visual Chat</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles.css?v=29" />
   </head>
   <body>
     <div id="app">
+      <div class="galgame-atmosphere" aria-hidden="true"></div>
       <aside class="rail">
         <div class="brand">
           <div class="brand-mark">C</div>
@@ -15,6 +16,7 @@
             <strong>CSP Chat</strong>
             <span>角色技能聊天平台</span>
           </div>
+          <button class="help-button" id="openSettingsDrawer" type="button">设置</button>
           <button class="help-button" id="openOnboarding" type="button">使用引导</button>
         </div>
 
@@ -25,6 +27,12 @@
             <small id="currentWork">点击打开角色卡片</small>
           </span>
         </button>
+
+        <div class="panel compact self-name-panel">
+          <label for="userAlias">角色对你的称呼</label>
+          <input id="userAlias" maxlength="24" placeholder="不填默认称呼你" />
+          <p>例如：主人、前辈、哥哥、制作人。角色会按语境自然使用。</p>
+        </div>
 
         <div class="panel compact style-panel">
           <label>界面风格</label>
@@ -48,19 +56,23 @@
           </div>
         </div>
 
-        <div class="panel compact">
+        <div class="panel compact settings-panel" id="chatApiPanel">
           <label>聊天 API</label>
           <select id="provider">
             <option value="mock">本地预览</option>
             <option value="openai-compatible">OpenAI Compatible</option>
             <option value="claude">Claude Messages API</option>
           </select>
+          <label class="check-line ai-action-toggle">
+            <input id="aiPetActions" type="checkbox" checked />
+            <span>AI 自动控制桌宠动作</span>
+          </label>
           <input id="baseUrl" placeholder="Base URL，可选" />
           <input id="model" placeholder="Model，可选" />
           <input id="apiKey" placeholder="API Key，可选，仅保存在本机浏览器" type="password" />
         </div>
 
-        <div class="panel compact voice-api-panel">
+        <div class="panel compact voice-api-panel settings-panel" id="voiceApiPanel">
           <label>配音 API</label>
           <select id="voiceProvider">
             <option value="openai-compatible">OpenAI TTS</option>
@@ -145,9 +157,13 @@
             <button type="button" data-pet-action="feed">投喂</button>
             <button type="button" data-pet-action="play">玩耍</button>
             <button type="button" data-pet-action="wave">挥手</button>
+            <button type="button" data-pet-action="praise">夸奖</button>
+            <button type="button" data-pet-action="approach">靠近</button>
+            <button type="button" data-pet-action="photo">拍照</button>
             <button type="button" data-pet-action="shy">害羞</button>
             <button type="button" data-pet-action="spin">转圈</button>
             <button type="button" data-pet-action="rest">休息</button>
+            <button type="button" data-pet-action="wake">叫醒</button>
           </div>
         </section>
 
@@ -156,13 +172,52 @@
           <h2 id="sheetName">未选择</h2>
           <p id="sheetSubtitle">从左侧角色列表选择对象开始。</p>
           <div id="sheetTags" class="tags"></div>
+          <div id="playStatus" class="play-status" hidden></div>
+          <button class="sheet-action" id="reprocessPetImage" type="button" hidden disabled>重新处理当前桌宠图</button>
           <a id="sourceLink" target="_blank" rel="noreferrer">来源资料</a>
         </div>
       </aside>
     </div>
 
-    <div class="style-dock" aria-label="界面风格">
+    <div class="style-dock" id="styleDock" aria-label="界面风格" aria-expanded="false">
       <button type="button" id="voiceToggleDock" aria-pressed="false">语音关</button>
+      <button class="galgame-tool" type="button" id="galgameLogToggle">履历</button>
+      <button class="galgame-tool" type="button" id="galgameSkipText">跳过</button>
+      <button class="galgame-tool" type="button" id="galgameHideToggle" aria-pressed="false">隐藏</button>
+      <button class="galgame-tool" type="button" id="galgameSave">存档</button>
+      <button class="galgame-tool" type="button" id="galgameLoad">读档</button>
+      <button class="galgame-tool" type="button" id="galgameAuto" aria-pressed="false">自动</button>
+      <button class="galgame-tool" type="button" id="galgameSkipRead" aria-pressed="false">跳读</button>
+      <button class="galgame-tool" type="button" id="galgameAutoScene" aria-pressed="true">场景</button>
+      <button class="galgame-tool" type="button" id="galgameAtmosphere" aria-pressed="true">氛围</button>
+      <button class="galgame-tool" type="button" id="galgameBranchEdit">分支</button>
+      <label class="galgame-frequency-control" title="控制 Galgame 分支选项出现频率">
+        <span>选项</span>
+        <select id="galgameChoiceFrequency">
+          <option value="low">较少</option>
+          <option value="normal" selected>适中</option>
+          <option value="high">频繁</option>
+          <option value="off">关闭</option>
+        </select>
+      </label>
+      <div class="galgame-bg-picker" id="galgameBgPicker" aria-label="Galgame 背景">
+        <button class="galgame-bg-choice" type="button" data-galgame-bg="riverside" style="--bg-thumb: url('/assets/ui/galgame-riverside-spring.png?v=1')" aria-label="背景：樱花河岸">河岸</button>
+        <button class="galgame-bg-choice" type="button" data-galgame-bg="classroom" style="--bg-thumb: url('/assets/ui/galgame-classroom-sunset.png?v=1')" aria-label="背景：黄昏教室">教室</button>
+        <button class="galgame-bg-choice" type="button" data-galgame-bg="street" style="--bg-thumb: url('/assets/ui/galgame-rain-street.png?v=1')" aria-label="背景：雨夜街道">雨街</button>
+        <button class="galgame-bg-choice" type="button" data-galgame-bg="room" style="--bg-thumb: url('/assets/ui/galgame-room-rain.png?v=1')" aria-label="背景：雨夜房间">房间</button>
+        <button class="galgame-bg-choice" type="button" data-galgame-bg="sakura" style="--bg-thumb: url('/assets/ui/galgame-sakura-bg.png?v=2')" aria-label="背景：旧樱花">旧樱</button>
+        <button class="galgame-bg-choice" type="button" data-galgame-bg="library" style="--bg-thumb: url('/assets/ui/galgame-library-afternoon.png?v=2')" aria-label="背景：午后图书馆">书馆</button>
+        <button class="galgame-bg-choice" type="button" data-galgame-bg="seaside" style="--bg-thumb: url('/assets/ui/galgame-seaside-station.png?v=2')" aria-label="背景：海边车站">海站</button>
+        <button class="galgame-bg-choice" type="button" data-galgame-bg="shrine" style="--bg-thumb: url('/assets/ui/galgame-shrine-dusk.png?v=2')" aria-label="背景：黄昏神社">神社</button>
+        <button class="galgame-bg-choice" type="button" data-galgame-bg="cafe" style="--bg-thumb: url('/assets/ui/galgame-cafe-window.png?v=2')" aria-label="背景：窗边咖啡店">咖啡</button>
+        <button class="galgame-bg-choice" type="button" data-galgame-bg="rooftop" style="--bg-thumb: url('/assets/ui/galgame-school-rooftop.png?v=2')" aria-label="背景：学校天台">天台</button>
+        <button class="galgame-bg-choice" type="button" data-galgame-bg="nightRoom" style="--bg-thumb: url('/assets/ui/galgame-night-apartment.png?v=2')" aria-label="背景：夜景房间">夜室</button>
+        <div class="galgame-user-bg-choices" id="galgameUserBgChoices" aria-label="本地上传背景"></div>
+        <label class="galgame-bg-upload">
+          <input id="galgameBgUpload" type="file" accept="image/*" />
+          <span>上传清晰背景</span>
+        </label>
+      </div>
       <label>
         <input name="uiStyle" type="radio" value="workbench" />
         <span>工作台</span>
@@ -180,6 +235,52 @@
         <span>卡册</span>
       </label>
     </div>
+
+    <div class="galgame-route-status" id="galgameRouteStatus" hidden>序章 · 共同路线 · 序章刚刚展开</div>
+
+    <section class="galgame-log" id="galgameLog" hidden aria-label="对话履历">
+      <div class="galgame-log-head">
+        <div>
+          <strong>对话履历</strong>
+          <span id="galgameLogCount">0 条</span>
+        </div>
+        <button type="button" id="galgameLogClose">关闭</button>
+      </div>
+      <div class="galgame-log-tools">
+        <input id="galgameLogSearch" type="search" placeholder="搜索台词、选项、路线事件" />
+      </div>
+      <div class="galgame-log-body" id="galgameLogBody"></div>
+    </section>
+
+    <dialog id="galgameSaveDialog" class="save-slot-dialog">
+      <form method="dialog">
+        <div class="save-slot-head">
+          <div>
+            <span class="eyebrow">Galgame</span>
+            <strong id="galgameSaveDialogTitle">存档槽位</strong>
+          </div>
+          <button type="button" id="galgameSaveDialogClose" aria-label="关闭">x</button>
+        </div>
+        <div class="save-slot-grid" id="galgameSaveSlots"></div>
+      </form>
+    </dialog>
+
+    <dialog id="routeEditor" class="route-editor">
+      <form id="routeEditorForm">
+        <div class="route-editor-head">
+          <div>
+            <strong>分支编辑器</strong>
+            <span id="routeEditorStatus">调整当前台词后的路线分支</span>
+          </div>
+          <button type="button" id="routeEditorClose" aria-label="关闭">x</button>
+        </div>
+        <div class="route-editor-body" id="routeEditorBody"></div>
+        <div class="route-editor-actions">
+          <button type="button" id="routeEditorCancel">取消</button>
+          <button type="submit">保存分支</button>
+        </div>
+      </form>
+    </dialog>
 
     <dialog id="onboardingModal" class="modal onboarding-modal">
       <div class="modal-head">
@@ -217,7 +318,20 @@
       </div>
     </dialog>
 
-    <dialog id="characterModal" class="modal">
+    <dialog id="settingsDrawer" class="settings-drawer">
+      <form method="dialog">
+        <div class="settings-drawer-head">
+          <div>
+            <span class="eyebrow">Settings</span>
+            <strong>模型与配音设置</strong>
+          </div>
+          <button type="button" id="closeSettingsDrawer" aria-label="关闭">x</button>
+        </div>
+        <div class="settings-drawer-body" id="settingsDrawerBody"></div>
+      </form>
+    </dialog>
+
+    <dialog id="characterModal" class="modal" data-library-pane="list">
       <div class="modal-head">
         <div>
           <span class="eyebrow">角色库</span>
@@ -230,7 +344,8 @@
         <section class="library-pane" aria-label="角色选择">
           <div class="tools-row">
             <input id="characterSearch" placeholder="搜索角色或作品" />
-            <button id="showCreate">新建角色</button>
+            <span id="libraryCount" class="library-count">0 个角色</span>
+            <button id="showCreate" type="button">新建角色</button>
           </div>
           <div id="characterGrid" class="character-grid"></div>
         </section>
@@ -340,6 +455,6 @@
       </div>
     </dialog>
 
-    <script src="/app.js" type="module"></script>
+    <script src="/app.js?v=18" type="module"></script>
   </body>
 </html>

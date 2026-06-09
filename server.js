@@ -188,6 +188,14 @@ function uploadUrlToFile(url) {
   return path.join(UPLOAD_DIR, decodeURIComponent(match[1]));
 }
 
+function displayAssetName(input) {
+  const base = path.basename(String(input || "本地背景")).replace(/\.[^.]+$/, "");
+  return base
+    .replace(/[-_]+/g, " ")
+    .trim()
+    .slice(0, 24) || "本地背景";
+}
+
 function runCutout(inputFile, outputFile) {
   return new Promise((resolve) => {
     if (!existsSync(CUTOUT_SCRIPT) || !existsSync(inputFile)) {
@@ -197,8 +205,18 @@ function runCutout(inputFile, outputFile) {
     const child = spawn(process.env.PYTHON || "python", [CUTOUT_SCRIPT, inputFile, outputFile], {
       windowsHide: true
     });
-    child.on("close", (code) => resolve(code === 0 && existsSync(outputFile)));
-    child.on("error", () => resolve(false));
+    const timer = setTimeout(() => {
+      child.kill();
+      resolve(false);
+    }, 25000);
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      resolve(code === 0 && existsSync(outputFile));
+    });
+    child.on("error", () => {
+      clearTimeout(timer);
+      resolve(false);
+    });
   });
 }
 
@@ -286,7 +304,92 @@ function firstMoegirlPage(data) {
   return Object.values(data.query?.pages || {}).filter((page) => page.pageid)[0];
 }
 
-async function fetchMoegirlPage(name) {
+function scoreMoegirlPage(page, name, work = "") {
+  const title = String(page?.title || "").toLowerCase();
+  const extract = String(page?.extract || "").toLowerCase();
+  const normalizedName = String(name || "").toLowerCase();
+  const normalizedWork = String(work || "").toLowerCase();
+  let score = 0;
+  if (page?.thumbnail?.source) score += 40;
+  if (extract && normalizedWork && extract.includes(normalizedWork)) score += 260;
+  if (extract && normalizedWork && normalizedWork.length > 4) {
+    const workParts = normalizedWork
+      .split(/[:：\s·,，。!！?？()（）《》]+/)
+      .filter((part) => /[\u3400-\u9fff]/.test(part) ? part.length >= 2 : part.length >= 4);
+    if (workParts.some((part) => extract.includes(part))) score += 120;
+  }
+  if (title && normalizedName && title.includes(normalizedName)) score += 100;
+  if (title && normalizedName && normalizedName.includes(title)) score += 80;
+  if (title.length && normalizedName.length && title.length <= normalizedName.length + 4) score += 30;
+  if (title && normalizedWork && (title.includes(normalizedWork) || normalizedWork.includes(title))) score -= 80;
+  if (/消歧义|disambig/i.test(`${page?.title || ""} ${page?.pageimage || ""}`)) score -= 120;
+  score -= Number(page?.index || 0);
+  return score;
+}
+
+function bestMoegirlPage(data, name, work = "") {
+  return Object.values(data.query?.pages || {})
+    .filter((page) => page.pageid)
+    .sort((a, b) => scoreMoegirlPage(b, name, work) - scoreMoegirlPage(a, name, work))[0];
+}
+
+async function fetchMoegirlLinkedPage(exactTitle, name, work = "") {
+  if (!exactTitle) return null;
+  const linkParams = new URLSearchParams({
+    action: "query",
+    titles: exactTitle,
+    prop: "links",
+    pllimit: "80",
+    format: "json",
+    origin: "*"
+  });
+  const linkData = await queryMoegirl(linkParams);
+  const links = Object.values(linkData.query?.pages || {})
+    .flatMap((page) => page.links || [])
+    .filter((item) => item.ns === 0 && item.title)
+    .map((item, index) => ({ title: item.title, index }));
+  if (!links.length) return null;
+
+  const normalizedWork = String(work || "").toLowerCase();
+  const workIndex = links.find((item) => {
+    const title = item.title.toLowerCase();
+    return normalizedWork && (title.includes(normalizedWork) || normalizedWork.includes(title));
+  })?.index ?? -1;
+  const titles = links.map((item) => item.title).slice(0, 50);
+  const infoParams = new URLSearchParams({
+    action: "query",
+    titles: titles.join("|"),
+    prop: "pageimages|info|extracts",
+    inprop: "url",
+    pithumbsize: "900",
+    exintro: "1",
+    explaintext: "1",
+    exchars: "500",
+    redirects: "1",
+    format: "json",
+    origin: "*"
+  });
+  const infoData = await queryMoegirl(infoParams);
+  const byTitle = new Map(links.map((item) => [item.title, item]));
+  return Object.values(infoData.query?.pages || {})
+    .filter((page) => page.pageid && page.title !== exactTitle)
+    .sort((a, b) => {
+      const linkedScore = (page) => {
+        const link = byTitle.get(page.title);
+        let score = scoreMoegirlPage(page, name, work);
+        if (workIndex >= 0 && link) {
+          const distance = Math.abs(link.index - workIndex);
+          if (distance > 0 && distance <= 3) {
+            score += 46 - distance * 10;
+          }
+        }
+        return score;
+      };
+      return linkedScore(b) - linkedScore(a);
+    })[0] || null;
+}
+
+async function fetchMoegirlPage(name, work = "") {
   const exactParams = new URLSearchParams({
     action: "query",
     titles: name,
@@ -299,13 +402,16 @@ async function fetchMoegirlPage(name) {
   });
 
   const exactPage = firstMoegirlPage(await queryMoegirl(exactParams));
-  if (exactPage?.thumbnail?.source || exactPage?.fullurl) return exactPage;
+  if (exactPage?.thumbnail?.source) return exactPage;
+
+  const linkedPage = await fetchMoegirlLinkedPage(exactPage?.title, name, work).catch(() => null);
+  if (linkedPage?.thumbnail?.source || linkedPage?.fullurl) return linkedPage;
 
   const params = new URLSearchParams({
     action: "query",
     generator: "search",
-    gsrsearch: name,
-    gsrlimit: "1",
+    gsrsearch: [name, work].filter(Boolean).join(" "),
+    gsrlimit: "8",
     prop: "pageimages|info",
     inprop: "url",
     pithumbsize: "900",
@@ -314,7 +420,7 @@ async function fetchMoegirlPage(name) {
     origin: "*"
   });
 
-  return firstMoegirlPage(await queryMoegirl(params)) || {};
+  return bestMoegirlPage(await queryMoegirl(params), name, work) || exactPage || {};
 }
 
 function scoreImageCandidate(candidate, kind) {
@@ -376,6 +482,21 @@ function normalizeMoegirlImageUrl(url) {
 
 function originalMoegirlImageUrl(url) {
   return normalizeMoegirlImageUrl(url).replace(/!\/.*$/, "");
+}
+
+function normalizeRemoteImageUrl(url) {
+  let text = decodeHtml(url)
+    .replace(/\\\//g, "/")
+    .replace(/\\u0026/g, "&")
+    .replace(/\\u003d/g, "=")
+    .trim();
+  try {
+    text = decodeURIComponent(text);
+  } catch {
+    // Some search result URLs are only partially encoded.
+  }
+  if (text.startsWith("//")) return `https:${text}`;
+  return /^https?:\/\//i.test(text) ? text : "";
 }
 
 function parseImageAttrs(tag) {
@@ -493,8 +614,71 @@ function formatImageCandidate(item) {
   };
 }
 
-async function fetchMoegirlImageCandidates(name) {
-  const page = await fetchMoegirlPage(name);
+function bingCandidateQueries(name, work = "") {
+  const base = [name, work].filter(Boolean).join(" ");
+  return [
+    { query: `${base} 角色 立绘 全身 png`, kind: "standee" },
+    { query: `${base} anime character render full body png`, kind: "standee" },
+    { query: `${base} 头像 icon portrait`, kind: "avatar" },
+    { query: `${base} Q版 chibi SD`, kind: "chibi" }
+  ];
+}
+
+async function fetchBingImageSearch(query, preferredKind = "standee") {
+  const searchUrl = `https://www.bing.com/images/search?${new URLSearchParams({
+    q: query,
+    first: "1",
+    safeSearch: "strict"
+  }).toString()}`;
+  const response = await fetch(searchUrl, {
+    headers: {
+      "accept": "text/html,application/xhtml+xml",
+      "accept-language": "zh-CN,zh;q=0.9,en;q=0.7,ja;q=0.6",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36"
+    },
+    signal: AbortSignal.timeout(12000)
+  });
+  if (!response.ok) return [];
+
+  const html = await response.text();
+  const urls = [];
+  for (const match of html.matchAll(/murl&quot;:&quot;([^&]+)&quot;|"murl":"((?:\\"|[^"])*)"/g)) {
+    const imageUrl = normalizeRemoteImageUrl(match[1] || match[2] || "");
+    if (!imageUrl) continue;
+    if (/(\.svg|logo|sprite|favicon|emoji|banner|wallpaper|background)/i.test(imageUrl)) continue;
+    urls.push(imageUrl);
+  }
+
+  return urls.slice(0, 12).map((url, index) => ({
+    title: `${query} ${preferredKind} ${index + 1}`,
+    imageinfo: [{
+      url,
+      thumburl: url,
+      width: 0,
+      height: 0
+    }]
+  }));
+}
+
+async function fetchBingImageCandidates(name, work = "") {
+  const queryResults = await Promise.allSettled(
+    bingCandidateQueries(name, work).map((item) => fetchBingImageSearch(item.query, item.kind))
+  );
+  const rawImages = queryResults.flatMap((result) => result.status === "fulfilled" ? result.value : []);
+  const seen = new Set();
+  return rawImages
+    .map(formatImageCandidate)
+    .filter((item) => item.url)
+    .filter((item) => {
+      const key = imageUrlKey(item.url);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+async function fetchMoegirlImageCandidates(name, work = "") {
+  const page = await fetchMoegirlPage(name, work);
   const [pageImages, htmlImages] = await Promise.allSettled([
     fetchMoegirlPageImages(page?.title),
     fetchMoegirlHtmlImages(page)
@@ -539,14 +723,25 @@ async function fetchMoegirlImageCandidates(name) {
     });
   }
 
+  if (ordered.length < 6) {
+    const fallbackCandidates = await fetchBingImageCandidates(name, work).catch(() => []);
+    for (const item of fallbackCandidates) {
+      if (ordered.length >= 18) break;
+      const key = imageUrlKey(item.url);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      ordered.push(item);
+    }
+  }
+
   return {
     sourceUrl: page?.fullurl || (page?.title ? `https://zh.moegirl.org.cn/${encodeURIComponent(page.title)}` : ""),
     candidates: ordered
   };
 }
 
-async function fetchMoegirlImages(name) {
-  const result = await fetchMoegirlImageCandidates(name);
+async function fetchMoegirlImages(name, work = "") {
+  const result = await fetchMoegirlImageCandidates(name, work);
   const pick = (kind) => result.candidates
     .map((item) => ({ item, score: item.scores?.[kind] ?? 0 }))
     .sort((a, b) => b.score - a.score)[0];
@@ -679,7 +874,33 @@ function extractAcgnToken(value) {
   }
 }
 
-async function postAcgnOfficialTts({ token, baseUrl, voice, input, language }) {
+function acgnEmotionCode(emotion = "") {
+  const value = String(emotion || "").toLowerCase();
+  if (/happy|shy|soft|surprised/.test(value)) return 1;
+  if (/serious|angry/.test(value)) return 2;
+  if (/sad/.test(value)) return 3;
+  return 1;
+}
+
+function elevenVoiceSettings(emotion = "") {
+  const value = String(emotion || "").toLowerCase();
+  if (/happy|surprised/.test(value)) return { stability: 0.36, similarity_boost: 0.82, style: 0.58, use_speaker_boost: true };
+  if (/shy|soft|sad/.test(value)) return { stability: 0.5, similarity_boost: 0.84, style: 0.38, use_speaker_boost: true };
+  if (/serious|angry/.test(value)) return { stability: 0.46, similarity_boost: 0.82, style: 0.52, use_speaker_boost: true };
+  return { stability: 0.42, similarity_boost: 0.82, style: 0.45, use_speaker_boost: true };
+}
+
+function ttsEmotionInstruction(emotion = "") {
+  const value = String(emotion || "").toLowerCase();
+  if (/happy/.test(value)) return "The emotion is bright, warm, and lightly smiling.";
+  if (/shy/.test(value)) return "The emotion is shy, soft, and intimate, with gentle hesitation.";
+  if (/soft|sad/.test(value)) return "The emotion is tender, quiet, and slightly fragile.";
+  if (/serious|angry/.test(value)) return "The emotion is serious and restrained, with clear tension.";
+  if (/surprised/.test(value)) return "The emotion is surprised and lively, but still natural.";
+  return "The emotion is natural and characterful.";
+}
+
+async function postAcgnOfficialTts({ token, baseUrl, voice, input, language, emotion }) {
   const bases = baseUrl
     ? [baseUrl.replace(/\/$/, "")]
     : ACGN_OFFICIAL_FALLBACKS;
@@ -698,7 +919,7 @@ async function postAcgnOfficialTts({ token, baseUrl, voice, input, language }) {
           speed_factor: 1,
           pitch_factor: 0,
           volume_change_dB: 0,
-          emotion: 1
+          emotion: acgnEmotionCode(emotion)
         }),
         signal: AbortSignal.timeout(30000)
       });
@@ -771,7 +992,7 @@ async function createCharacter(body) {
 
   const [csp, image] = await Promise.allSettled([
     runCspSearch(name, work),
-    fetchMoegirlImages(name)
+    fetchMoegirlImages(name, work)
   ]);
 
   const cspValue = csp.status === "fulfilled" ? csp.value : { ok: false, warning: csp.reason?.message };
@@ -852,15 +1073,60 @@ function makeFallbackPortrait(name, accent) {
   return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 900'><defs><radialGradient id='halo' cx='.5' cy='.22' r='.5'><stop stop-color='${color}' stop-opacity='.95'/><stop offset='.62' stop-color='${color}' stop-opacity='.32'/><stop offset='1' stop-color='${color}' stop-opacity='0'/></radialGradient><linearGradient id='body' x1='0' y1='0' x2='1' y2='1'><stop stop-color='%23ffffff' stop-opacity='.24'/><stop offset='1' stop-color='${color}' stop-opacity='.5'/></linearGradient></defs><ellipse cx='320' cy='815' rx='158' ry='32' fill='%23000000' fill-opacity='.28'/><path d='M166 820c22-276 70-434 154-434s132 158 154 434z' fill='url(%23body)'/><path d='M218 820c14-178 50-278 102-278s88 100 102 278z' fill='%23ffffff' fill-opacity='.09'/><circle cx='320' cy='245' r='170' fill='url(%23halo)'/><path d='M236 260c0-73 45-122 84-122s84 49 84 122c0 68-39 118-84 118s-84-50-84-118z' fill='${color}' fill-opacity='.36'/><circle cx='270' cy='255' r='14' fill='white'/><circle cx='370' cy='255' r='14' fill='white'/><path d='M284 314c27 22 62 22 88 0' fill='none' stroke='white' stroke-width='14' stroke-linecap='round' opacity='.9'/><text x='320' y='294' text-anchor='middle' font-size='92' font-family='Arial, sans-serif' font-weight='800' fill='white'>${initial}</text></svg>`;
 }
 
-async function buildSystemPrompt(character) {
+function routePrompt(routeState) {
+  if (!routeState || typeof routeState !== "object") return "";
+  const route = String(routeState.route || "序章");
+  const affection = Number(routeState.affection) || 0;
+  const trust = Number(routeState.trust) || 0;
+  const intimacy = Number(routeState.intimacy) || 0;
+  const lastChoice = String(routeState.lastChoice || "").trim();
+  const lastTone = String(routeState.lastTone || "").trim();
+  const templateLabel = String(routeState.templateLabel || routeState.template || "").trim();
+  const templateHint = String(routeState.templateHint || "").trim();
+  const mood = String(routeState.mood || "").trim();
+  const stress = Number(routeState.stress) || 0;
+  const energy = Number(routeState.energy) || 0;
+  const relationship = [
+    affection >= 14 ? "对用户明显更有好感" : affection <= -6 ? "对用户有所疏离" : "好感仍在观察中",
+    trust >= 14 ? "愿意透露更真实的想法" : trust <= -6 ? "会更谨慎防备" : "信任还在建立",
+    intimacy >= 14 ? "距离感明显变近" : intimacy <= -4 ? "会保持礼貌距离" : "亲密度处于普通阶段"
+  ].join("；");
+  return [
+    "Galgame 路线隐藏状态：",
+    `当前路线：${route}`,
+    templateLabel ? `路线模板：${templateLabel}` : "",
+    templateHint ? `路线模板要求：${templateHint}` : "",
+    `关系倾向：${relationship}`,
+    mood ? `当前心情倾向：${mood}` : "",
+    `当前压力/精力倾向：${stress >= 70 ? "压力偏高" : stress <= 25 ? "压力较低" : "压力普通"}；${energy <= 25 ? "精力偏低" : energy >= 75 ? "精力充足" : "精力普通"}`,
+    lastChoice ? `用户刚才的路线选择：${lastChoice}` : "",
+    lastTone ? `选择倾向标签：${lastTone}` : "",
+    "写回复时要自然体现关系变化：路线越亲近，语气可以更放松、更愿意袒露；信任偏低时要更克制或试探。",
+    "不要直接说出好感度、信任度、亲密度、压力、精力或路线数值，也不要解释这套系统。"
+  ].filter(Boolean).join("\n");
+}
+
+function userAliasPrompt(userAlias = "") {
+  const alias = String(userAlias || "").trim() || "你";
+  return [
+    `用户希望被角色称呼为：${alias}`,
+    "回复时可以按角色性格和当前关系自然使用这个称呼；不要每句话都机械重复，也不要把称呼设置解释给用户。"
+  ].join("\n");
+}
+
+async function buildSystemPrompt(character, routeState = null, userAlias = "") {
   const skill = await readCharacterSkill(character);
   const base = character?.prompt || "你是一个有帮助的聊天助手。";
-  if (!skill) return base;
+  const route = routePrompt(routeState);
+  const alias = userAliasPrompt(userAlias || routeState?.userAlias || "");
+  if (!skill) return [base, alias, route].filter(Boolean).join("\n\n");
   return [
     "你正在为一个角色聊天应用输出回复。必须优先遵守下方角色 Skill，而不是只套用泛化动漫角色模板。",
     "输出要求：直接以角色第一人称回复；不要写“露出笑容”这类括号舞台说明；不要自称 AI；不要复述这些规则；不知道的原作信息要承认边界。",
     `当前角色：${character.name}`,
     character.work ? `作品：${character.work}` : "",
+    alias,
+    route,
     "应用内简短提示：",
     base,
     "本地角色 Skill：",
@@ -868,16 +1134,235 @@ async function buildSystemPrompt(character) {
   ].filter(Boolean).join("\n\n");
 }
 
-async function callChatAdapter({ provider, apiKey, baseUrl, model, messages, character }) {
-  const system = await buildSystemPrompt(character);
+const PET_ACTIONS = new Set(["idle", "touch", "feed", "play", "wave", "praise", "approach", "photo", "shy", "spin", "rest", "wake", "happy", "sad", "angry", "surprised"]);
+
+function normalizePetAction(action) {
+  const value = String(action || "").trim().toLowerCase();
+  return PET_ACTIONS.has(value) ? value : "";
+}
+
+function inferPetAction(text) {
+  const content = String(text || "").toLowerCase();
+  if (/摸|pat|touch|抱|hug|头/.test(content)) return "touch";
+  if (/吃|投喂|feed|饭|甜点|零食/.test(content)) return "feed";
+  if (/玩|play|游戏|一起/.test(content)) return "play";
+  if (/挥手|再见|hello|hi|你好|早|晚/.test(content)) return "wave";
+  if (/夸|称赞|做得好|praise/.test(content)) return "praise";
+  if (/靠近|过来|近一点|come closer|near/.test(content)) return "approach";
+  if (/拍照|合影|照片|photo|picture/.test(content)) return "photo";
+  if (/叫醒|醒醒|wake/.test(content)) return "wake";
+  if (/害羞|脸红|shy|喜欢|可爱/.test(content)) return "shy";
+  if (/休息|累|睡|困|rest/.test(content)) return "rest";
+  if (/开心|高兴|happy|喜欢/.test(content)) return "happy";
+  if (/难过|伤心|sad|哭/.test(content)) return "sad";
+  if (/生气|angry|讨厌/.test(content)) return "angry";
+  if (/惊|surprise|吓/.test(content)) return "surprised";
+  return "idle";
+}
+
+function withPetActionContract(system) {
+  return [
+    system,
+    "本次回复必须输出一个 JSON 对象，不要输出 Markdown，不要包裹代码块。",
+    "JSON 结构：{\"reply\":\"角色对用户说的话\",\"petAction\":\"idle|touch|feed|play|wave|praise|approach|photo|shy|spin|rest|wake|happy|sad|angry|surprised\"}",
+    "reply 仍然必须遵守角色口吻；petAction 只表达动作意图，不要写舞台描写。"
+  ].join("\n\n");
+}
+
+function parseChatEnvelope(raw) {
+  const text = String(raw || "").trim();
+  if (!text) return { reply: "", petAction: "" };
+  const candidate = text
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/i, "")
+    .trim();
+  try {
+    const parsed = JSON.parse(candidate);
+    if (parsed && typeof parsed === "object") {
+      return {
+        reply: String(parsed.reply || parsed.content || parsed.message || "").trim() || text,
+        petAction: normalizePetAction(parsed.petAction || parsed.action || parsed.motion)
+      };
+    }
+  } catch {}
+  const objectMatch = candidate.match(/\{[\s\S]*\}/);
+  if (objectMatch) {
+    try {
+      const parsed = JSON.parse(objectMatch[0]);
+      return {
+        reply: String(parsed.reply || parsed.content || parsed.message || "").trim() || text,
+        petAction: normalizePetAction(parsed.petAction || parsed.action || parsed.motion)
+      };
+    } catch {}
+  }
+  return { reply: text, petAction: "" };
+}
+
+function normalizeRouteEffects(effects = {}) {
+  return {
+    affection: Math.max(-3, Math.min(3, Number(effects.affection) || 0)),
+    trust: Math.max(-3, Math.min(3, Number(effects.trust) || 0)),
+    intimacy: Math.max(-3, Math.min(3, Number(effects.intimacy) || 0)),
+    tone: String(effects.tone || "").slice(0, 32)
+  };
+}
+
+function fallbackRouteChoices(reply, character) {
+  const name = character?.name || "角色";
+  const text = String(reply || "");
+  if (/日常|工作|家务|打扫|餐点|准备|忙|偷懒|期待|陪伴|主人|说话/.test(text)) {
+    return [
+      { text: `问问${name}今天最累的事`, effects: { affection: 0, trust: 2, intimacy: 0, tone: "daily-care" } },
+      { text: "夸她已经做得很好了", effects: { affection: 2, trust: 1, intimacy: 1, tone: "praise" } },
+      { text: "邀请她先休息一会儿", effects: { affection: 1, trust: 1, intimacy: 2, tone: "rest-together" } }
+    ];
+  }
+  if (/一起|陪|去|来|看看|约/.test(text)) {
+    return [
+      { text: `答应${name}，立刻一起出发`, effects: { affection: 2, trust: 1, intimacy: 2, tone: "accept" } },
+      { text: `故意逗${name}一下再答应`, effects: { affection: 2, trust: 0, intimacy: 1, tone: "tease" } },
+      { text: "先问清真正的理由", effects: { affection: 0, trust: 2, intimacy: -1, tone: "cautious" } }
+    ];
+  }
+  return [
+    { text: `继续追问${name}刚才的想法`, effects: { affection: 0, trust: 2, intimacy: 0, tone: "follow-up" } },
+    { text: "换一个轻松的话题缓和气氛", effects: { affection: 1, trust: 0, intimacy: 0, tone: "lighten" } },
+    { text: `选择沉默片刻，看${name}怎么回应`, effects: { affection: 0, trust: 0, intimacy: 1, tone: "silence" } }
+  ];
+}
+
+function sanitizeRouteChoices(rawChoices, reply, character) {
+  const source = Array.isArray(rawChoices) && rawChoices.length ? rawChoices : fallbackRouteChoices(reply, character);
+  return source
+    .map((choice) => ({
+      text: String(choice?.text || choice?.label || "").replace(/^【选择】/, "").trim(),
+      effects: normalizeRouteEffects(choice?.effects || choice)
+    }))
+    .filter((choice) => choice.text.length >= 2)
+    .slice(0, 3);
+}
+
+function parseRouteChoices(raw, reply, character) {
+  const text = String(raw || "").trim();
+  if (!text) return sanitizeRouteChoices([], reply, character);
+  const candidate = text.replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
+  try {
+    const parsed = JSON.parse(candidate);
+    return sanitizeRouteChoices(parsed.choices || parsed.routeChoices || parsed, reply, character);
+  } catch {}
+  const objectMatch = candidate.match(/\{[\s\S]*\}/);
+  if (objectMatch) {
+    try {
+      const parsed = JSON.parse(objectMatch[0]);
+      return sanitizeRouteChoices(parsed.choices || parsed.routeChoices || parsed, reply, character);
+    } catch {}
+  }
+  return sanitizeRouteChoices([], reply, character);
+}
+
+function stripVoiceStageDirections(text) {
+  return String(text || "")
+    .replace(/（[^（）]{1,140}）/g, "")
+    .replace(/\([^()]{1,140}\)/g, "")
+    .replace(/【[^【】]{1,80}】/g, "")
+    .replace(/［[^［］]{1,80}］/g, "")
+    .replace(/\[[^\[\]]{1,80}\]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function cleanVoiceScriptOutput(raw, fallback) {
+  const text = String(raw || "")
+    .replace(/^```(?:json|text)?/i, "")
+    .replace(/```$/i, "")
+    .replace(/^["“”「」『』]+|["“”「」『』]+$/g, "")
+    .replace(/^(日语|日文|配音稿|voice script|script)\s*[:：]/i, "")
+    .trim();
+  const cleaned = stripVoiceStageDirections(text)
+    .replace(/^["“”「」『』]+|["“”「」『』]+$/g, "")
+    .trim();
+  return cleaned || stripVoiceStageDirections(fallback);
+}
+
+async function callVoiceScriptAdapter({ provider, apiKey, baseUrl, model, character, routeState, text, emotion, targetLanguage, userAlias }) {
+  const source = stripVoiceStageDirections(text).slice(0, 700);
+  const alias = String(userAlias || routeState?.userAlias || "").trim();
+  if (!source) return "";
+  if (provider === "mock" || !provider) return source;
+  const prompt = [
+    "把下面这句中文角色台词改写成用于 TTS 的日语配音稿。",
+    "目标不是正式翻译，而是视觉小说/动漫里自然会说出口的台词。要符合角色人设、关系路线和当前情绪。",
+    "必须保留原台词的核心意思和信息量，不要擅自增加剧情，不要把语气翻得过度礼貌或新闻腔。",
+    "删除括号里的动作、表情、舞台说明。不要输出括号、旁白、解释、说话人名字、Markdown 或序号。",
+    "只输出一段日语台词。如果原文有轻微调侃、害羞、亲近感，日语也要保留这种二次元口语感。",
+    `目标语言：${targetLanguage || "JP"}`,
+    emotion ? `当前配音情绪：${emotion}` : "",
+    routeState ? `当前隐藏路线：${routeState.route || "序章"}，路线模板：${routeState.templateLabel || routeState.template || "默认"}，上次选择：${routeState.lastChoice || "无"}` : "",
+    alias ? `用户称呼：${alias}` : "",
+    `原文：${source}`
+  ].filter(Boolean).join("\n");
+  const raw = await callChatAdapter({
+    provider,
+    apiKey,
+    baseUrl,
+    model,
+    character,
+    routeState,
+    userAlias: alias,
+    enablePetAction: false,
+    messages: [{ role: "user", content: prompt }]
+  });
+  return cleanVoiceScriptOutput(raw, source).slice(0, 900);
+}
+
+async function callRouteChoiceAdapter({ provider, apiKey, baseUrl, model, character, routeState, reply, userAlias }) {
+  const alias = String(userAlias || routeState?.userAlias || "").trim();
+  if (provider === "mock" || !provider) return fallbackRouteChoices(reply, character);
+  const prompt = [
+    "你是 Galgame 攻略分支设计器。根据角色刚刚说的话，生成 3 个贴合语境的玩家回应选项。",
+    "必须贴合台词，不要只按关键词套模板。不要生成与当前情绪相反的道歉/冲突选项，除非角色真的生气或冲突。",
+    "先在心里判断当前是日常、邀请、脆弱、冲突、暧昧还是普通推进。三个选项必须围绕同一场景，不要突然跳到无关活动。",
+    "日常陪伴场景优先给关心、夸奖、陪伴、休息类选项；暧昧场景可以轻微靠近，但不要油腻；脆弱场景避免调侃过头。",
+    "选项要像玩家在攻略路线里会点的回应，短、具体、能改变关系，而不是泛泛的“继续聊”。",
+    "输出 JSON，不要 Markdown。格式：{\"choices\":[{\"text\":\"选项文本\",\"effects\":{\"affection\":0,\"trust\":0,\"intimacy\":0,\"tone\":\"标签\"}}]}",
+    "effects 每项只能是 -3 到 3。text 不要带数字序号，不要带【选择】。",
+    `角色：${character?.name || "角色"}`,
+    character?.work ? `作品：${character.work}` : "",
+    alias ? `用户称呼：${alias}` : "",
+    routeState ? `当前隐藏路线：${routeState.route || "序章"}，上次选择：${routeState.lastChoice || "无"}` : "",
+    routeState?.templateHint ? `路线模板要求：${routeState.templateHint}` : "",
+    `角色刚刚说：${String(reply || "").slice(0, 500)}`
+  ].filter(Boolean).join("\n");
+  const raw = await callChatAdapter({
+    provider,
+    apiKey,
+    baseUrl,
+    model,
+    character,
+    routeState,
+    userAlias: alias,
+    enablePetAction: false,
+    messages: [{ role: "user", content: prompt }]
+  });
+  return parseRouteChoices(raw, reply, character);
+}
+
+async function callChatAdapter({ provider, apiKey, baseUrl, model, messages, character, enablePetAction = false, routeState = null, userAlias = "" }) {
+  const system = enablePetAction
+    ? withPetActionContract(await buildSystemPrompt(character, routeState, userAlias))
+    : await buildSystemPrompt(character, routeState, userAlias);
   if (provider === "mock" || !provider) {
     const last = messages.at(-1)?.content || "";
-    return [
+    const route = routeState?.route ? `当前路线：${routeState.route}` : "当前路线：序章";
+    const reply = [
       "本地预览不会调用模型，也不会执行完整角色 Skill。",
       `当前已选角色：${character?.name || "角色"}`,
+      `用户称呼：${String(userAlias || routeState?.userAlias || "你").trim() || "你"}`,
+      route,
       `收到消息：“${last.slice(0, 80) || "我在。"}”`,
       "要检查真实角色效果，请切换到 OpenAI Compatible 或 Claude Messages API。"
     ].join("\n");
+    return enablePetAction ? JSON.stringify({ reply, petAction: inferPetAction(last) }) : reply;
   }
 
   if (provider === "openai-compatible") {
@@ -896,7 +1381,7 @@ async function callChatAdapter({ provider, apiKey, baseUrl, model, messages, cha
       signal: AbortSignal.timeout(45000)
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || `Chat API failed: ${response.status}`);
+    if (!response.ok) throw new Error(data.error?.message || data.error || data.message || `Chat API failed: ${response.status}`);
     return data.choices?.[0]?.message?.content || "";
   }
 
@@ -942,7 +1427,7 @@ async function callPetActionAdapter({ provider, apiKey, baseUrl, model, action, 
   });
 }
 
-async function callTtsAdapter({ provider, apiKey, baseUrl, text, voice, model, language, autoTranslate, deviceId }) {
+async function callTtsAdapter({ provider, apiKey, baseUrl, text, voice, model, language, autoTranslate, deviceId, emotion }) {
   const input = String(text || "").slice(0, 1200);
   if (!input.trim()) throw new Error("语音文本不能为空");
 
@@ -955,7 +1440,8 @@ async function callTtsAdapter({ provider, apiKey, baseUrl, text, voice, model, l
       baseUrl,
       voice,
       input,
-      language: language || model || "JP"
+      language: language || model || "JP",
+      emotion
     });
     return downloadAcgnAudio({ data, token, official: true });
   }
@@ -981,7 +1467,7 @@ async function callTtsAdapter({ provider, apiKey, baseUrl, text, voice, model, l
         volume_change_dB: 0,
         rate: "1.0",
         client_ip: "ACGN",
-        emotion: 1
+        emotion: acgnEmotionCode(emotion)
       }),
       signal: AbortSignal.timeout(60000)
     });
@@ -1005,12 +1491,7 @@ async function callTtsAdapter({ provider, apiKey, baseUrl, text, voice, model, l
       body: JSON.stringify({
         text: input,
         model_id: model || "eleven_multilingual_v2",
-        voice_settings: {
-          stability: 0.42,
-          similarity_boost: 0.82,
-          style: 0.45,
-          use_speaker_boost: true
-        }
+        voice_settings: elevenVoiceSettings(emotion)
       }),
       signal: AbortSignal.timeout(30000)
     });
@@ -1048,7 +1529,8 @@ async function callTtsAdapter({ provider, apiKey, baseUrl, text, voice, model, l
       instructions: [
         "Speak in Japanese with polished anime voice acting.",
         "Use a natural seiyuu-like performance without imitating any real person.",
-        "Keep the delivery emotionally expressive, clear, and characterful."
+        "Keep the delivery emotionally expressive, clear, and characterful.",
+        ttsEmotionInstruction(emotion)
       ].join(" "),
       response_format: "mp3"
     }),
@@ -1106,11 +1588,12 @@ async function routeApi(req, res, pathname) {
     try {
       const url = new URL(req.url || "/", `http://${req.headers.host}`);
       const name = String(url.searchParams.get("name") || "").trim();
+      const work = String(url.searchParams.get("work") || "").trim();
       if (!name) {
         json(res, 400, { error: "角色名不能为空" });
         return;
       }
-      json(res, 200, await fetchMoegirlImageCandidates(name));
+      json(res, 200, await fetchMoegirlImageCandidates(name, work));
     } catch (error) {
       json(res, 500, { error: error.message, candidates: [] });
     }
@@ -1122,10 +1605,68 @@ async function routeApi(req, res, pathname) {
     return;
   }
 
+  if (req.method === "POST" && pathname === "/api/backgrounds") {
+    try {
+      const body = await readBody(req);
+      const name = displayAssetName(body.name);
+      const url = await saveDataUrlAsset(body.dataUrl, `galgame-bg-${name}`);
+      if (!url) {
+        json(res, 400, { error: "没有收到可保存的背景图片" });
+        return;
+      }
+      json(res, 201, {
+        background: {
+          id: crypto.createHash("sha1").update(url).digest("hex").slice(0, 10),
+          name,
+          url,
+          createdAt: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      json(res, 400, { error: error.message });
+    }
+    return;
+  }
+
   if (req.method === "POST" && pathname === "/api/characters") {
     try {
       const character = await createCharacter(await readBody(req));
       json(res, 201, character);
+    } catch (error) {
+      json(res, 400, { error: error.message });
+    }
+    return;
+  }
+
+  const reprocessPetMatch = pathname.match(/^\/api\/characters\/([^/]+)\/reprocess-pet$/);
+  if (req.method === "POST" && reprocessPetMatch) {
+    try {
+      const id = decodeURIComponent(reprocessPetMatch[1]);
+      const characters = await readJson(CHARACTER_FILE, []);
+      const index = characters.findIndex((item) => item.id === id);
+      if (index < 0) {
+        json(res, 404, { error: "Character not found" });
+        return;
+      }
+      const character = characters[index];
+      const petLooksProcessed = /-cutout\.png(?:[?#].*)?$/i.test(character.petImageUrl || "");
+      const source = petLooksProcessed && character.imageUrl
+        ? character.imageUrl
+        : character.petImageUrl || character.imageUrl;
+      if (!source) {
+        json(res, 400, { error: "当前角色没有可处理的桌宠图" });
+        return;
+      }
+      const petImageUrl = await saveStandeeImageAsset(source, `${id}-pet-reprocess`);
+      const nextCharacter = {
+        ...character,
+        petImageUrl,
+        petStyle: character.petStyle === "live2d" ? "standee" : (character.petStyle || "standee"),
+        updatedAt: new Date().toISOString()
+      };
+      characters[index] = nextCharacter;
+      await writeJson(CHARACTER_FILE, characters);
+      json(res, 200, nextCharacter);
     } catch (error) {
       json(res, 400, { error: error.message });
     }
@@ -1160,13 +1701,26 @@ async function routeApi(req, res, pathname) {
       const body = await readBody(req);
       const characters = await readJson(CHARACTER_FILE, []);
       const character = characters.find((item) => item.id === body.characterId) || characters[0];
-      const reply = await callChatAdapter({ ...body, character });
+      const rawReply = await callChatAdapter({ ...body, character, enablePetAction: Boolean(body.enablePetAction) });
+      const parsed = body.enablePetAction ? parseChatEnvelope(rawReply) : { reply: rawReply, petAction: "" };
+      const reply = parsed.reply || rawReply;
+      const requestedAction = normalizePetAction(parsed.petAction);
+      const petAction = body.enablePetAction
+        ? (requestedAction && requestedAction !== "idle" ? requestedAction : inferPetAction(`${(body.messages || []).at(-1)?.content || ""}\n${reply}`))
+        : "";
+      const routeChoices = body.requestRouteChoices
+        ? await callRouteChoiceAdapter({ ...body, character, reply, routeState: body.routeState || null })
+        : [];
       const sessions = await readJson(SESSION_FILE, {});
       const sessionId = body.sessionId || `${character.id}-${Date.now()}`;
       const history = sessions[sessionId] || [];
-      sessions[sessionId] = [...history, ...(body.messages || []).slice(-1), { role: "assistant", content: reply, at: new Date().toISOString() }];
+      sessions[sessionId] = [
+        ...history,
+        ...(body.messages || []).slice(-1),
+        { role: "assistant", content: reply, petAction, routeState: body.routeState || null, routeChoices, at: new Date().toISOString() }
+      ];
       await writeJson(SESSION_FILE, sessions);
-      json(res, 200, { reply, sessionId });
+      json(res, 200, { reply, petAction, sessionId, routeState: body.routeState || null, routeChoices });
     } catch (error) {
       json(res, 500, { error: error.message });
     }
@@ -1180,6 +1734,19 @@ async function routeApi(req, res, pathname) {
       const character = characters.find((item) => item.id === body.characterId) || characters[0];
       const reply = await callPetActionAdapter({ ...body, character });
       json(res, 200, { reply });
+    } catch (error) {
+      json(res, 500, { error: error.message });
+    }
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/voice-script") {
+    try {
+      const body = await readBody(req);
+      const characters = await readJson(CHARACTER_FILE, []);
+      const character = characters.find((item) => item.id === body.characterId) || characters[0];
+      const text = await callVoiceScriptAdapter({ ...body, character, routeState: body.routeState || null });
+      json(res, 200, { text });
     } catch (error) {
       json(res, 500, { error: error.message });
     }

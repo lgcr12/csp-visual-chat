@@ -11,14 +11,27 @@ except Exception:
     cv2 = None
     np = None
 
-try:
-    from rembg import new_session, remove as rembg_remove
-except Exception:
-    new_session = None
-    rembg_remove = None
-
 REMBG_SESSIONS = {}
+new_session = None
+rembg_remove = None
+REMBG_IMPORT_ATTEMPTED = False
 SUBJECT_ALPHA_THRESHOLD = 72
+
+
+def ensure_rembg():
+    global new_session, rembg_remove, REMBG_IMPORT_ATTEMPTED
+    if REMBG_IMPORT_ATTEMPTED:
+        return rembg_remove is not None and new_session is not None
+    REMBG_IMPORT_ATTEMPTED = True
+    try:
+        from rembg import new_session as loaded_new_session, remove as loaded_remove
+    except Exception:
+        new_session = None
+        rembg_remove = None
+        return False
+    new_session = loaded_new_session
+    rembg_remove = loaded_remove
+    return True
 
 
 def is_border_background(pixel):
@@ -41,6 +54,106 @@ def crop_alpha(image, pad=8):
     right = min(w, bbox[2] + pad)
     bottom = min(h, bbox[3] + pad)
     return image.crop((left, top, right, bottom))
+
+
+def source_has_complex_background(image):
+    if cv2 is None or np is None:
+        return False
+    rgba = np.array(image.convert("RGBA"))
+    rgb = rgba[:, :, :3].astype("float32")
+    h, w = rgb.shape[:2]
+    edge = max(4, int(min(w, h) * 0.035))
+    edge_pixels = np.concatenate([
+        rgb[:edge, :, :].reshape(-1, 3),
+        rgb[h - edge:, :, :].reshape(-1, 3),
+        rgb[:, :edge, :].reshape(-1, 3),
+        rgb[:, w - edge:, :].reshape(-1, 3),
+    ], axis=0)
+    channel_std = float(edge_pixels.std(axis=0).mean())
+    color_span = float((edge_pixels.max(axis=0) - edge_pixels.min(axis=0)).mean())
+    neutral = np.abs(edge_pixels.max(axis=1) - edge_pixels.min(axis=1)) <= 36
+    bright = edge_pixels.min(axis=1) >= 226
+    dark = edge_pixels.max(axis=1) <= 36
+    simple_ratio = float(np.count_nonzero(neutral & (bright | dark))) / float(len(edge_pixels))
+    return simple_ratio < 0.58 and (channel_std > 24 or color_span > 96)
+
+
+def polish_cutout_edges(image):
+    if cv2 is None or np is None:
+        return crop_alpha(image)
+
+    rgba = np.array(image.convert("RGBA"))
+    alpha = rgba[:, :, 3]
+    if not np.any(alpha > 0):
+        return image
+
+    strong = (alpha > SUBJECT_ALPHA_THRESHOLD).astype("uint8")
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    strong = cv2.morphologyEx(strong, cv2.MORPH_CLOSE, kernel, iterations=1)
+    strong = cv2.morphologyEx(strong, cv2.MORPH_OPEN, kernel, iterations=1)
+    strong = fill_alpha_holes((strong * 255).astype("uint8"))
+    soft = cv2.GaussianBlur(strong, (3, 3), 0)
+    alpha = np.minimum(alpha, np.maximum(strong, soft)).astype("uint8")
+    alpha[alpha < 8] = 0
+
+    # Semi-transparent edge pixels often carry the old background color. Borrow nearby
+    # opaque foreground color so the standee no longer has dark/bright halos on stage.
+    edge_mask = ((alpha > 0) & (alpha < 245)).astype("uint8") * 255
+    if np.count_nonzero(edge_mask):
+        opaque = alpha >= 245
+        if np.count_nonzero(opaque) > 0:
+            rgb = rgba[:, :, :3].copy()
+            inpaint_mask = edge_mask
+            try:
+                rgb = cv2.inpaint(rgb, inpaint_mask, 3, cv2.INPAINT_TELEA)
+                blend = (edge_mask > 0)[:, :, None]
+                rgba[:, :, :3] = np.where(blend, rgb, rgba[:, :, :3])
+            except Exception:
+                pass
+
+    rgba[:, :, 3] = alpha
+    return crop_alpha(Image.fromarray(rgba, "RGBA"), pad=10)
+
+
+def resize_for_model(image, max_side=1150):
+    w, h = image.size
+    side = max(w, h)
+    if side <= max_side:
+        return image
+    scale = max_side / float(side)
+    return image.resize((max(1, int(w * scale)), max(1, int(h * scale))), Image.Resampling.LANCZOS)
+
+
+def pre_crop_complex_scene(image):
+    if cv2 is None or np is None:
+        return image
+    w, h = image.size
+    if w < 1200 or w < h * 1.25:
+        return image
+
+    rgba = np.array(image.convert("RGBA"))
+    rgb = rgba[:, :, :3]
+    hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
+    sat = hsv[:, :, 1].astype("float32")
+    val = hsv[:, :, 2].astype("float32")
+    # UI screenshots usually have a large illustrated character with higher
+    # saturation/edge density than the atmospheric background.
+    gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
+    edges = cv2.Canny(gray, 60, 140).astype("float32")
+    signal = sat * 0.65 + edges * 0.35 + np.maximum(0, val - 128) * 0.08
+    signal[:int(h * 0.08), :] *= 0.25
+    signal[int(h * 0.72):, :] *= 0.45
+    signal[:, :int(w * 0.18)] *= 0.55
+
+    cols = signal.sum(axis=0)
+    window = max(40, int(w * 0.18))
+    kernel = np.ones(window, dtype="float32") / float(window)
+    smooth = np.convolve(cols, kernel, mode="same")
+    center = int(np.argmax(smooth))
+    crop_w = int(min(w * 0.56, max(h * 0.52, w * 0.34)))
+    left = max(0, min(w - crop_w, center - crop_w // 2))
+    right = min(w, left + crop_w)
+    return image.crop((left, 0, right, h))
 
 
 def fill_alpha_holes(alpha):
@@ -482,25 +595,36 @@ def remove_grabcut_background(image):
     result = Image.fromarray(output, "RGBA")
     if not result.getchannel("A").getbbox():
         return None
-    return crop_alpha(keep_main_alpha_region(result), pad=10)
+    return polish_cutout_edges(keep_main_alpha_region(result))
 
 
-def remove_model_background(image, model_names=("isnet-anime", "u2net")):
-    if rembg_remove is None or new_session is None:
+def remove_model_background(image, model_names=("isnet-anime", "u2net"), use_alpha_matting=False):
+    if not ensure_rembg():
         return None
 
+    model_image = resize_for_model(image)
     for model_name in model_names:
         try:
             if model_name not in REMBG_SESSIONS:
                 REMBG_SESSIONS[model_name] = new_session(model_name)
-            output = rembg_remove(image, session=REMBG_SESSIONS[model_name])
+            try:
+                output = rembg_remove(
+                    model_image,
+                    session=REMBG_SESSIONS[model_name],
+                    alpha_matting=use_alpha_matting,
+                    alpha_matting_foreground_threshold=235,
+                    alpha_matting_background_threshold=18,
+                    alpha_matting_erode_size=8,
+                )
+            except TypeError:
+                output = rembg_remove(model_image, session=REMBG_SESSIONS[model_name])
         except Exception:
             continue
 
         result = output.convert("RGBA")
         if not result.getchannel("A").getbbox():
             continue
-        result = crop_alpha(keep_main_alpha_region(result), pad=10)
+        result = polish_cutout_edges(keep_main_alpha_region(result))
         if looks_like_useful_cutout(result):
             return result
 
@@ -578,6 +702,58 @@ def has_background_leak(image):
     return False
 
 
+def cutout_quality_score(image):
+    if image is None or not looks_like_useful_cutout(image):
+        return -10000
+    score = 0
+    if has_background_leak(image):
+        score -= 420
+
+    bbox = image.getchannel("A").getbbox()
+    if not bbox:
+        return -10000
+
+    w, h = image.size
+    bw = bbox[2] - bbox[0]
+    bh = bbox[3] - bbox[1]
+    ratio = alpha_area_ratio(image)
+    aspect = bh / float(max(1, bw))
+
+    score += min(240, bh / float(max(1, h)) * 210)
+    if 1.15 <= aspect <= 4.2:
+        score += 90
+    if 0.035 <= ratio <= 0.58:
+        score += 120
+    if ratio > 0.70:
+        score -= 220
+    if bw >= w * 0.94 and bh >= h * 0.90:
+        score -= 260
+
+    if cv2 is not None and np is not None:
+        alpha = np.array(image.getchannel("A"))
+        edge = max(3, int(min(w, h) * 0.018))
+        edge_visible = (
+            np.count_nonzero(alpha[:edge, :] > SUBJECT_ALPHA_THRESHOLD)
+            + np.count_nonzero(alpha[:, :edge] > SUBJECT_ALPHA_THRESHOLD)
+            + np.count_nonzero(alpha[:, w - edge:] > SUBJECT_ALPHA_THRESHOLD)
+        )
+        score -= min(180, edge_visible / float(max(1, edge * (w + h * 2))) * 260)
+        soft_ratio = float(np.count_nonzero((alpha > 0) & (alpha < 42))) / float(alpha.size)
+        if soft_ratio > 0.08:
+            score -= 80
+
+    return score
+
+
+def choose_best_cutout(candidates):
+    valid = [(cutout_quality_score(image), label, image) for label, image in candidates if image is not None]
+    valid = [item for item in valid if item[0] > -10000]
+    if not valid:
+        return None
+    valid.sort(key=lambda item: item[0], reverse=True)
+    return polish_cutout_edges(valid[0][2])
+
+
 def model_cutout_from_sheet_crop(original, border_output):
     if original.width < original.height * 1.04:
         return None
@@ -607,29 +783,37 @@ def model_cutout_from_sheet_crop(original, border_output):
     if not model_output or not looks_like_useful_cutout(model_output):
         return None
 
-    return crop_alpha(keep_main_alpha_region(model_output), pad=10)
+    return polish_cutout_edges(keep_main_alpha_region(model_output))
 
 
 def remove_background(src, dst):
     image = Image.open(src).convert("RGBA")
+    original_pixels = image.width * image.height
+    if original_pixels > 1_200_000 and image.width > image.height * 1.25:
+        alpha = image.getchannel("A")
+        if alpha.getextrema()[0] >= 250:
+            raise SystemExit("large opaque landscape image is not a safe standee source")
+    complex_background = source_has_complex_background(image)
+    if complex_background and original_pixels > 1_200_000 and image.width > image.height * 1.25:
+        raise SystemExit("complex full-scene screenshot is not a safe standee source")
+    if complex_background:
+        image = pre_crop_complex_scene(image)
     border_output = remove_border_background(image)
     sheet_model_output = model_cutout_from_sheet_crop(image, border_output)
-    if sheet_model_output is not None:
-        output = sheet_model_output
-    else:
-        border_is_useful = looks_like_useful_cutout(border_output) and not has_background_leak(border_output)
-        if border_is_useful:
-            output = border_output
-        else:
-            output = remove_model_background(image, model_names=("u2net", "u2net_human_seg", "isnet-anime"))
-            if output is not None and has_background_leak(output):
-                output = None
-            if output is None and border_is_useful:
-                output = border_output
+    model_order = ("isnet-anime",) if complex_background else ("isnet-anime", "u2net")
+    skip_model = complex_background and original_pixels > 900_000
+    model_output = None if skip_model else remove_model_background(image, model_names=model_order)
+    grabcut_output = remove_grabcut_background(image)
+    border_is_useful = looks_like_useful_cutout(border_output) and not has_background_leak(border_output)
+    candidates = [
+        ("sheet-model", sheet_model_output),
+        ("model", model_output),
+        ("grabcut", grabcut_output),
+        ("border", border_output if border_is_useful or not complex_background else None),
+    ]
+    output = choose_best_cutout(candidates)
     if output is None:
-        output = remove_grabcut_background(image)
-    if output is None:
-        output = border_output
+        output = polish_cutout_edges(border_output)
 
     output.save(dst)
 

@@ -479,8 +479,14 @@ def remove_border_background(image):
         ], axis=0)
         edge_color = np.median(edge_pixels, axis=0)
         edge_brightness = float(edge_color.max())
+        edge_colorfulness = float(edge_color.max() - edge_color.min())
         edge_distance = np.linalg.norm(rgb.astype("float32") - edge_color.astype("float32"), axis=2)
-        edge_threshold = 52 if edge_brightness >= 210 else 38 if edge_brightness <= 64 else 32
+        edge_threshold = (
+            78 if edge_colorfulness >= 58 and edge_brightness >= 120
+            else 52 if edge_brightness >= 210
+            else 38 if edge_brightness <= 64
+            else 32
+        )
         border_like = edge_distance <= edge_threshold
         background_candidate = (alpha == 0) | (neutral & (bright | dark)) | border_like
         count, labels, stats, _ = cv2.connectedComponentsWithStats(background_candidate.astype("uint8"), connectivity=8)
@@ -702,7 +708,51 @@ def has_background_leak(image):
     return False
 
 
-def cutout_quality_score(image):
+def sampled_background_residue_ratio(image, source_image):
+    if image is None or source_image is None or cv2 is None or np is None:
+        return 0.0
+    src = np.array(source_image.convert("RGBA"))[:, :, :3].astype("float32")
+    sh, sw = src.shape[:2]
+    edge = max(4, int(min(sw, sh) * 0.04))
+    edge_pixels = np.concatenate([
+        src[:edge, :, :].reshape(-1, 3),
+        src[sh - edge:, :, :].reshape(-1, 3),
+        src[:, :edge, :].reshape(-1, 3),
+        src[:, sw - edge:, :].reshape(-1, 3),
+    ], axis=0)
+    edge_color = np.median(edge_pixels, axis=0)
+    edge_colorfulness = float(edge_color.max() - edge_color.min())
+    if edge_colorfulness < 42:
+        return 0.0
+
+    rgba = np.array(image.convert("RGBA"))
+    rgb = rgba[:, :, :3].astype("float32")
+    alpha = rgba[:, :, 3]
+    visible = alpha > 36
+    if not np.any(visible):
+        return 1.0
+    distance = np.linalg.norm(rgb - edge_color, axis=2)
+    residue = visible & (distance < 82)
+    return float(np.count_nonzero(residue)) / float(np.count_nonzero(visible))
+
+
+def source_edge_colorfulness(source_image):
+    if source_image is None or cv2 is None or np is None:
+        return 0.0
+    src = np.array(source_image.convert("RGBA"))[:, :, :3].astype("float32")
+    h, w = src.shape[:2]
+    edge = max(4, int(min(w, h) * 0.04))
+    edge_pixels = np.concatenate([
+        src[:edge, :, :].reshape(-1, 3),
+        src[h - edge:, :, :].reshape(-1, 3),
+        src[:, :edge, :].reshape(-1, 3),
+        src[:, w - edge:, :].reshape(-1, 3),
+    ], axis=0)
+    edge_color = np.median(edge_pixels, axis=0)
+    return float(edge_color.max() - edge_color.min())
+
+
+def cutout_quality_score(image, source_image=None):
     if image is None or not looks_like_useful_cutout(image):
         return -10000
     score = 0
@@ -741,12 +791,26 @@ def cutout_quality_score(image):
         soft_ratio = float(np.count_nonzero((alpha > 0) & (alpha < 42))) / float(alpha.size)
         if soft_ratio > 0.08:
             score -= 80
+        residue_ratio = sampled_background_residue_ratio(image, source_image)
+        if residue_ratio > 0.08:
+            score -= min(520, residue_ratio * 1600)
 
     return score
 
 
-def choose_best_cutout(candidates):
-    valid = [(cutout_quality_score(image), label, image) for label, image in candidates if image is not None]
+def choose_best_cutout(candidates, source_image=None):
+    colorful_edge = source_edge_colorfulness(source_image) >= 58
+    valid = []
+    for label, image in candidates:
+        if image is None:
+            continue
+        score = cutout_quality_score(image, source_image)
+        residue = sampled_background_residue_ratio(image, source_image)
+        if colorful_edge and label == "grabcut" and residue < 0.24:
+            score += 140
+        if colorful_edge and label == "model" and residue > 0.10:
+            score -= 180
+        valid.append((score, label, image))
     valid = [item for item in valid if item[0] > -10000]
     if not valid:
         return None
@@ -811,7 +875,7 @@ def remove_background(src, dst):
         ("grabcut", grabcut_output),
         ("border", border_output if border_is_useful or not complex_background else None),
     ]
-    output = choose_best_cutout(candidates)
+    output = choose_best_cutout(candidates, image)
     if output is None:
         output = polish_cutout_edges(border_output)
 

@@ -1,5 +1,5 @@
 import http from "node:http";
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { readFile, writeFile, mkdir, readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -186,6 +186,31 @@ function uploadUrlToFile(url) {
   const match = String(url || "").match(/^\/assets\/uploads\/([^/]+)$/);
   if (!match) return null;
   return path.join(UPLOAD_DIR, decodeURIComponent(match[1]));
+}
+
+async function originalUploadUrlForCutout(url) {
+  const file = uploadUrlToFile(url);
+  if (!file || !/-cutout\.png(?:[?#].*)?$/i.test(String(url || ""))) return url;
+  const cutoutName = path.basename(file);
+  const exactStem = cutoutName.replace(/(?:-u2net)?-cutout\.png$/i, "");
+  const exactCandidates = [".png", ".jpg", ".jpeg", ".webp"].map((ext) => `${exactStem}${ext}`);
+  const files = await readdir(UPLOAD_DIR).catch(() => []);
+  const exact = exactCandidates.find((name) => files.includes(name));
+  if (exact) return `/assets/uploads/${encodeURIComponent(exact)}`;
+
+  const match = cutoutName.match(/^(.+?)-(\d+)(?:-[^-]+)?-cutout\.png$/i);
+  if (!match) return url;
+  const prefix = match[1];
+  const stamp = Number(match[2]);
+  const near = files
+    .map((name) => {
+      const item = name.match(new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}-(\\d+)\\.(?:png|jpe?g|webp)$`, "i"));
+      if (!item) return null;
+      return { name, distance: Math.abs(Number(item[1]) - stamp) };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.distance - b.distance)[0];
+  return near && near.distance <= 15000 ? `/assets/uploads/${encodeURIComponent(near.name)}` : url;
 }
 
 function displayAssetName(input) {
@@ -2273,9 +2298,10 @@ async function routeApi(req, res, pathname) {
       }
       const character = characters[index];
       const petLooksProcessed = /-cutout\.png(?:[?#].*)?$/i.test(character.petImageUrl || "");
-      const source = petLooksProcessed && character.imageUrl
+      const preferredSource = petLooksProcessed && character.imageUrl
         ? character.imageUrl
         : character.petImageUrl || character.imageUrl;
+      const source = await originalUploadUrlForCutout(preferredSource);
       if (!source) {
         json(res, 400, { error: "当前角色没有可处理的桌宠图" });
         return;

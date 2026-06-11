@@ -1,5 +1,1008 @@
 [
   {
+    "id": "character-洛琪希",
+    "name": "洛琪希",
+    "work": "",
+    "subtitle": "自定义作品 角色",
+    "avatarUrl": "/assets/uploads/character-avatar-1781105214825.jpg",
+    "imageUrl": "/assets/uploads/character-standee-1781105214876-cutout.png",
+    "petImageUrl": "/assets/uploads/character-pet-1781105237493-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#ff83ad",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E6%B4%9B%E7%90%AA%E5%B8%8C%C2%B7%E7%B1%B3%E6%A0%BC%E8%B7%AF%E8%BF%AA%E4%BA%9A",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：洛琪希\n资料页：洛琪希·米格路迪亚\n来源：https://zh.moegirl.org.cn/%E6%B4%9B%E7%90%AA%E5%B8%8C%C2%B7%E7%B1%B3%E6%A0%BC%E8%B7%AF%E8%BF%AA%E4%BA%9A",
+    "csp": {
+      "ok": true,
+      "query": "洛琪希",
+      "work": "",
+      "mode": "discover",
+      "retrieved_at": "2026-06-10",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-洛琪希·米格路迪亚",
+          "source": "moegirl",
+          "title": "洛琪希·米格路迪亚",
+          "resolved_title": "洛琪希·米格路迪亚",
+          "url": "https://zh.moegirl.org.cn/%E6%B4%9B%E7%90%AA%E5%B8%8C%C2%B7%E7%B1%B3%E6%A0%BC%E8%B7%AF%E8%BF%AA%E4%BA%9A",
+          "query": "洛琪希",
+          "work": "",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-10",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 洛琪希 --timeout 12",
+          "pageid": 444758,
+          "extract_chars": 71,
+          "content_hash": "sha256:9cdc6ef37960af8127321f1e6bd0990ca09f447bef15ae3161ebf5239d4d8521",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "voiceProvider": "acgn-ttson",
+    "voiceId": "51",
+    "voiceName": "Harper-女-日语",
+    "voiceLanguage": "JP",
+    "voiceAutoTranslate": true,
+    "voiceCandidates": [
+      {
+        "voice_id": 51,
+        "name": "Harper-女-日语",
+        "tags": [
+          "外语"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 503,
+        "name": "玛修·基列莱特 Fate系列 高橋李依 | マシュ・キリエライト Fateシリーズ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 802,
+        "name": "雷姆 Re:从零开始的异世界生活 水瀬いのり | レム Re:ゼロから始める異世界生活 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 893,
+        "name": "艾米莉亚 Re:从零开始的异世界生活 高桥李依 | エミリア Re:ゼロから始める異世界生活 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 935,
+        "name": "司马懿 Fate系列 水濑祈 | 司馬懿 Fateシリーズ 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 970,
+        "name": "惠惠 为美好的世界献上祝福！ 高桥李依 | めぐみん この素晴らしい世界に祝福を！ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 1168,
+        "name": "梅古米 我家的女神最可爱 高橋李依 | めぐみん ウチの姫さまがいちばんカワイイ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 1226,
+        "name": "胡桃 原神 高桥李依 | 胡桃 原神 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      }
+    ],
+    "createdAt": "2026-06-10T15:28:06.981Z"
+  },
+  {
+    "id": "character-蕾西亚",
+    "name": "蕾西亚",
+    "work": "",
+    "subtitle": "自定义作品 角色",
+    "avatarUrl": "/assets/uploads/character-avatar-1781104394652.png",
+    "imageUrl": "/assets/uploads/character-standee-1781104394698-cutout.png",
+    "petImageUrl": "/assets/uploads/character-pet-1781104401442-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#ff756b",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E8%95%BE%E8%A5%BF%E4%BA%9A",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：蕾西亚\n资料页：蕾西亚\n来源：https://zh.moegirl.org.cn/%E8%95%BE%E8%A5%BF%E4%BA%9A",
+    "csp": {
+      "ok": true,
+      "query": "蕾西亚",
+      "work": "",
+      "mode": "discover",
+      "retrieved_at": "2026-06-10",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-蕾西亚",
+          "source": "moegirl",
+          "title": "蕾西亚",
+          "resolved_title": "蕾西亚",
+          "url": "https://zh.moegirl.org.cn/%E8%95%BE%E8%A5%BF%E4%BA%9A",
+          "query": "蕾西亚",
+          "work": "",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-10",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 蕾西亚 --timeout 12",
+          "pageid": 321880,
+          "extract_chars": 46,
+          "content_hash": "sha256:ca5b04b8a98a61d7131b4231ce87b4c63bad5eae3409ccc76866ebda5885e753",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "voiceProvider": "acgn-ttson",
+    "voiceId": "51",
+    "voiceName": "Harper-女-日语",
+    "voiceLanguage": "JP",
+    "voiceAutoTranslate": true,
+    "voiceCandidates": [
+      {
+        "voice_id": 51,
+        "name": "Harper-女-日语",
+        "tags": [
+          "外语"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 503,
+        "name": "玛修·基列莱特 Fate系列 高橋李依 | マシュ・キリエライト Fateシリーズ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 802,
+        "name": "雷姆 Re:从零开始的异世界生活 水瀬いのり | レム Re:ゼロから始める異世界生活 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 893,
+        "name": "艾米莉亚 Re:从零开始的异世界生活 高桥李依 | エミリア Re:ゼロから始める異世界生活 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 935,
+        "name": "司马懿 Fate系列 水濑祈 | 司馬懿 Fateシリーズ 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 970,
+        "name": "惠惠 为美好的世界献上祝福！ 高桥李依 | めぐみん この素晴らしい世界に祝福を！ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 1168,
+        "name": "梅古米 我家的女神最可爱 高橋李依 | めぐみん ウチの姫さまがいちばんカワイイ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 1226,
+        "name": "胡桃 原神 高桥李依 | 胡桃 原神 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      }
+    ],
+    "createdAt": "2026-06-10T15:13:28.040Z"
+  },
+  {
+    "id": "character-斧乃木余接",
+    "name": "斧乃木余接",
+    "work": "",
+    "subtitle": "自定义作品 角色",
+    "avatarUrl": "/assets/uploads/character-avatar-1781090616473.jpg",
+    "imageUrl": "/assets/uploads/character-standee-280-full.webp",
+    "petImageUrl": "/assets/uploads/character-pet-1781090622573-fixed-full-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#c99cff",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E6%96%A7%E4%B9%83%E6%9C%A8%E4%BD%99%E6%8E%A5",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：斧乃木余接\n资料页：斧乃木余接\n来源：https://zh.moegirl.org.cn/%E6%96%A7%E4%B9%83%E6%9C%A8%E4%BD%99%E6%8E%A5",
+    "csp": {
+      "ok": true,
+      "query": "斧乃木余接",
+      "work": "",
+      "mode": "discover",
+      "retrieved_at": "2026-06-10",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-斧乃木余接",
+          "source": "moegirl",
+          "title": "斧乃木余接",
+          "resolved_title": "斧乃木余接",
+          "url": "https://zh.moegirl.org.cn/%E6%96%A7%E4%B9%83%E6%9C%A8%E4%BD%99%E6%8E%A5",
+          "query": "斧乃木余接",
+          "work": "",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-10",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 斧乃木余接 --timeout 12",
+          "pageid": 24333,
+          "extract_chars": 55,
+          "content_hash": "sha256:6a01407945d61b5bbae9072dc7b62b23187a5380526ea07861680f785e542b16",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "voiceProvider": "acgn-ttson",
+    "voiceId": "811",
+    "voiceName": "斧乃木余接 物语系列 早見沙織 | 斧乃木余接 物語シリーズ 早見沙織",
+    "voiceLanguage": "JP",
+    "voiceAutoTranslate": true,
+    "voiceCandidates": [
+      {
+        "voice_id": 811,
+        "name": "斧乃木余接 物语系列 早見沙織 | 斧乃木余接 物語シリーズ 早見沙織",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 164
+      },
+      {
+        "voice_id": 51,
+        "name": "Harper-女-日语",
+        "tags": [
+          "外语"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 503,
+        "name": "玛修·基列莱特 Fate系列 高橋李依 | マシュ・キリエライト Fateシリーズ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 802,
+        "name": "雷姆 Re:从零开始的异世界生活 水瀬いのり | レム Re:ゼロから始める異世界生活 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 893,
+        "name": "艾米莉亚 Re:从零开始的异世界生活 高桥李依 | エミリア Re:ゼロから始める異世界生活 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 935,
+        "name": "司马懿 Fate系列 水濑祈 | 司馬懿 Fateシリーズ 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 970,
+        "name": "惠惠 为美好的世界献上祝福！ 高桥李依 | めぐみん この素晴らしい世界に祝福を！ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 1168,
+        "name": "梅古米 我家的女神最可爱 高橋李依 | めぐみん ウチの姫さまがいちばんカワイイ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      }
+    ],
+    "createdAt": "2026-06-10T11:23:48.158Z"
+  },
+  {
+    "id": "character-忍野忍",
+    "name": "忍野忍",
+    "work": "",
+    "subtitle": "自定义作品 角色",
+    "avatarUrl": "/assets/uploads/character-avatar-1781089485034.jpg",
+    "imageUrl": "/assets/uploads/character-standee-1781089485157-cutout.png",
+    "petImageUrl": "/assets/uploads/character-pet-1781089948666-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#7aa8ff",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E5%BF%8D%E9%87%8E%E5%BF%8D",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：忍野忍\n资料页：忍野忍\n来源：https://zh.moegirl.org.cn/%E5%BF%8D%E9%87%8E%E5%BF%8D",
+    "csp": {
+      "ok": true,
+      "query": "忍野忍",
+      "work": "",
+      "mode": "discover",
+      "retrieved_at": "2026-06-10",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-忍野忍",
+          "source": "moegirl",
+          "title": "忍野忍",
+          "resolved_title": "忍野忍",
+          "url": "https://zh.moegirl.org.cn/%E5%BF%8D%E9%87%8E%E5%BF%8D",
+          "query": "忍野忍",
+          "work": "",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-10",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 忍野忍 --timeout 12",
+          "pageid": 11225,
+          "extract_chars": 230,
+          "content_hash": "sha256:1e04b5bcc820dbc42e34410f0a7fc92bba7e8e6d14a6fdbb73397ddfa4b8d873",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "voiceProvider": "acgn-ttson",
+    "voiceId": "582",
+    "voiceName": "忍野忍 物语系列 坂本真綾 | 忍野忍 物語シリーズ 坂本真綾",
+    "voiceLanguage": "JP",
+    "voiceAutoTranslate": true,
+    "voiceCandidates": [
+      {
+        "voice_id": 582,
+        "name": "忍野忍 物语系列 坂本真綾 | 忍野忍 物語シリーズ 坂本真綾",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 164
+      },
+      {
+        "voice_id": 737,
+        "name": "忍野忍 物语系列 櫻井孝宏 | 忍野メメ 物語シリーズ 櫻井孝宏",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 164
+      },
+      {
+        "voice_id": 1040,
+        "name": "忍野忍 魔法少女小圆 坂本真綾 | 忍野忍 魔法少女まどか☆マギカ 坂本真綾",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 164
+      },
+      {
+        "voice_id": 4947,
+        "name": "物语_忍野忍",
+        "tags": [
+          "男生"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 164
+      },
+      {
+        "voice_id": 51,
+        "name": "Harper-女-日语",
+        "tags": [
+          "外语"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 503,
+        "name": "玛修·基列莱特 Fate系列 高橋李依 | マシュ・キリエライト Fateシリーズ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 802,
+        "name": "雷姆 Re:从零开始的异世界生活 水瀬いのり | レム Re:ゼロから始める異世界生活 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 893,
+        "name": "艾米莉亚 Re:从零开始的异世界生活 高桥李依 | エミリア Re:ゼロから始める異世界生活 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      }
+    ],
+    "createdAt": "2026-06-10T11:12:36.810Z"
+  },
+  {
+    "id": "character-羽川翼",
+    "name": "羽川翼",
+    "work": "",
+    "subtitle": "自定义作品 角色",
+    "avatarUrl": "/assets/uploads/character-avatar-1781086997539.png",
+    "imageUrl": "/assets/uploads/character-standee-1781086998414-cutout.png",
+    "petImageUrl": "/assets/uploads/character-pet-1781087002827-birefnet-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#c99cff",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E7%BE%BD%E5%B7%9D%E7%BF%BC",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：羽川翼\n资料页：羽川翼\n来源：https://zh.moegirl.org.cn/%E7%BE%BD%E5%B7%9D%E7%BF%BC",
+    "csp": {
+      "ok": true,
+      "query": "羽川翼",
+      "work": "",
+      "mode": "discover",
+      "retrieved_at": "2026-06-10",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-羽川翼",
+          "source": "moegirl",
+          "title": "羽川翼",
+          "resolved_title": "羽川翼",
+          "url": "https://zh.moegirl.org.cn/%E7%BE%BD%E5%B7%9D%E7%BF%BC",
+          "query": "羽川翼",
+          "work": "",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-10",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 羽川翼 --timeout 12",
+          "pageid": 29698,
+          "extract_chars": 47,
+          "content_hash": "sha256:67629aa3e44744c97f34702aa850e7447e1614e05a165e22615f01ca47a261b6",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "voiceProvider": "acgn-ttson",
+    "voiceId": "566",
+    "voiceName": "羽川翼 物语系列 堀江由衣 | 羽川翼 物語シリーズ 堀江由衣",
+    "voiceLanguage": "JP",
+    "voiceAutoTranslate": true,
+    "voiceCandidates": [
+      {
+        "voice_id": 566,
+        "name": "羽川翼 物语系列 堀江由衣 | 羽川翼 物語シリーズ 堀江由衣",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 164
+      },
+      {
+        "voice_id": 1148,
+        "name": "羽川翼 魔法少女小圆 堀江由衣 | 羽川翼 魔法少女まどか☆マギカ 堀江由衣",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 164
+      },
+      {
+        "voice_id": 51,
+        "name": "Harper-女-日语",
+        "tags": [
+          "外语"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 503,
+        "name": "玛修·基列莱特 Fate系列 高橋李依 | マシュ・キリエライト Fateシリーズ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 802,
+        "name": "雷姆 Re:从零开始的异世界生活 水瀬いのり | レム Re:ゼロから始める異世界生活 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 893,
+        "name": "艾米莉亚 Re:从零开始的异世界生活 高桥李依 | エミリア Re:ゼロから始める異世界生活 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 935,
+        "name": "司马懿 Fate系列 水濑祈 | 司馬懿 Fateシリーズ 水瀬いのり",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      },
+      {
+        "voice_id": 970,
+        "name": "惠惠 为美好的世界献上祝福！ 高桥李依 | めぐみん この素晴らしい世界に祝福を！ 高橋李依",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 10
+      }
+    ],
+    "createdAt": "2026-06-10T10:23:28.897Z"
+  },
+  {
+    "id": "物语系列-战场原黑仪",
+    "name": "战场原黑仪",
+    "work": "物语系列",
+    "subtitle": "物语系列 角色",
+    "avatarUrl": "/assets/uploads/avatar-1781064352207.jpg",
+    "imageUrl": "/assets/uploads/standee-1781064352292-cutout.png",
+    "petImageUrl": "/assets/uploads/pet-1781064355381-v2-cutout.png",
+    "petStyle": "standee",
+    "live2dModelUrl": "",
+    "accent": "#7aa8ff",
+    "tags": [
+      "CSP",
+      "新建角色"
+    ],
+    "sourceUrl": "https://zh.moegirl.org.cn/%E6%88%98%E5%9C%BA%E5%8E%9F%E9%BB%91%E4%BB%AA",
+    "prompt": "你是一个由 CSP 角色技能蒸馏器生成的角色聊天人格。\n原则：行为大于形容词，证据大于印象，语境大于台词。不要编造原作中没有明确依据的事件。\n聊天时保持角色的表达质感，但不要输出分析报告。遇到资料不足时自然承认边界。\n角色：战场原黑仪\n作品：物语系列\n资料页：战场原黑仪\n来源：https://zh.moegirl.org.cn/%E6%88%98%E5%9C%BA%E5%8E%9F%E9%BB%91%E4%BB%AA",
+    "csp": {
+      "ok": true,
+      "query": "战场原黑仪",
+      "work": "物语系列",
+      "mode": "discover",
+      "retrieved_at": "2026-06-10",
+      "cross_media_hint": false,
+      "sources_requested": [
+        "moegirl"
+      ],
+      "records": [
+        {
+          "id": "moegirl-战场原黑仪",
+          "source": "moegirl",
+          "title": "战场原黑仪",
+          "resolved_title": "战场原黑仪",
+          "url": "https://zh.moegirl.org.cn/%E6%88%98%E5%9C%BA%E5%8E%9F%E9%BB%91%E4%BB%AA",
+          "query": "战场原黑仪",
+          "work": "物语系列",
+          "source_tier": "high",
+          "officiality": "secondary",
+          "media_type": "wiki",
+          "language": "zh",
+          "retrieved_at": "2026-06-10",
+          "status": "ok",
+          "warnings": [],
+          "attempted_modes": [
+            "intro"
+          ],
+          "retrieved_by": "C:\\Users\\ZhuanZ\\miniconda3\\python.exe C:\\Users\\ZhuanZ\\.codex\\skills\\character-skill-producer\\scripts\\moegirl_api.py 战场原黑仪 --timeout 12",
+          "pageid": 9996,
+          "extract_chars": 134,
+          "content_hash": "sha256:d8148b497ac0c3f2da1baef5eb6b06f06179be5119f7c771b19371b1a5548711",
+          "error": null
+        }
+      ],
+      "warnings": [],
+      "stderr": ""
+    },
+    "voiceProvider": "acgn-ttson",
+    "voiceId": "1142",
+    "voiceName": "战场原黑仪 魔法少女小圆 斎藤千和 | 戦場ヶ原ひたぎ 魔法少女まどか☆マギカ 斎藤千和",
+    "voiceLanguage": "JP",
+    "voiceAutoTranslate": true,
+    "voiceCandidates": [
+      {
+        "voice_id": 1142,
+        "name": "战场原黑仪 魔法少女小圆 斎藤千和 | 戦場ヶ原ひたぎ 魔法少女まどか☆マギカ 斎藤千和",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 164
+      },
+      {
+        "voice_id": 532,
+        "name": "战场原黑乃 物语系列 斋藤千和 | 戦場ヶ原ひたぎ 物語シリーズ 斎藤千和",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 69
+      },
+      {
+        "voice_id": 566,
+        "name": "羽川翼 物语系列 堀江由衣 | 羽川翼 物語シリーズ 堀江由衣",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 69
+      },
+      {
+        "voice_id": 582,
+        "name": "忍野忍 物语系列 坂本真綾 | 忍野忍 物語シリーズ 坂本真綾",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 69
+      },
+      {
+        "voice_id": 634,
+        "name": "阿良良木月火 物语系列 井口裕香 | 阿良々木月火 物語シリーズ 井口裕香",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 69
+      },
+      {
+        "voice_id": 655,
+        "name": "布莱克·哈卡 物语系列 堀江由衣 | ブラック羽川 物語シリーズ 堀江由衣",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 69
+      },
+      {
+        "voice_id": 675,
+        "name": "阿良良木火怜 物语系列 喜多村英梨 | 阿良々木火憐 物語シリーズ 喜多村英梨",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 69
+      },
+      {
+        "voice_id": 682,
+        "name": "八九寺真宵 物语系列 加藤英美里 | 八九寺真宵 物語シリーズ 加藤英美里",
+        "tags": [
+          "日漫1000+角色",
+          "原神",
+          "日漫1000+角色"
+        ],
+        "language": "zh-CN",
+        "gender": "female",
+        "max_length": 1000,
+        "score": 69
+      }
+    ],
+    "createdAt": "2026-06-10T04:05:58.278Z",
+    "updatedAt": "2026-06-10T10:04:42.222Z"
+  },
+  {
     "id": "命运石之门-牧濑红莉栖",
     "name": "牧濑红莉栖",
     "work": "命运石之门",

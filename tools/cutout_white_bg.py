@@ -1,6 +1,9 @@
 from collections import deque
 from pathlib import Path
+import shutil
+import subprocess
 import sys
+import tempfile
 
 from PIL import Image
 
@@ -16,6 +19,50 @@ new_session = None
 rembg_remove = None
 REMBG_IMPORT_ATTEMPTED = False
 SUBJECT_ALPHA_THRESHOLD = 72
+LOCAL_REMBG_MODEL_DIR = Path.home() / ".u2net"
+
+
+def overlap_length(a_start, a_size, b_start, b_size):
+    return max(0, min(a_start + a_size, b_start + b_size) - max(a_start, b_start))
+
+
+def component_belongs_to_subject(x, y, bw, bh, area, main_x, main_y, main_w, main_h, main_area, image_w, image_h):
+    gap_x = max(0, max(main_x - (x + bw), x - (main_x + main_w)))
+    gap_y = max(0, max(main_y - (y + bh), y - (main_y + main_h)))
+    overlap_x = overlap_length(x, bw, main_x, main_w)
+    overlap_y = overlap_length(y, bh, main_y, main_h)
+    center_x = x + bw * 0.5
+    main_center_x = main_x + main_w * 0.5
+    center_y = y + bh * 0.5
+    main_center_y = main_y + main_h * 0.5
+
+    close = gap_x <= max(18, image_w * 0.11) and gap_y <= max(18, image_h * 0.11)
+    vertical_chain = (
+        gap_y <= max(24, image_h * 0.14)
+        and overlap_x >= min(bw, main_w) * 0.16
+    )
+    horizontal_chain = (
+        gap_x <= max(20, image_w * 0.10)
+        and overlap_y >= min(bh, main_h) * 0.14
+    )
+    aligned_center = abs(center_x - main_center_x) <= max(main_w, bw) * 0.72
+    area_ok = area <= main_area * 1.05 or (close and aligned_center)
+    plausible_part = (
+        area >= max(12, image_w * image_h * 0.00008)
+        and area_ok
+        and (close or vertical_chain or horizontal_chain)
+        and (aligned_center or overlap_x > 0 or overlap_y > 0)
+    )
+
+    # Avoid swallowing a second nearby full-body character when a source image contains a group.
+    separate_standee = (
+        bh / float(max(1, bw)) >= 1.45
+        and bh >= main_h * 0.42
+        and area >= main_area * 0.28
+        and abs(center_y - main_center_y) <= max(main_h, bh) * 0.38
+        and gap_x > max(10, image_w * 0.035)
+    )
+    return plausible_part and not separate_standee
 
 
 def ensure_rembg():
@@ -31,6 +78,14 @@ def ensure_rembg():
         return False
     new_session = loaded_new_session
     rembg_remove = loaded_remove
+    return True
+
+
+def rembg_model_is_available(model_name):
+    # BiRefNet is excellent for messy illustration backgrounds, but it is large.
+    # Only use it when the model has already been cached locally.
+    if model_name == "birefnet-general":
+        return (LOCAL_REMBG_MODEL_DIR / "birefnet-general.onnx").exists()
     return True
 
 
@@ -288,19 +343,7 @@ def selected_subject_labels(alpha):
         bw = stats[label, cv2.CC_STAT_WIDTH]
         bh = stats[label, cv2.CC_STAT_HEIGHT]
         area = stats[label, cv2.CC_STAT_AREA]
-        gap_x = max(0, max(main_x - (x + bw), x - (main_x + main_w)))
-        gap_y = max(0, max(main_y - (y + bh), y - (main_y + main_h)))
-        close = gap_x <= max(10, w * 0.035) and gap_y <= max(10, h * 0.035)
-        accessory = area <= main_area * 0.28 and (bh <= main_h * 0.72 or bw <= main_w * 0.72)
-        separate_standee = (
-            bh / float(max(1, bw)) >= 1.4
-            and bh >= main_h * 0.16
-            and area >= main_area * 0.024
-            and x >= main_x + main_w * 0.52
-        )
-        if separate_standee:
-            continue
-        if close and accessory:
+        if component_belongs_to_subject(x, y, bw, bh, area, main_x, main_y, main_w, main_h, main_area, w, h):
             keep.add(label)
 
     return labels, keep
@@ -450,11 +493,7 @@ def prune_satellite_components(image):
         bw = stats[label, cv2.CC_STAT_WIDTH]
         bh = stats[label, cv2.CC_STAT_HEIGHT]
         area = stats[label, cv2.CC_STAT_AREA]
-        gap_x = max(0, max(main_x - (x + bw), x - (main_x + main_w)))
-        gap_y = max(0, max(main_y - (y + bh), y - (main_y + main_h)))
-        close = gap_x <= max(8, w * 0.024) and gap_y <= max(8, h * 0.024)
-        tiny = area <= main_area * 0.018 or (bw <= main_w * 0.18 and bh <= main_h * 0.18)
-        if close and tiny:
+        if component_belongs_to_subject(x, y, bw, bh, area, main_x, main_y, main_w, main_h, main_area, w, h):
             keep |= labels == label
 
     rgba[:, :, 3] = np.where(keep, alpha, 0).astype("uint8")
@@ -610,6 +649,8 @@ def remove_model_background(image, model_names=("isnet-anime", "u2net"), use_alp
 
     model_image = resize_for_model(image)
     for model_name in model_names:
+        if not rembg_model_is_available(model_name):
+            continue
         try:
             if model_name not in REMBG_SESSIONS:
                 REMBG_SESSIONS[model_name] = new_session(model_name)
@@ -635,6 +676,30 @@ def remove_model_background(image, model_names=("isnet-anime", "u2net"), use_alp
             return result
 
     return None
+
+
+def remove_anime_segmentation_background(src):
+    """Use SkyTNT anime-segmentation via rm_anime_bg when available locally."""
+    executable = shutil.which("rm_anime_bg")
+    if not executable:
+        return None
+    try:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            subprocess.run(
+                [executable, "--cpu", "-o", temp_dir, str(src)],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=90,
+            )
+            outputs = sorted(Path(temp_dir).glob("*.png"))
+            if not outputs:
+                return None
+            result = Image.open(outputs[0]).convert("RGBA")
+            result = polish_cutout_edges(keep_main_alpha_region(result))
+            return result if looks_like_useful_cutout(result) else None
+    except Exception:
+        return None
 
 
 def alpha_area_ratio(image):
@@ -800,15 +865,35 @@ def cutout_quality_score(image, source_image=None):
 
 def choose_best_cutout(candidates, source_image=None):
     colorful_edge = source_edge_colorfulness(source_image) >= 58
+    complex_source = source_has_complex_background(source_image) if source_image is not None else False
+    source_w, source_h = source_image.size if source_image is not None else (0, 0)
+    portrait_source = source_h > source_w * 1.22 if source_image is not None else False
     valid = []
     for label, image in candidates:
         if image is None:
             continue
         score = cutout_quality_score(image, source_image)
         residue = sampled_background_residue_ratio(image, source_image)
-        if colorful_edge and label == "grabcut" and residue < 0.24:
+        if label == "anime-seg":
+            score += 420
+        if portrait_source:
+            bbox = image.getchannel("A").getbbox()
+            if bbox:
+                alpha_height = bbox[3] - bbox[1]
+                output_height_ratio = image.height / float(max(1, source_h))
+                alpha_height_ratio = alpha_height / float(max(1, source_h))
+                reaches_lower_body = bbox[3] >= image.height * 0.78 or output_height_ratio >= 0.86
+                if output_height_ratio >= 0.82 and alpha_height_ratio >= 0.66 and reaches_lower_body:
+                    score += 560
+                elif output_height_ratio < 0.72 or alpha_height_ratio < 0.55:
+                    score -= 420
+        if complex_source and label == "model" and not has_background_leak(image):
+            score += 260
+        if complex_source and label in {"border", "grabcut"} and residue > 0.36:
+            score -= 180
+        if not complex_source and colorful_edge and label == "grabcut" and residue < 0.24:
             score += 140
-        if colorful_edge and label == "model" and residue > 0.10:
+        if not complex_source and colorful_edge and label == "model" and residue > 0.10:
             score -= 180
         valid.append((score, label, image))
     valid = [item for item in valid if item[0] > -10000]
@@ -862,14 +947,16 @@ def remove_background(src, dst):
         raise SystemExit("complex full-scene screenshot is not a safe standee source")
     if complex_background:
         image = pre_crop_complex_scene(image)
+    anime_seg_output = remove_anime_segmentation_background(src)
     border_output = remove_border_background(image)
     sheet_model_output = model_cutout_from_sheet_crop(image, border_output)
-    model_order = ("isnet-anime",) if complex_background else ("isnet-anime", "u2net")
+    model_order = ("birefnet-general", "isnet-anime") if complex_background else ("isnet-anime", "u2net")
     skip_model = complex_background and original_pixels > 900_000
     model_output = None if skip_model else remove_model_background(image, model_names=model_order)
     grabcut_output = remove_grabcut_background(image)
     border_is_useful = looks_like_useful_cutout(border_output) and not has_background_leak(border_output)
     candidates = [
+        ("anime-seg", anime_seg_output),
         ("sheet-model", sheet_model_output),
         ("model", model_output),
         ("grabcut", grabcut_output),

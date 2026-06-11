@@ -182,6 +182,14 @@ async function saveRemoteImageAsset(url, prefix) {
   return `/assets/uploads/${filename}`;
 }
 
+async function saveImageAsset(source, prefix) {
+  const text = String(source || "");
+  if (!text) return "";
+  return text.startsWith("data:")
+    ? saveDataUrlAsset(text, prefix)
+    : saveRemoteImageAsset(text, prefix);
+}
+
 function uploadUrlToFile(url) {
   const match = String(url || "").match(/^\/assets\/uploads\/([^/]+)$/);
   if (!match) return null;
@@ -233,7 +241,7 @@ function runCutout(inputFile, outputFile) {
     const timer = setTimeout(() => {
       child.kill();
       resolve(false);
-    }, 25000);
+    }, 60000);
     child.on("close", (code) => {
       clearTimeout(timer);
       resolve(code === 0 && existsSync(outputFile));
@@ -257,9 +265,7 @@ async function cutoutUploadedImage(url, prefix) {
 async function saveStandeeImageAsset(source, prefix) {
   const text = String(source || "");
   if (!text) return "";
-  const saved = text.startsWith("data:")
-    ? await saveDataUrlAsset(text, prefix)
-    : await saveRemoteImageAsset(text, prefix);
+  const saved = await saveImageAsset(text, prefix);
   return cutoutUploadedImage(saved, prefix);
 }
 
@@ -1490,7 +1496,7 @@ async function createCharacter(body) {
     : makeFallbackPortrait(name, body.accent);
   const cardSourceUrl = body.imageUrl || uploadedImageUrl || fetchedFullBodyUrl || "";
   const cardImageUrl = cardSourceUrl
-    ? await saveStandeeImageAsset(cardSourceUrl, `${id}-standee`)
+    ? await saveImageAsset(cardSourceUrl, `${id}-standee`)
     : makeFallbackPortrait(name, body.accent);
   const petSourceUrl = makePet
     ? (petStyle === "chibi"
@@ -1728,6 +1734,8 @@ function normalizeRouteEffects(effects = {}) {
     affection: Math.max(-3, Math.min(3, Number(effects.affection) || 0)),
     trust: Math.max(-3, Math.min(3, Number(effects.trust) || 0)),
     intimacy: Math.max(-3, Math.min(3, Number(effects.intimacy) || 0)),
+    tension: Math.max(-3, Math.min(3, Number(effects.tension) || 0)),
+    honesty: Math.max(-3, Math.min(3, Number(effects.honesty) || 0)),
     tone: String(effects.tone || "").slice(0, 32)
   };
 }
@@ -1738,8 +1746,8 @@ function replyChoiceAnchors(reply = "") {
   const add = (key, label) => {
     if (!anchors.some((item) => item.key === key)) anchors.push({ key, label });
   };
-  if (/咖啡馆|咖啡店|咖啡|坐下|点杯/.test(text)) add("cafe", "咖啡馆");
-  if (/近路|路上|顺路|出发|过去|穿过|跟我来|带你/.test(text)) add("route", "路上");
+  if (/咖啡馆|咖啡厅|咖啡店|店里|店外|咖啡|拿铁|点单|点杯|座位|坐下/.test(text)) add("cafe", "咖啡馆");
+  if (/近路|路上|顺路|出发|过去|穿过|跟我来|带你|走吧|换个地方|到那边|去外面/.test(text)) add("route", "路上");
   if (/责任|负责|追责|甩锅|怪我|怪你/.test(text)) add("responsibility", "责任");
   if (/理论|模型|方程|假设|建模/.test(text)) add("model", "理论模型");
   if (/异常点|偏差|误差|变量|观测|记录|数据/.test(text)) add("anomaly", "异常点");
@@ -1748,7 +1756,34 @@ function replyChoiceAnchors(reply = "") {
   if (/害怕|担心|不安|难过|孤独|寂寞|哭|迷茫/.test(text)) add("vulnerable", "不安");
   if (/生气|讨厌|别说|别碰|烦死|指着|质问/.test(text)) add("conflict", "冲突");
   if (/一起|陪|跟我|留下|约|邀请/.test(text)) add("invitation", "邀请");
+  replyFocusPhrases(text).forEach((label) => add("focus", label));
   return anchors;
+}
+
+function replyFocusPhrasesV2(reply = "") {
+  const text = String(reply || "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/[【［\[][^\]］】]{1,80}[\]］】]/g, " ")
+    .replace(/[“”"「」『』]/g, " ");
+  const quoted = [...String(reply || "").matchAll(/[“"「『]([^”"」』]{2,18})[”"」』]/g)]
+    .map((match) => match[1]);
+  const keywordMatches = text.match(/咖啡馆|咖啡厅|咖啡店|图书馆|教室|天台|神社|海边|车站|房间|街道|学校|实验室|店里|路上|座位|点单|拿铁|书|伞|手机|消息|照片|钥匙|乐队|练习|舞台|歌词|吉他|时间机器|理论模型|异常点|实验数据|责任|邀请|约定|沉默|不安|担心|生气|难过/g) || [];
+  const generic = new Set(["角色", "玩家", "现在", "这里", "那里", "这个", "那个", "什么", "怎么", "为什么", "但是", "然后", "因为", "所以", "如果", "只是", "已经", "不会", "不要", "可以", "可能", "还是", "觉得", "继续", "一下", "一点", "真的", "刚才", "时候", "事情", "问题", "想法"]);
+  const phraseMatches = (text.match(/[\u4e00-\u9fa5A-Za-z0-9·]{2,12}/g) || [])
+    .filter((item) => !generic.has(item))
+    .filter((item) => !/^(我|你|她|他|它|我们|你们|他们|不是|没有|就是|可是|不过)/.test(item))
+    .filter((item) => /咖啡|店|路|实验|理论|模型|异常|数据|责任|邀请|约|一起|坐|去|来|等|问|说|看|拿|放|听|怕|担心|难过|生气|沉默|书|伞|手机|消息|舞台|练习|歌词|吉他/.test(item));
+  const seen = new Set();
+  return [...quoted, ...keywordMatches, ...phraseMatches]
+    .map((item) => String(item || "").trim())
+    .filter((item) => item.length >= 2 && item.length <= 18)
+    .filter((item) => {
+      const key = item.replace(/\s+/g, "");
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 3);
 }
 
 function genericChoiceText(text = "") {
@@ -1763,8 +1798,26 @@ function choiceMatchesReply(choiceText = "", anchors = []) {
   if (anchors.some((anchor) => anchor.key === "model" && /理论|模型|假设|方程|建模/.test(text))) return true;
   if (anchors.some((anchor) => anchor.key === "anomaly" && /异常|偏差|误差|变量|观测|记录|数据/.test(text))) return true;
   if (anchors.some((anchor) => anchor.key === "pause" && /停顿|说完|等她|放轻|死机|沉默/.test(text))) return true;
+  if (anchors.some((anchor) => anchor.key === "cafe" && /咖啡|咖啡馆|咖啡厅|咖啡店|店里|座位|坐下|点单|点杯|拿铁/.test(text))) return true;
   if (anchors.some((anchor) => anchor.key === "route" && /路上|目的地|跟上|过去|近路|出发/.test(text))) return true;
+  if (anchors.some((anchor) => anchor.key === "invitation" && /答应|邀请|一起|陪|跟上|留下/.test(text))) return true;
+  if (anchors.some((anchor) => anchor.key === "vulnerable" && /不安|担心|害怕|难过|陪|安慰|安全/.test(text))) return true;
+  if (anchors.some((anchor) => anchor.key === "conflict" && /冲突|不满|道歉|反驳|刺激|放轻|退/.test(text))) return true;
   return false;
+}
+
+function focusRouteChoices(reply, character) {
+  const name = character?.name || "角色";
+  const focus = replyFocusPhrases(reply);
+  if (!focus.length) return [];
+  const [first, second] = focus;
+  return [
+    { text: `顺着“${first}”追问一个具体细节`, effects: { affection: 0, trust: 2, intimacy: 0, honesty: 1, tone: "answer" } },
+    { text: `先回应${name}提到的“${first}”，不急着转开`, effects: { affection: 1, trust: 2, intimacy: 0, tension: -1, tone: "patient" } },
+    second
+      ? { text: `把“${first}”和“${second}”之间的关系问清楚`, effects: { affection: 0, trust: 2, intimacy: 0, honesty: 2, tone: "probe" } }
+      : { text: `确认“${first}”对${name}来说意味着什么`, effects: { affection: 1, trust: 2, intimacy: 1, tone: "soften" } }
+  ];
 }
 
 function fallbackRouteChoices(reply, character) {
@@ -1807,16 +1860,13 @@ function fallbackRouteChoices(reply, character) {
       { text: "先问清真正的理由", effects: { affection: 0, trust: 2, intimacy: -1, tone: "cautious" } }
     ];
   }
-  return [
-    { text: `继续追问${name}刚才的想法`, effects: { affection: 0, trust: 2, intimacy: 0, tone: "follow-up" } },
-    { text: "换一个轻松的话题缓和气氛", effects: { affection: 1, trust: 0, intimacy: 0, tone: "lighten" } },
-    { text: `选择沉默片刻，看${name}怎么回应`, effects: { affection: 0, trust: 0, intimacy: 1, tone: "silence" } }
-  ];
+  return focusRouteChoices(reply, character);
 }
 
 function sanitizeRouteChoices(rawChoices, reply, character) {
   const anchors = replyChoiceAnchors(reply);
-  const source = Array.isArray(rawChoices) && rawChoices.length ? rawChoices : fallbackRouteChoices(reply, character);
+  const fallback = fallbackRouteChoices(reply, character);
+  const source = Array.isArray(rawChoices) && rawChoices.length ? rawChoices : fallback;
   const cleaned = source
     .map((choice) => ({
       text: String(choice?.text || choice?.label || "").replace(/^【选择】/, "").trim(),
@@ -1825,7 +1875,8 @@ function sanitizeRouteChoices(rawChoices, reply, character) {
     .filter((choice) => choice.text.length >= 2)
     .filter((choice) => choiceMatchesReply(choice.text, anchors))
     .slice(0, 3);
-  return cleaned.length >= 2 ? cleaned : fallbackRouteChoices(reply, character).slice(0, 3);
+  if (cleaned.length >= 2) return cleaned;
+  return fallback.slice(0, 3);
 }
 
 function parseRouteChoices(raw, reply, character) {
@@ -1844,6 +1895,171 @@ function parseRouteChoices(raw, reply, character) {
     } catch {}
   }
   return sanitizeRouteChoices([], reply, character);
+}
+
+// Route-choice v2: choices must be rebuilt from the assistant's latest reply,
+// not from static route templates. Keep this block after the legacy helpers so
+// these declarations win at runtime without touching older generated text.
+function cleanDialogueText(reply = "") {
+  return String(reply || "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/[【［\[][^\]］】]{1,80}[\]］】]/g, " ")
+    .replace(/[“”"「」『』]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function replyFocusPhrases(reply = "") {
+  const text = cleanDialogueText(reply);
+  const quoted = [...String(reply || "").matchAll(/[“"「『]([^”"」』]{2,18})[”"」』]/g)].map((match) => match[1]);
+  const keywords = text.match(/咖啡馆|咖啡厅|咖啡店|店里|店外|座位|坐下|点单|拿铁|实验室|实验|数据|异常点|理论模型|责任|近路|路上|街道|车站|图书馆|教室|天台|神社|海边|房间|练习室|舞台|歌词|吉他|手机|消息|照片|钥匙|约定|邀请|沉默|不安|担心|生气|难过|害怕|休息|陪你|一起/g) || [];
+  const generic = new Set(["现在", "这里", "那里", "这个", "那个", "什么", "怎么", "为什么", "但是", "然后", "因为", "所以", "如果", "只是", "已经", "不会", "不要", "可以", "可能", "还是", "觉得", "继续", "一下", "一点", "真的", "刚才", "时候", "事情", "问题", "想法", "角色", "玩家"]);
+  const phrases = (text.match(/[\u4e00-\u9fa5A-Za-z0-9·]{2,14}/g) || [])
+    .filter((item) => !generic.has(item))
+    .filter((item) => !/^(我|你|她|他|它|我们|你们|他们|不是|没有|就是|可是|不过|所以|因为)/.test(item))
+    .filter((item) => /咖啡|店|座|路|去|来|实验|数据|异常|理论|责任|邀请|约|一起|陪|等|问|说|看|拿|放|听|怕|担心|难过|生气|沉默|休息|书|伞|手机|消息|舞台|练习|歌词|吉他/.test(item));
+  const seen = new Set();
+  return [...quoted, ...keywords, ...phrases]
+    .map((item) => String(item || "").trim())
+    .filter((item) => item.length >= 2 && item.length <= 18)
+    .filter((item) => {
+      const key = item.replace(/\s+/g, "");
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 5);
+}
+
+function replyChoiceAnchorsV2(reply = "") {
+  const text = cleanDialogueText(reply);
+  const focus = replyFocusPhrasesV2(text);
+  const anchors = [];
+  const add = (key, label) => {
+    if (!anchors.some((item) => item.key === key || item.label === label)) anchors.push({ key, label });
+  };
+  if (/咖啡馆|咖啡厅|咖啡店|店里|店外|咖啡|拿铁|点单|点杯|座位|坐下/.test(text)) add("cafe", "咖啡馆");
+  if (/近路|路上|顺路|出发|过去|穿过|跟我来|带你|走吧|换个地方|到那边|去外面|车站|街道/.test(text)) add("route", "路上");
+  if (/责任|负责|追责|甩锅|怪我|怪你|承担/.test(text)) add("responsibility", "责任");
+  if (/理论|模型|方程|假设|建模/.test(text)) add("model", "理论模型");
+  if (/异常点|偏差|误差|变量|观测|记录|数据/.test(text)) add("anomaly", "异常点");
+  if (/实验室|实验|研究|论文/.test(text)) add("experiment", "实验");
+  if (/当场死机|沉默|说不出|停顿|愣住|僵住/.test(text)) add("pause", "停顿");
+  if (/害怕|担心|不安|难过|孤独|寂寞|哭|迷茫/.test(text)) add("vulnerable", "不安");
+  if (/生气|讨厌|别说|别碰|烦死|指着|质问|冲突/.test(text)) add("conflict", "冲突");
+  if (/一起|陪|跟我|留下|约|邀请|答应/.test(text)) add("invitation", "邀请");
+  focus.forEach((label) => add("focus", label));
+  return anchors.slice(0, 6);
+}
+
+function genericChoiceTextV2(text = "") {
+  return /继续聊|继续问|换个话题|轻松的话题|沉默片刻|认真回应|顺着.*问题|问问.*想法|先回答|陪.*说完|刚才的想法/.test(String(text || ""));
+}
+
+function choiceMatchesReplyV2(choiceText = "", anchors = []) {
+  const text = String(choiceText || "");
+  if (!anchors.length) return false;
+  if (genericChoiceTextV2(text) && !anchors.some((anchor) => text.includes(anchor.label))) return false;
+  return anchors.some((anchor) => {
+    if (anchor.label && text.includes(anchor.label)) return true;
+    if (anchor.key === "cafe") return /咖啡|店里|座位|坐下|点单|拿铁/.test(text);
+    if (anchor.key === "route") return /路上|跟上|过去|出发|车站|街道|目的地/.test(text);
+    if (anchor.key === "responsibility") return /责任|负责|承担|追责/.test(text);
+    if (anchor.key === "model") return /理论|模型|假设|方程/.test(text);
+    if (anchor.key === "anomaly") return /异常|偏差|误差|变量|数据|记录/.test(text);
+    if (anchor.key === "experiment") return /实验|研究|实验室|论文/.test(text);
+    if (anchor.key === "pause") return /停顿|沉默|等|放轻|说完/.test(text);
+    if (anchor.key === "vulnerable") return /不安|担心|害怕|难过|陪|安慰|安全/.test(text);
+    if (anchor.key === "conflict") return /冲突|道歉|反驳|放轻|退|质问/.test(text);
+    if (anchor.key === "invitation") return /答应|邀请|一起|陪|跟上|留下/.test(text);
+    return false;
+  });
+}
+
+function routeChoiceFromFocus(label, character, index = 0) {
+  const name = character?.name || "她";
+  const variants = [
+    { text: `顺着“${label}”追问一个具体细节`, effects: { affection: 0, trust: 2, intimacy: 0, honesty: 1, tone: "probe" } },
+    { text: `先回应${name}提到的“${label}”，不急着转开`, effects: { affection: 1, trust: 2, intimacy: 0, tension: -1, tone: "patient" } },
+    { text: `确认“${label}”对${name}来说到底意味着什么`, effects: { affection: 1, trust: 2, intimacy: 1, honesty: 1, tone: "soften" } }
+  ];
+  return variants[index % variants.length];
+}
+
+function fallbackRouteChoicesV2(reply, character) {
+  const text = cleanDialogueText(reply);
+  const name = character?.name || "她";
+  const focus = replyFocusPhrasesV2(text);
+  if (/咖啡馆|咖啡厅|咖啡店|咖啡|拿铁|点单|座位|坐下/.test(text)) {
+    return [
+      { text: `先陪${name}找个座位坐下，再接着聊刚才的话`, effects: { affection: 1, trust: 2, intimacy: 1, tension: -1, tone: "daily-care" } },
+      { text: "问她想喝什么，把节奏放慢一点", effects: { affection: 1, trust: 1, intimacy: 1, tension: -2, tone: "soften" } },
+      { text: "等点单之后，再追问她为什么提到咖啡馆", effects: { affection: 0, trust: 2, intimacy: 0, honesty: 1, tone: "probe" } }
+    ];
+  }
+  if (/路上|近路|出发|过去|跟我来|带你|走吧|车站|街道/.test(text)) {
+    return [
+      { text: `跟上${name}，但先确认要去哪里`, effects: { affection: 0, trust: 2, intimacy: 1, tone: "cautious" } },
+      { text: "把刚才没说完的话留到路上继续", effects: { affection: 1, trust: 1, intimacy: 0, tension: -1, tone: "soften" } },
+      { text: `答应一起走，但让${name}说清邀请的理由`, effects: { affection: 1, trust: 2, intimacy: 1, honesty: 1, tone: "probe" } }
+    ];
+  }
+  if (/实验|数据|异常|理论|模型|责任/.test(text)) {
+    return [
+      { text: "先锁定她提到的异常点，不急着下结论", effects: { affection: 0, trust: 3, intimacy: 0, tension: -1, tone: "answer" } },
+      { text: "把责任和实验结果分开说清楚", effects: { affection: 0, trust: 2, intimacy: 0, honesty: 2, tone: "honest" } },
+      { text: "顺着她的理论模型重新确认假设", effects: { affection: 0, trust: 3, intimacy: 0, honesty: 1, tone: "probe" } }
+    ];
+  }
+  if (/害怕|担心|不安|难过|沉默|哭|迷茫/.test(text)) {
+    return [
+      { text: `放轻语气，先确认${name}是不是在不安`, effects: { affection: 1, trust: 2, intimacy: 1, tension: -2, tone: "comfort" } },
+      { text: "不追问原因，先把陪伴这件事说清楚", effects: { affection: 2, trust: 1, intimacy: 2, tension: -2, tone: "patient" } },
+      { text: "等她愿意说时，再问刚才沉默的含义", effects: { affection: 0, trust: 2, intimacy: 1, honesty: 1, tone: "probe" } }
+    ];
+  }
+  if (/生气|讨厌|别说|别碰|烦死|质问|冲突/.test(text)) {
+    return [
+      { text: "先道歉，把语气放低一点", effects: { affection: 0, trust: 1, intimacy: 0, tension: -3, tone: "apology" } },
+      { text: "不后退，但把真正想说的话讲清楚", effects: { affection: -1, trust: 2, intimacy: 0, honesty: 2, tone: "honest" } },
+      { text: "承认她的不满，先别急着解释", effects: { affection: 0, trust: 2, intimacy: 0, tension: -2, tone: "patient" } }
+    ];
+  }
+  return focus.map((label, index) => routeChoiceFromFocus(label, character, index)).slice(0, 3);
+}
+
+function sanitizeRouteChoicesV2(rawChoices, reply, character) {
+  const anchors = replyChoiceAnchorsV2(reply);
+  const fallback = fallbackRouteChoicesV2(reply, character);
+  const source = Array.isArray(rawChoices) && rawChoices.length ? rawChoices : fallback;
+  const cleaned = source
+    .map((choice) => ({
+      text: String(choice?.text || choice?.label || "").replace(/^【选择】/, "").trim(),
+      effects: normalizeRouteEffects(choice?.effects || choice)
+    }))
+    .filter((choice) => choice.text.length >= 2)
+    .filter((choice) => choiceMatchesReplyV2(choice.text, anchors))
+    .slice(0, 3);
+  if (cleaned.length >= 2) return cleaned;
+  return fallback.slice(0, 3);
+}
+
+function parseRouteChoicesV2(raw, reply, character) {
+  const text = String(raw || "").trim();
+  if (!text) return sanitizeRouteChoicesV2([], reply, character);
+  const candidate = text.replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
+  try {
+    const parsed = JSON.parse(candidate);
+    return sanitizeRouteChoicesV2(parsed.choices || parsed.routeChoices || parsed, reply, character);
+  } catch {}
+  const objectMatch = candidate.match(/\{[\s\S]*\}/);
+  if (objectMatch) {
+    try {
+      const parsed = JSON.parse(objectMatch[0]);
+      return sanitizeRouteChoicesV2(parsed.choices || parsed.routeChoices || parsed, reply, character);
+    } catch {}
+  }
+  return sanitizeRouteChoicesV2([], reply, character);
 }
 
 function stripVoiceStageDirections(text) {
@@ -1903,7 +2119,7 @@ async function callVoiceScriptAdapter({ provider, apiKey, baseUrl, model, charac
 
 async function callRouteChoiceAdapter({ provider, apiKey, baseUrl, model, character, routeState, reply, userAlias }) {
   const alias = String(userAlias || routeState?.userAlias || "").trim();
-  if (provider === "mock" || !provider) return fallbackRouteChoices(reply, character);
+  if (provider === "mock" || !provider) return fallbackRouteChoicesV2(reply, character);
   const prompt = [
     "你是 Galgame 攻略分支设计器。根据角色刚刚说的话，生成 3 个贴合语境的玩家回应选项。",
     "质量优先级：当前台词的具体锚点 > 角色人设边界 > 关系温度 > 玩法推进。不要只按关键词套模板。",
@@ -1920,7 +2136,7 @@ async function callRouteChoiceAdapter({ provider, apiKey, baseUrl, model, charac
     alias ? `用户称呼：${alias}` : "",
     routeState ? `当前隐藏路线：${routeState.route || "序章"}，上次选择：${routeState.lastChoice || "无"}` : "",
     routeState?.templateHint ? `路线模板要求：${routeState.templateHint}` : "",
-    `可用台词锚点：${replyChoiceAnchors(reply).map((item) => item.label).join("、") || "无明显锚点，请保守生成"}`,
+    `可用台词锚点：${replyChoiceAnchorsV2(reply).map((item) => item.label).join("、") || "无明显锚点，请保守生成"}`,
     `角色刚刚说：${String(reply || "").slice(0, 500)}`
   ].filter(Boolean).join("\n");
   const raw = await callChatAdapter({
@@ -1934,7 +2150,7 @@ async function callRouteChoiceAdapter({ provider, apiKey, baseUrl, model, charac
     enablePetAction: false,
     messages: [{ role: "user", content: prompt }]
   });
-  return parseRouteChoices(raw, reply, character);
+  return parseRouteChoicesV2(raw, reply, character);
 }
 
 async function callChatAdapter({ provider, apiKey, baseUrl, model, messages, character, enablePetAction = false, routeState = null, userAlias = "" }) {

@@ -121,6 +121,11 @@ const els = {
   routeEditorStatus: $("#routeEditorStatus"),
   styleInputs: [...document.querySelectorAll('input[name="uiStyle"]')],
   createForm: $("#createForm"),
+  createProgress: $("#createProgress"),
+  createProgressLabel: $("#createProgressLabel"),
+  createProgressPercent: $("#createProgressPercent"),
+  createProgressTrack: $(".create-progress-track"),
+  createProgressBar: $("#createProgressBar"),
   createStatus: $("#createStatus"),
   fetchCandidates: $("#fetchCandidates"),
   candidateStatus: $("#candidateStatus"),
@@ -1661,12 +1666,17 @@ function appendGalgameEvent(text, kind = "route") {
 function showRouteEvent(text) {
   if (!text || !isGalgameStyle()) return;
   appendGalgameEvent(text, "route");
+  clearTimeout(showRouteEvent.timer);
+  document.querySelectorAll(".route-event-toast").forEach((item) => item.remove());
   const notice = document.createElement("div");
   notice.className = "route-event-toast";
   notice.textContent = text;
   document.body.append(notice);
-  clearTimeout(showRouteEvent.timer);
-  showRouteEvent.timer = setTimeout(() => notice.remove(), 2400);
+  const removeNotice = () => {
+    if (notice.isConnected) notice.remove();
+  };
+  notice.addEventListener("animationend", removeNotice, { once: true });
+  showRouteEvent.timer = setTimeout(removeNotice, 2600);
 }
 
 function routeMilestoneEvents(previous, route) {
@@ -2017,7 +2027,9 @@ function currentGalgameSave() {
     characterId: state.current.id,
     characterName: state.current.name,
     savedAt: new Date().toISOString(),
-    messages: state.messages.filter((message) => message.content !== "..."),
+    messages: state.messages
+      .filter((message) => message.content !== "...")
+      .map(({ routeChoices, ...message }) => message),
     sessionId: state.sessionId,
     routeState: routeContextForPrompt(),
     background: state.galgame.background,
@@ -2053,7 +2065,10 @@ function loadGalgameSlot(slot = "quick") {
     return;
   }
   applyCharacter(character);
-  state.messages = Array.isArray(save.messages) ? save.messages : [];
+  state.messages = Array.isArray(save.messages)
+    ? save.messages.map(({ routeChoices, ...message }) => message)
+    : [];
+  state.galgame.routeChoices = {};
   state.sessionId = save.sessionId || null;
   state.routeStates[character.id] = { ...defaultRouteState(), ...(save.routeState || {}) };
   saveRouteStates();
@@ -2681,6 +2696,32 @@ function resetCreatePreviews() {
   updateCreatePreviews();
 }
 
+function setCreateProgress(percent, label = "", tone = "active") {
+  if (!els.createProgress) return;
+  const value = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
+  els.createProgress.hidden = false;
+  els.createProgress.dataset.tone = tone;
+  if (els.createProgressLabel && label) els.createProgressLabel.textContent = label;
+  if (els.createProgressPercent) els.createProgressPercent.textContent = `${value}%`;
+  if (els.createProgressBar) els.createProgressBar.style.width = `${value}%`;
+  if (els.createProgressTrack) els.createProgressTrack.setAttribute("aria-valuenow", String(value));
+}
+
+function startCreateProgressLoop() {
+  clearInterval(startCreateProgressLoop.timer);
+  let value = 38;
+  setCreateProgress(value, "CSP 正在检索资料、处理图片与声线...");
+  startCreateProgressLoop.timer = setInterval(() => {
+    value = Math.min(88, value + Math.max(1, Math.round((90 - value) * 0.08)));
+    setCreateProgress(value, "CSP 正在检索资料、处理图片与声线...");
+    if (value >= 88) clearInterval(startCreateProgressLoop.timer);
+  }, 900);
+}
+
+function stopCreateProgressLoop() {
+  clearInterval(startCreateProgressLoop.timer);
+}
+
 function candidateFor(kinds, candidates) {
   const ranked = rankedCandidates(candidates).map((entry) => entry.item);
   return ranked.find((item) => kinds.includes(item.best)) || ranked[0];
@@ -3214,8 +3255,8 @@ function replyAnchors(text = "") {
   const add = (key, label) => {
     if (!anchors.some((item) => item.key === key)) anchors.push({ key, label });
   };
-  if (/咖啡馆|咖啡店|咖啡|坐下|点杯/.test(source)) add("cafe", "咖啡馆");
-  if (/近路|路上|顺路|出发|过去|穿过|跟我来|带你/.test(source)) add("route", "路上");
+  if (/咖啡馆|咖啡厅|咖啡店|店里|店外|咖啡|拿铁|点单|点杯|座位|坐下/.test(source)) add("cafe", "咖啡馆");
+  if (/近路|路上|顺路|出发|过去|穿过|跟我来|带你|走吧|换个地方|到那边|去外面/.test(source)) add("route", "路上");
   if (/责任|负责|追责|甩锅|怪我|怪你/.test(source)) add("responsibility", "责任");
   if (/理论|模型|方程|假设|建模/.test(source)) add("model", "理论模型");
   if (/异常点|偏差|误差|变量|观测|记录|数据/.test(source)) add("anomaly", "异常点");
@@ -3224,7 +3265,34 @@ function replyAnchors(text = "") {
   if (/害怕|担心|不安|难过|孤独|寂寞|哭|迷茫/.test(source)) add("vulnerable", "不安");
   if (/生气|讨厌|别说|别碰|烦死|指着|质问/.test(source)) add("conflict", "冲突");
   if (/一起|陪|跟我|留下|约|邀请/.test(source)) add("invitation", "邀请");
+  replyFocusPhrases(source).forEach((label) => add("focus", label));
   return anchors;
+}
+
+function replyFocusPhrases(reply = "") {
+  const text = String(reply || "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/[【［\[][^\]］】]{1,80}[\]］】]/g, " ")
+    .replace(/[“”"「」『』]/g, " ");
+  const quoted = [...String(reply || "").matchAll(/[“"「『]([^”"」』]{2,18})[”"」』]/g)]
+    .map((match) => match[1]);
+  const keywordMatches = text.match(/咖啡馆|咖啡厅|咖啡店|图书馆|教室|天台|神社|海边|车站|房间|街道|学校|实验室|店里|路上|座位|点单|拿铁|书|伞|手机|消息|照片|钥匙|乐队|练习|舞台|歌词|吉他|时间机器|理论模型|异常点|实验数据|责任|邀请|约定|沉默|不安|担心|生气|难过/g) || [];
+  const generic = new Set(["角色", "玩家", "现在", "这里", "那里", "这个", "那个", "什么", "怎么", "为什么", "但是", "然后", "因为", "所以", "如果", "只是", "已经", "不会", "不要", "可以", "可能", "还是", "觉得", "继续", "一下", "一点", "真的", "刚才", "时候", "事情", "问题", "想法"]);
+  const phraseMatches = (text.match(/[\u4e00-\u9fa5A-Za-z0-9·]{2,12}/g) || [])
+    .filter((item) => !generic.has(item))
+    .filter((item) => !/^(我|你|她|他|它|我们|你们|他们|不是|没有|就是|可是|不过)/.test(item))
+    .filter((item) => /咖啡|店|路|实验|理论|模型|异常|数据|责任|邀请|约|一起|坐|去|来|等|问|说|看|拿|放|听|怕|担心|难过|生气|沉默|书|伞|手机|消息|舞台|练习|歌词|吉他/.test(item));
+  const seen = new Set();
+  return [...quoted, ...keywordMatches, ...phraseMatches]
+    .map((item) => String(item || "").trim())
+    .filter((item) => item.length >= 2 && item.length <= 18)
+    .filter((item) => {
+      const key = item.replace(/\s+/g, "");
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 3);
 }
 
 function templateQuestionChoices(template, name, route = routeStateFor(), seed = 0) {
@@ -3271,9 +3339,11 @@ function templateQuestionChoices(template, name, route = routeStateFor(), seed =
 
 function analyzeReplyChoiceContext(content = "") {
   const text = String(content || "");
+  const anchors = replyAnchors(text);
+  const hasFocus = anchors.some((item) => item.key === "focus");
   const hasQuestion = /[？?]/.test(text);
   const hasDirectChoice = /怎么办|要不要|可以吗|愿意|想不想|选|选择|决定|哪边|哪一个|一起去|陪我|跟我|跟我来|去吗|どう|かな|どちら|一緒|行く|来て|選/.test(text);
-  const isCafeScene = /咖啡馆|咖啡店|店里|店外|咖啡|坐下|点杯|格外苦涩/.test(text);
+  const isCafeScene = /咖啡馆|咖啡厅|咖啡店|店里|店外|咖啡|拿铁|点单|坐下|点杯|座位|格外苦涩/.test(text);
   const isSceneMove = /跟我来|带你|近路|路上|避开|顺路|出发|过去|穿过|走吧|换个地方|到那边|去外面/.test(text);
   const isExperiment = /实验|数据|样本|论文|理论|研究|假设|观测|公式|结果|误差|失败|错了|bug|调试|记录|分析/.test(text);
   const isExperimentBlame = /责任|负责|指着|指向|鼻子|不得了|执着|较真|当场死机|不是.*坏事|你刚才|你又|质问|追责|甩锅|怪我|怪你/.test(text);
@@ -3298,18 +3368,19 @@ function analyzeReplyChoiceContext(content = "") {
   else if (isWarm) kind = "warm";
   else if (isDaily) kind = "daily";
   else if (hasDirectChoice) kind = "direct-choice";
+  else if (hasFocus) kind = "focus";
   else if (hasQuestion) kind = "question";
 
   return {
     kind,
     seed: textSeed(text),
-    anchors: replyAnchors(text),
+    anchors,
     isExperimentBlame,
     isExperimentModel,
     hasQuestion,
     hasDirectChoice,
     isActionable: Boolean(kind && kind !== "question"),
-    isStrong: Boolean(hasDirectChoice || ["scene-cafe", "scene-move", "experiment-pressure", "experiment-frustrated", "experiment-model", "conflict", "vulnerable", "invitation"].includes(kind))
+    isStrong: Boolean(hasDirectChoice || ["scene-cafe", "scene-move", "experiment-pressure", "experiment-frustrated", "experiment-model", "conflict", "vulnerable", "invitation", "focus"].includes(kind))
   };
 }
 
@@ -3317,6 +3388,7 @@ function contextualAnchorChoices(context, name) {
   const anchors = Array.isArray(context?.anchors) ? context.anchors : [];
   const has = (key) => anchors.some((item) => item.key === key);
   const choices = [];
+  const focus = anchors.filter((item) => item.key === "focus").map((item) => item.label).slice(0, 3);
 
   if (has("cafe")) {
     choices.push(routeChoicePrompt(`把话题先带到咖啡馆的座位上，再继续问${name}`, { affection: 1, trust: 2, intimacy: 0, tension: -1, tone: "soften" }));
@@ -3346,6 +3418,17 @@ function contextualAnchorChoices(context, name) {
   }
   if (has("invitation")) {
     choices.push(routeChoicePrompt(`答应${name}，但让她把邀请的理由说得更明白一点`, { affection: 1, trust: 1, intimacy: 1, tone: "tease" }));
+  }
+  if (!choices.length && focus.length) {
+    const [first, second] = focus;
+    choices.push(routeChoicePrompt(`顺着“${first}”追问一个具体细节`, { affection: 0, trust: 2, intimacy: 0, honesty: 1, tone: "answer" }));
+    choices.push(routeChoicePrompt(`先回应${name}提到的“${first}”，不急着转开`, { affection: 1, trust: 2, intimacy: 0, tension: -1, tone: "patient" }));
+    choices.push(routeChoicePrompt(
+      second ? `把“${first}”和“${second}”之间的关系问清楚` : `确认“${first}”对${name}来说意味着什么`,
+      second
+        ? { affection: 0, trust: 2, intimacy: 0, honesty: 2, tone: "probe" }
+        : { affection: 1, trust: 2, intimacy: 1, tone: "soften" }
+    ));
   }
 
   return choices;
@@ -3492,10 +3575,7 @@ function safeRouteFallbackChoices(route = routeStateFor()) {
       routeChoicePrompt("承认刚才太急了，重新认真听她说", { affection: 0, trust: 2, intimacy: 0, tension: -4, tone: "apology" })
     ];
   }
-  return [
-    routeChoicePrompt("先顺着当前话题认真回应", { affection: 0, trust: 1, intimacy: 0, tone: "answer" }),
-    routeChoicePrompt("不急着推进关系，给她一点思考空间", { affection: 0, trust: 1, intimacy: 0, tension: -2, tone: "soften" })
-  ];
+  return [];
 }
 
 function filterRouteChoices(choices, route = routeStateFor()) {
@@ -3596,7 +3676,7 @@ function currentRouteChoices() {
     latest,
     choices: state.galgame.routeChoices[latest.key]?.length
       ? state.galgame.routeChoices[latest.key]
-      : galgameRouteChoices(latest.message)
+      : galgameRouteChoicesV2(latest.message)
   };
 }
 
@@ -3707,7 +3787,7 @@ function galgameRouteChoices(latestMessage) {
     ];
   } else if (context.kind) {
     choices = replyContextChoices(context, template, name, route, assistantTurns + content.length + (context.seed || 0));
-  } else {
+  } else if (storyChoices.length) {
     const fallbackByTemplate = {
       warm: [
         routeChoicePrompt(`陪${name}把今天慢慢说完`, { affection: 1, trust: 2, intimacy: 1, tone: "daily-care" }),
@@ -3735,6 +3815,8 @@ function galgameRouteChoices(latestMessage) {
       routeChoicePrompt("换一个轻松的话题缓和气氛", { affection: 1, trust: 0, intimacy: 0, tone: "lighten" }),
       routeChoicePrompt(`选择沉默片刻，看${name}怎么回应`, { affection: 0, trust: 0, intimacy: 1, tone: "silence" })
     ];
+  } else {
+    choices = [];
   }
 
   const mode = currentGameplayMode();
@@ -3742,6 +3824,104 @@ function galgameRouteChoices(latestMessage) {
     ? [...storyChoices, ...choices]
     : [...choices, ...storyChoices];
   return filterRouteChoices(combinedChoices, route);
+}
+
+// Galgame choices v2: prefer server-generated choices for the exact assistant
+// message; local choices are content-derived fallbacks only.
+function extractReplyChoiceFocusV2(reply = "") {
+  const text = String(reply || "").replace(/\s+/g, " ").trim();
+  const matches = text.match(/咖啡馆|咖啡厅|咖啡店|咖啡|拿铁|点单|座位|坐下|实验室|实验|数据|异常点|理论模型|责任|路上|近路|出发|车站|街道|邀请|约定|一起|沉默|不安|担心|生气|难过|休息|手机|消息|照片|钥匙|舞台|练习|歌词|吉他/g) || [];
+  const phrases = (text.match(/[\u4e00-\u9fa5A-Za-z0-9·]{2,14}/g) || [])
+    .filter((item) => /咖啡|店|座|路|去|来|实验|数据|异常|理论|责任|邀请|约|一起|陪|等|问|说|看|拿|听|担心|难过|生气|沉默|休息|手机|消息|舞台|练习|歌词|吉他/.test(item));
+  const seen = new Set();
+  return [...matches, ...phrases].filter((item) => {
+    const key = String(item || "").trim();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 4);
+}
+
+function replyDrivenRouteChoicesV2(message, route = routeStateFor()) {
+  const text = String(message?.content || "");
+  const name = state.current?.name || "她";
+  if (/咖啡馆|咖啡厅|咖啡店|咖啡|拿铁|点单|座位|坐下/.test(text)) {
+    return [
+      routeChoicePrompt(`陪${name}找座位坐下，再继续刚才的话`, { affection: 1, trust: 2, intimacy: 1, tension: -1, tone: "daily-care" }),
+      routeChoicePrompt("问她想喝什么，把节奏放慢一点", { affection: 1, trust: 1, intimacy: 1, tension: -2, tone: "soften" }),
+      routeChoicePrompt("等点单后再问她为什么提到咖啡馆", { affection: 0, trust: 2, intimacy: 0, honesty: 1, tone: "probe" })
+    ];
+  }
+  if (/路上|近路|出发|过去|跟我来|带你|走吧|车站|街道/.test(text)) {
+    return [
+      routeChoicePrompt(`跟上${name}，但先确认要去哪里`, { affection: 0, trust: 2, intimacy: 1, tone: "cautious" }),
+      routeChoicePrompt("把没说完的话留到路上继续", { affection: 1, trust: 1, intimacy: 0, tension: -1, tone: "soften" }),
+      routeChoicePrompt(`答应一起走，但让${name}说清理由`, { affection: 1, trust: 2, intimacy: 1, honesty: 1, tone: "probe" })
+    ];
+  }
+  if (/实验|数据|异常|理论|模型|责任/.test(text)) {
+    return [
+      routeChoicePrompt("先锁定她提到的异常点", { affection: 0, trust: 3, intimacy: 0, tension: -1, tone: "answer" }),
+      routeChoicePrompt("把责任和实验结果分开说清楚", { affection: 0, trust: 2, intimacy: 0, honesty: 2, tone: "honest" }),
+      routeChoicePrompt("顺着她的理论模型重新确认假设", { affection: 0, trust: 3, intimacy: 0, honesty: 1, tone: "probe" })
+    ];
+  }
+  if (/害怕|担心|不安|难过|沉默|哭|迷茫/.test(text)) {
+    return [
+      routeChoicePrompt(`放轻语气，先确认${name}是不是在不安`, { affection: 1, trust: 2, intimacy: 1, tension: -2, tone: "comfort" }),
+      routeChoicePrompt("不追问原因，先把陪伴说清楚", { affection: 2, trust: 1, intimacy: 2, tension: -2, tone: "patient" }),
+      routeChoicePrompt("等她愿意说时，再问沉默的含义", { affection: 0, trust: 2, intimacy: 1, honesty: 1, tone: "probe" })
+    ];
+  }
+  if (/生气|讨厌|别说|别碰|烦死|质问|冲突/.test(text)) {
+    return [
+      routeChoicePrompt("先道歉，把语气放低一点", { affection: 0, trust: 1, intimacy: 0, tension: -3, tone: "apology" }),
+      routeChoicePrompt("不后退，但把真正想说的话讲清楚", { affection: -1, trust: 2, intimacy: 0, honesty: 2, tone: "honest" }),
+      routeChoicePrompt("承认她的不满，先别急着解释", { affection: 0, trust: 2, intimacy: 0, tension: -2, tone: "patient" })
+    ];
+  }
+  const focus = extractReplyChoiceFocusV2(text);
+  return focus.slice(0, 3).map((label, index) => routeChoicePrompt([
+    `顺着“${label}”追问一个具体细节`,
+    `先回应${name}提到的“${label}”`,
+    `确认“${label}”对${name}意味着什么`
+  ][index] || `继续围绕“${label}”回应`, {
+    affection: index === 1 ? 1 : 0,
+    trust: 2,
+    intimacy: index === 2 ? 1 : 0,
+    honesty: index === 0 ? 1 : 0,
+    tone: index === 1 ? "patient" : "probe"
+  }));
+}
+
+function shouldShowRouteChoicesV2(latestMessage, assistantTurns, context = {}, hasStoryChoices = false) {
+  const frequency = routeChoiceFrequency();
+  const mode = currentGameplayMode();
+  if (!isGalgameStyle() || frequency === "off") return false;
+  if (!latestMessage || latestMessage.role !== "assistant" || latestMessage.content === "...") return false;
+  if (mode === "story") return Boolean(hasStoryChoices || context.kind);
+  if (frequency === "high") return Boolean(hasStoryChoices || context.isActionable || context.hasDirectChoice || extractReplyChoiceFocusV2(latestMessage.content).length);
+  if (frequency === "low") return Boolean(hasStoryChoices || context.isStrong) && assistantTurns % 5 === 0;
+  if (context.hasDirectChoice || hasStoryChoices) return true;
+  return Boolean(context.isStrong || context.isActionable) && assistantTurns % 3 === 0;
+}
+
+function galgameRouteChoicesV2(latestMessage) {
+  if (!state.current || !latestMessage || latestMessage.role !== "assistant") return [];
+  if (latestMessage.content === "..." || state.galgame.typingKey) return [];
+  const key = messageKey(latestMessage, state.messages.indexOf(latestMessage));
+  if (state.galgame.routeChoices[key]?.length) return filterRouteChoices(state.galgame.routeChoices[key], routeStateFor());
+
+  const assistantTurns = state.messages.filter((message) => message.role === "assistant" && message.content !== "...").length;
+  const context = analyzeReplyChoiceContext(String(latestMessage.content || ""));
+  const route = routeStateFor();
+  const storyChoices = availableStoryEvents(route).map((event) => storyEventChoice(event, route));
+  if (!shouldShowRouteChoicesV2(latestMessage, assistantTurns, context, storyChoices.length > 0)) return [];
+
+  const localChoices = replyDrivenRouteChoicesV2(latestMessage, route);
+  const mode = currentGameplayMode();
+  const combined = mode === "story" ? [...storyChoices, ...localChoices] : [...localChoices, ...storyChoices];
+  return filterRouteChoices(combined, route);
 }
 
 function isGalgameStyle() {
@@ -3994,7 +4174,7 @@ function renderMessages(options = {}) {
   const offset = isGalgame ? state.messages.length - visibleMessages.length : 0;
   syncGalgameTyping(visibleMessages, offset, options);
   const latestVisible = visibleMessages.at(-1);
-  const choiceBar = isGalgame ? renderRouteChoiceButtons(galgameRouteChoices(latestVisible)) : "";
+  const choiceBar = isGalgame ? renderRouteChoiceButtons(galgameRouteChoicesV2(latestVisible)) : "";
   renderGalgameChoiceLayer(choiceBar);
   els.messages.innerHTML = (isGalgame
     ? visibleMessages.map((message, index) => (
@@ -4005,7 +4185,7 @@ function renderMessages(options = {}) {
   if (isGalgame) {
     renderGalgameLog();
     updateRouteFeedback();
-    scheduleGalgameAutoPlay(latestVisible, galgameRouteChoices(latestVisible));
+    scheduleGalgameAutoPlay(latestVisible, galgameRouteChoicesV2(latestVisible));
   }
 
   const latestAssistant = [...state.messages].reverse().find((message) => message.role === "assistant");
@@ -5046,25 +5226,31 @@ els.petUpload.addEventListener("change", () => {
 
 els.createForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const form = new FormData(els.createForm);
-  const payload = Object.fromEntries(form.entries());
-  payload.useFetchedImage = form.get("useFetchedImage") === "on";
-  payload.petStyle = form.get("petStyle") || "standee";
-  payload.makePet = payload.petStyle !== "live2d";
-  payload.useChibiPet = payload.petStyle === "chibi";
-  payload.voiceLanguage = payload.voiceLanguage || "JP";
-  payload.voiceAutoTranslate = form.get("voiceAutoTranslate") === "on";
-  payload.uploadedImageData = await readFileAsDataUrl(els.imageUpload.files?.[0]);
-  payload.uploadedPetData = await readFileAsDataUrl(els.petUpload.files?.[0]);
-
   const submitButton = els.createForm.querySelector('button[type="submit"]');
-  els.createStatus.textContent = "正在调用 CSP 生成角色卡...";
   submitButton.disabled = true;
+  setCreateProgress(8, "准备角色生成任务...");
+  els.createStatus.textContent = "正在整理表单与素材...";
   try {
+    const form = new FormData(els.createForm);
+    const payload = Object.fromEntries(form.entries());
+    payload.useFetchedImage = form.get("useFetchedImage") === "on";
+    payload.petStyle = form.get("petStyle") || "standee";
+    payload.makePet = payload.petStyle !== "live2d";
+    payload.useChibiPet = payload.petStyle === "chibi";
+    payload.voiceLanguage = payload.voiceLanguage || "JP";
+    payload.voiceAutoTranslate = form.get("voiceAutoTranslate") === "on";
+    setCreateProgress(22, "正在读取上传素材...");
+    payload.uploadedImageData = await readFileAsDataUrl(els.imageUpload.files?.[0]);
+    payload.uploadedPetData = await readFileAsDataUrl(els.petUpload.files?.[0]);
+    setCreateProgress(36, "正在调用 CSP 生成角色卡...");
+    els.createStatus.textContent = "正在调用 CSP 生成角色卡...";
+    startCreateProgressLoop();
     const character = await api("/api/characters", {
       method: "POST",
       body: JSON.stringify(payload)
     });
+    stopCreateProgressLoop();
+    setCreateProgress(92, "正在写入角色库...");
     state.characters = [character, ...state.characters.filter((item) => item.id !== character.id)];
     applyCharacter(character);
     els.search.value = "";
@@ -5076,9 +5262,12 @@ els.createForm.addEventListener("submit", async (event) => {
     state.candidateQuery = "";
     renderCandidateGrid([]);
     els.candidateStatus.textContent = "";
+    setCreateProgress(100, "角色卡已生成", "done");
     els.createStatus.textContent = "角色卡已生成。";
     if (!isAlbumStyle()) setTimeout(closeCharacterLibrary, 350);
   } catch (error) {
+    stopCreateProgressLoop();
+    setCreateProgress(100, "生成失败", "error");
     els.createStatus.textContent = `生成失败：${error.message}`;
   } finally {
     submitButton.disabled = false;

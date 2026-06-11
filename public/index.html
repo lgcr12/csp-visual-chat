@@ -469,11 +469,20 @@
             <textarea name="notes" rows="4" placeholder="补充设定边界、时间线、口吻要求，可选"></textarea>
           </section>
 
+          <div id="createProgress" class="create-progress" hidden aria-live="polite">
+            <div class="create-progress-head">
+              <span id="createProgressLabel">准备生成</span>
+              <b id="createProgressPercent">0%</b>
+            </div>
+            <div class="create-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <span id="createProgressBar"></span>
+            </div>
+          </div>
           <p id="createStatus"></p>
         </form>
       </div>
     </dialog>
 
-    <script src="/app.js?v=18" type="module"></script>
+    <script src="/app.js?v=19" type="module"></script>
   </body>
 </html>

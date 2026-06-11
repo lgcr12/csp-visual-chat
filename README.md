@@ -133,4 +133,50 @@ powershell -ExecutionPolicy Bypass -File .\deploy.ps1 -SkipPython
 http://localhost:4173
 ```
 
-如果指定了端口，请访问对应端口，例�
+如果指定了端口，请访问对应端口，例如：
+
+```text
+http://localhost:4175
+```
+
+## 手动启动
+
+安装 Node 依赖：
+
+```bash
+npm install
+```
+
+可选安装 Python 抠图依赖：
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+启动服务：
+
+```bash
+npm start
+```
+
+开发模式：
+
+```bash
+npm run dev
+```
+
+## 使用流程
+
+1. 打开页面并进入角色选择。
+2. 新建或选择角色卡。
+3. 配置头像、角色卡图、桌宠图或 Live2D 模型。
+4. 在聊天界面选择玩法模式和分支频率。
+5. 进入 Galgame 舞台后，通过聊天或条件选项推动关系与剧情。
+6. 当路线状态、记忆和关系阶段满足条件时，系统会进入个人线或结局态。
+
+## 注意
+
+- `data/sessions.json` 是本地运行时会话数据，一般不应提交到产品更新里。
+- 当前 Galgame 系统仍是可玩原型，不是最终商业级 VN 引擎。
+- 角色剧情质量依赖角色资料、Story Bible 完整度和模型输出稳定性。
+- 如果角色设定与玩家期待冲突，应优先保护角色逻辑，而不是强行满足玩家愿望。

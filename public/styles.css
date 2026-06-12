@@ -9779,6 +9779,487 @@ html[data-ui-style="galgame"] .live2d-stage {
   }
 }
 
+/* Galgame menu v2: flatten nested boxes and keep one visual container only. */
+html[data-ui-style="galgame"][data-galgame-menu="open"] .style-dock,
+html[data-ui-style="galgame"] .style-dock:hover,
+html[data-ui-style="galgame"] .style-dock:focus-within {
+  gap: 12px !important;
+  width: min(600px, calc(100vw - 20px)) !important;
+  padding: 12px !important;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 202, 185, 0.16), transparent 30%),
+    linear-gradient(180deg, rgba(19, 20, 29, 0.9), rgba(11, 12, 18, 0.82)) !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .menu-row::before {
+  color: rgba(255, 230, 218, 0.5) !important;
+  font-size: 9px !important;
+  letter-spacing: 0.18em !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-actions {
+  grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-configs {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  padding-top: 0 !important;
+  border-top: 0 !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-thumbnails {
+  display: grid !important;
+  gap: 8px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-thumbnails::before {
+  margin: 0 !important;
+}
+
+html[data-ui-style="galgame"] .style-dock span,
+html[data-ui-style="galgame"] .style-dock button {
+  background: rgba(255, 255, 255, 0.045) !important;
+  border-color: rgba(255, 255, 255, 0.11) !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .galgame-mode-control,
+html[data-ui-style="galgame"] .style-dock .galgame-frequency-control {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .galgame-mode-control > span,
+html[data-ui-style="galgame"] .style-dock .galgame-frequency-control > span {
+  color: rgba(255, 230, 218, 0.48) !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-picker {
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(64px, 1fr)) !important;
+  gap: 8px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-picker::before,
+html[data-ui-style="galgame"] .galgame-user-bg-choices::before {
+  display: none !important;
+  content: none !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-choice,
+html[data-ui-style="galgame"] .galgame-bg-upload span {
+  min-height: 42px !important;
+  border-radius: 9px !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-choice[data-active="true"] {
+  border-color: rgba(255, 226, 216, 0.92) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 191, 174, 0.42),
+    0 8px 20px rgba(255, 165, 136, 0.16) !important;
+}
+
+@media (max-width: 700px) {
+  html[data-ui-style="galgame"] .galgame-bg-picker {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Galgame final cascade guard: keep the menu flat after older polish rules. */
+html[data-ui-style="galgame"][data-galgame-menu="open"] .style-dock,
+html[data-ui-style="galgame"] .style-dock:hover,
+html[data-ui-style="galgame"] .style-dock:focus-within {
+  width: min(600px, calc(100vw - 20px)) !important;
+  gap: 12px !important;
+  padding: 12px !important;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 202, 185, 0.15), transparent 30%),
+    linear-gradient(180deg, rgba(18, 19, 28, 0.9), rgba(9, 10, 16, 0.8)) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  box-shadow:
+    0 24px 58px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.13) !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .menu-row,
+html[data-ui-style="galgame"] .style-dock .row-thumbnails,
+html[data-ui-style="galgame"] .galgame-bg-picker {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-thumbnails {
+  display: grid !important;
+  gap: 8px !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-configs {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  padding-top: 0 !important;
+  border-top: 0 !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .galgame-mode-control,
+html[data-ui-style="galgame"] .style-dock .galgame-frequency-control {
+  grid-column: span 2 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-thumbnails::before,
+html[data-ui-style="galgame"] .galgame-bg-picker::before,
+html[data-ui-style="galgame"] .galgame-user-bg-choices::before {
+  display: none !important;
+  content: none !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-choice,
+html[data-ui-style="galgame"] .galgame-bg-upload span,
+html[data-ui-style="galgame"] .style-dock button,
+html[data-ui-style="galgame"] .style-dock label > span {
+  background: rgba(255, 255, 255, 0.045) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-choice {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.36)),
+    var(--bg-thumb) center / cover no-repeat !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-picker {
+  grid-template-columns: repeat(6, minmax(64px, 1fr)) !important;
+  gap: 8px !important;
+  padding: 0 !important;
+}
+
+@media (max-width: 700px) {
+  html[data-ui-style="galgame"] .style-dock .row-configs {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html[data-ui-style="galgame"] .galgame-bg-picker {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Galgame dock de-boxing: remove nested card borders and keep only active cues. */
+html[data-ui-style="galgame"][data-galgame-menu="open"] .style-dock,
+html[data-ui-style="galgame"] .style-dock:hover,
+html[data-ui-style="galgame"] .style-dock:focus-within {
+  padding: 14px 16px 16px !important;
+  gap: 14px !important;
+  background:
+    radial-gradient(circle at 12% -8%, rgba(255, 214, 196, 0.16), transparent 34%),
+    linear-gradient(135deg, rgba(34, 41, 50, 0.84), rgba(12, 15, 22, 0.78)) !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-actions {
+  gap: 7px !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-actions > button {
+  min-height: 31px !important;
+  padding: 0 10px !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  color: rgba(255, 245, 240, 0.78) !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-actions > button:hover,
+html[data-ui-style="galgame"] .style-dock .row-actions > button[aria-pressed="true"],
+html[data-ui-style="galgame"] .style-dock .row-actions > button[data-active="true"] {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.18) !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-configs {
+  gap: 16px !important;
+  align-items: end !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .galgame-mode-control,
+html[data-ui-style="galgame"] .style-dock .galgame-frequency-control {
+  display: grid !important;
+  grid-template-columns: auto 1fr !important;
+  gap: 10px !important;
+  min-height: 34px !important;
+  padding: 0 0 7px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .galgame-mode-control > span,
+html[data-ui-style="galgame"] .style-dock .galgame-frequency-control > span {
+  min-height: auto !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .galgame-mode-control select,
+html[data-ui-style="galgame"] .style-dock .galgame-frequency-control select {
+  min-height: 28px !important;
+  padding: 0 24px 0 8px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: rgba(0, 0, 0, 0.2) !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-configs > button {
+  min-height: 34px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: rgba(255, 245, 240, 0.76) !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-configs > button:hover,
+html[data-ui-style="galgame"] .style-dock .row-configs > button[aria-pressed="true"],
+html[data-ui-style="galgame"] .style-dock .row-configs > button[data-active="true"] {
+  color: #2a1714 !important;
+  background: linear-gradient(135deg, #ffe3d8, #ffc3ad) !important;
+  box-shadow: 0 8px 22px rgba(255, 177, 145, 0.2) !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-thumbnails {
+  margin-top: 2px !important;
+  gap: 10px !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-picker {
+  grid-template-columns: repeat(6, minmax(74px, 1fr)) !important;
+  gap: 10px 12px !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-choice,
+html[data-ui-style="galgame"] .galgame-bg-upload span {
+  min-height: 54px !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-choice {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.38)),
+    var(--bg-thumb) center / cover no-repeat !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-choice[data-active="true"] {
+  outline: 2px solid rgba(255, 224, 214, 0.9) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 10px 26px rgba(255, 188, 160, 0.2) !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-upload span {
+  color: rgba(255, 245, 240, 0.72) !important;
+  background: rgba(255, 255, 255, 0.055) !important;
+  outline: 1px dashed rgba(255, 255, 255, 0.18) !important;
+  outline-offset: -1px !important;
+}
+
+/* Galgame final cascade guard: keep the menu flat after older polish rules. */
+html[data-ui-style="galgame"][data-galgame-menu="open"] .style-dock,
+html[data-ui-style="galgame"] .style-dock:hover,
+html[data-ui-style="galgame"] .style-dock:focus-within {
+  width: min(600px, calc(100vw - 20px)) !important;
+  gap: 12px !important;
+  padding: 12px !important;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 202, 185, 0.15), transparent 30%),
+    linear-gradient(180deg, rgba(18, 19, 28, 0.9), rgba(9, 10, 16, 0.8)) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  box-shadow:
+    0 24px 58px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.13) !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .menu-row,
+html[data-ui-style="galgame"] .style-dock .row-thumbnails,
+html[data-ui-style="galgame"] .galgame-bg-picker {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-thumbnails {
+  display: grid !important;
+  gap: 8px !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-configs {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  padding-top: 0 !important;
+  border-top: 0 !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .galgame-mode-control,
+html[data-ui-style="galgame"] .style-dock .galgame-frequency-control {
+  grid-column: span 2 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-thumbnails::before,
+html[data-ui-style="galgame"] .galgame-bg-picker::before,
+html[data-ui-style="galgame"] .galgame-user-bg-choices::before {
+  display: none !important;
+  content: none !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-choice,
+html[data-ui-style="galgame"] .galgame-bg-upload span,
+html[data-ui-style="galgame"] .style-dock button,
+html[data-ui-style="galgame"] .style-dock label > span {
+  background: rgba(255, 255, 255, 0.045) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-choice {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.36)),
+    var(--bg-thumb) center / cover no-repeat !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-picker {
+  grid-template-columns: repeat(6, minmax(64px, 1fr)) !important;
+  gap: 8px !important;
+  padding: 0 !important;
+}
+
+@media (max-width: 700px) {
+  html[data-ui-style="galgame"] .style-dock .row-configs {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html[data-ui-style="galgame"] .galgame-bg-picker {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Galgame final pass: one glass menu, no nested boxed sections. */
+html[data-ui-style="galgame"][data-galgame-menu="open"] .style-dock,
+html[data-ui-style="galgame"] .style-dock:hover,
+html[data-ui-style="galgame"] .style-dock:focus-within {
+  width: min(600px, calc(100vw - 20px)) !important;
+  gap: 12px !important;
+  padding: 12px !important;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 202, 185, 0.15), transparent 30%),
+    linear-gradient(180deg, rgba(18, 19, 28, 0.9), rgba(9, 10, 16, 0.8)) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  box-shadow:
+    0 24px 58px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.13) !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .menu-row,
+html[data-ui-style="galgame"] .style-dock .row-thumbnails,
+html[data-ui-style="galgame"] .galgame-bg-picker {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-thumbnails {
+  display: grid !important;
+  gap: 8px !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-configs {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  padding-top: 0 !important;
+  border-top: 0 !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .galgame-mode-control,
+html[data-ui-style="galgame"] .style-dock .galgame-frequency-control {
+  grid-column: span 2 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .galgame-mode-control > span,
+html[data-ui-style="galgame"] .style-dock .galgame-frequency-control > span {
+  color: rgba(255, 232, 224, 0.52) !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-picker {
+  grid-template-columns: repeat(6, minmax(64px, 1fr)) !important;
+  gap: 8px !important;
+  padding: 0 !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-thumbnails::before,
+html[data-ui-style="galgame"] .galgame-bg-picker::before,
+html[data-ui-style="galgame"] .galgame-user-bg-choices::before {
+  display: none !important;
+  content: none !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-choice,
+html[data-ui-style="galgame"] .galgame-bg-upload span,
+html[data-ui-style="galgame"] .style-dock button,
+html[data-ui-style="galgame"] .style-dock label > span {
+  background: rgba(255, 255, 255, 0.045) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-choice {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.36)),
+    var(--bg-thumb) center / cover no-repeat !important;
+}
+
+@media (max-width: 700px) {
+  html[data-ui-style="galgame"] .style-dock .row-configs {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html[data-ui-style="galgame"] .galgame-bg-picker {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
 /*
   Galgame menu polish: compact VN command panel with clear sections.
 */
@@ -10055,6 +10536,90 @@ html[data-ui-style="galgame"] .galgame-bg-upload span {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }
 
+  html[data-ui-style="galgame"] .style-dock .row-configs {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html[data-ui-style="galgame"] .galgame-bg-picker {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Galgame final cascade guard: keep the menu flat after older polish rules. */
+html[data-ui-style="galgame"][data-galgame-menu="open"] .style-dock,
+html[data-ui-style="galgame"] .style-dock:hover,
+html[data-ui-style="galgame"] .style-dock:focus-within {
+  width: min(600px, calc(100vw - 20px)) !important;
+  gap: 12px !important;
+  padding: 12px !important;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 202, 185, 0.15), transparent 30%),
+    linear-gradient(180deg, rgba(18, 19, 28, 0.9), rgba(9, 10, 16, 0.8)) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  box-shadow:
+    0 24px 58px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.13) !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .menu-row,
+html[data-ui-style="galgame"] .style-dock .row-thumbnails,
+html[data-ui-style="galgame"] .galgame-bg-picker {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-thumbnails {
+  display: grid !important;
+  gap: 8px !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-configs {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  padding-top: 0 !important;
+  border-top: 0 !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .galgame-mode-control,
+html[data-ui-style="galgame"] .style-dock .galgame-frequency-control {
+  grid-column: span 2 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .style-dock .row-thumbnails::before,
+html[data-ui-style="galgame"] .galgame-bg-picker::before,
+html[data-ui-style="galgame"] .galgame-user-bg-choices::before {
+  display: none !important;
+  content: none !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-choice,
+html[data-ui-style="galgame"] .galgame-bg-upload span,
+html[data-ui-style="galgame"] .style-dock button,
+html[data-ui-style="galgame"] .style-dock label > span {
+  background: rgba(255, 255, 255, 0.045) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: none !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-choice {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.36)),
+    var(--bg-thumb) center / cover no-repeat !important;
+}
+
+html[data-ui-style="galgame"] .galgame-bg-picker {
+  grid-template-columns: repeat(6, minmax(64px, 1fr)) !important;
+  gap: 8px !important;
+  padding: 0 !important;
+}
+
+@media (max-width: 700px) {
   html[data-ui-style="galgame"] .style-dock .row-configs {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }

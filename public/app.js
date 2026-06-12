@@ -3144,6 +3144,7 @@ function renderCandidateGrid(candidates) {
         <div class="candidate-meta">
           <div class="candidate-badges">
             <b>${candidateKindLabel(item.best)}</b>
+            ${item.source ? `<span>${escapeHtml(candidateSourceLabel(item.source))}</span>` : ""}
             <span class="quality-badge">${quality.label} ${quality.score}</span>
           </div>
           <small>${escapeHtml(item.width && item.height ? `${item.width} x ${item.height}` : item.title)}</small>
@@ -3157,6 +3158,13 @@ function renderCandidateGrid(candidates) {
       </div>
     </article>
   `).join("");
+}
+
+function candidateSourceLabel(source = "") {
+  return {
+    moegirl: "萌娘百科",
+    bing: "Bing"
+  }[String(source || "")] || String(source || "来源");
 }
 
 async function fetchImageCandidates() {
@@ -3842,6 +3850,23 @@ function extractReplyChoiceFocusV2(reply = "") {
   }).slice(0, 4);
 }
 
+function choiceReferencesReplyV2(choice, reply = "") {
+  const label = routeChoiceLabel(choice);
+  const focus = extractReplyChoiceFocusV2(reply);
+  if (!focus.length) return false;
+  if (focus.some((item) => label.includes(item))) return true;
+  const text = String(reply || "");
+  const semanticPairs = [
+    [/咖啡馆|咖啡厅|咖啡店|咖啡|拿铁|点单|座位|坐下/, /咖啡|店|座位|坐下|点单|喝/],
+    [/路上|近路|出发|过去|跟我来|带你|走吧|车站|街道/, /路上|跟上|过去|出发|走|目的地|车站/],
+    [/实验|数据|异常|理论|模型|责任/, /实验|数据|异常|理论|模型|责任|假设/],
+    [/害怕|担心|不安|难过|沉默|哭|迷茫/, /不安|担心|害怕|难过|陪|安慰|沉默/],
+    [/生气|讨厌|别说|别碰|烦死|质问|冲突/, /道歉|冲突|反驳|放低|解释|不满/],
+    [/邀请|约定|一起|陪|留下/, /邀请|约定|一起|陪|留下|答应/]
+  ];
+  return semanticPairs.some(([replyPattern, choicePattern]) => replyPattern.test(text) && choicePattern.test(label));
+}
+
 function replyDrivenRouteChoicesV2(message, route = routeStateFor()) {
   const text = String(message?.content || "");
   const name = state.current?.name || "她";
@@ -3900,9 +3925,9 @@ function shouldShowRouteChoicesV2(latestMessage, assistantTurns, context = {}, h
   if (!isGalgameStyle() || frequency === "off") return false;
   if (!latestMessage || latestMessage.role !== "assistant" || latestMessage.content === "...") return false;
   if (mode === "story") return Boolean(hasStoryChoices || context.kind);
-  if (frequency === "high") return Boolean(hasStoryChoices || context.isActionable || context.hasDirectChoice || extractReplyChoiceFocusV2(latestMessage.content).length);
-  if (frequency === "low") return Boolean(hasStoryChoices || context.isStrong) && assistantTurns % 5 === 0;
-  if (context.hasDirectChoice || hasStoryChoices) return true;
+  if (frequency === "high") return Boolean(context.isActionable || context.hasDirectChoice || extractReplyChoiceFocusV2(latestMessage.content).length);
+  if (frequency === "low") return Boolean(context.isStrong) && assistantTurns % 5 === 0;
+  if (context.hasDirectChoice) return true;
   return Boolean(context.isStrong || context.isActionable) && assistantTurns % 3 === 0;
 }
 
@@ -3910,7 +3935,10 @@ function galgameRouteChoicesV2(latestMessage) {
   if (!state.current || !latestMessage || latestMessage.role !== "assistant") return [];
   if (latestMessage.content === "..." || state.galgame.typingKey) return [];
   const key = messageKey(latestMessage, state.messages.indexOf(latestMessage));
-  if (state.galgame.routeChoices[key]?.length) return filterRouteChoices(state.galgame.routeChoices[key], routeStateFor());
+  if (state.galgame.routeChoices[key]?.length) {
+    const serverChoices = state.galgame.routeChoices[key].filter((choice) => choiceReferencesReplyV2(choice, latestMessage.content));
+    return filterRouteChoices(serverChoices, routeStateFor());
+  }
 
   const assistantTurns = state.messages.filter((message) => message.role === "assistant" && message.content !== "...").length;
   const context = analyzeReplyChoiceContext(String(latestMessage.content || ""));
@@ -3920,8 +3948,13 @@ function galgameRouteChoicesV2(latestMessage) {
 
   const localChoices = replyDrivenRouteChoicesV2(latestMessage, route);
   const mode = currentGameplayMode();
-  const combined = mode === "story" ? [...storyChoices, ...localChoices] : [...localChoices, ...storyChoices];
-  return filterRouteChoices(combined, route);
+  const replyCheckedLocal = localChoices.filter((choice) => choiceReferencesReplyV2(choice, latestMessage.content));
+  const replyCheckedStory = storyChoices.filter((choice) => choiceReferencesReplyV2(choice, latestMessage.content));
+  const combined = mode === "story"
+    ? [...replyCheckedStory, ...replyCheckedLocal]
+    : [...replyCheckedLocal, ...replyCheckedStory.slice(0, 1)];
+  const replyChecked = combined.filter((choice) => choiceReferencesReplyV2(choice, latestMessage.content));
+  return filterRouteChoices(replyChecked, route);
 }
 
 function isGalgameStyle() {

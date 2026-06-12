@@ -459,11 +459,11 @@ function scoreImageCandidate(candidate, kind) {
   const width = Number(info.width || 0);
   const height = Number(info.height || 0);
   const ratio = width ? height / width : 0;
-  const text = `${candidate.title || ""} ${info.url || ""}`.toLowerCase();
-  const fullBodyTerms = /(立绘|立ち絵|全身|人设|設定|公式|角色|stand|standing|standee|full|body|render|sprite|character|chara)/i;
+  const text = `${candidate.title || ""} ${candidate.desc || ""} ${candidate.pageUrl || ""} ${info.url || ""}`.toLowerCase();
+  const fullBodyTerms = /(立绘|立ち絵|全身|人设|設定|公式|角色|standing|standee|full\s*body|character\s*(render|sprite)|render|sprite|chara)/i;
   const chibiTerms = /(q版|q版|sd|chibi|ぷち|mini|deform|deformed|小人|二头身|三头身)/i;
   const avatarTerms = /(头像|icon|face|profile|head|portrait|表情)/i;
-  const badTerms = /(logo|banner|bg|background|wallpaper|icon|头像|表情|stamp|封面|海报|截图|screenshot|watermark|cd|bd|dvd)/i;
+  const badTerms = /(logo|banner|bg|background|wallpaper|icon|头像|表情|stamp|封面|海报|截图|screenshot|watermark|cd|bd|dvd|gameplay|game\s*screen|screencap|racing|race\s*car|oldsmobile|vehicle|car\s+game|driving|simulator|porn|adult|labia|nude|nsfw|shop|shopee|clinic|medical|embryology|cavity|coelom|ppt|pngsucai|素材|免扣素材)/i;
   let score = 0;
 
   if (kind === "avatar") {
@@ -485,6 +485,29 @@ function scoreImageCandidate(candidate, kind) {
   if (/\.png(?:$|\?)/i.test(info.url || "")) score += 8;
   if (kind !== "avatar" && badTerms.test(text)) score -= 120;
   return score;
+}
+
+function isBadImageCandidate(candidate) {
+  const info = candidate.imageinfo?.[0] || {};
+  const url = info.url || candidate.url || "";
+  const text = `${candidate.title || ""} ${candidate.desc || ""} ${candidate.pageUrl || ""} ${url} ${candidate.thumbUrl || ""}`.toLowerCase();
+  if (/(\.svg|favicon|emoji|logo|banner|wallpaper|background)/i.test(url)) return true;
+  return /(oldsmobile|race\s*car|racing|vehicle|car\s+game|driving|simulator|gameplay|game\s*screen|screenshot|screencap|roblox|minecraft|porn|adult|labia|nude|nsfw|shopee|clinic|medical|embryology|cavity|coelom|ppt|pngsucai|素材网|免扣素材)/i.test(text);
+}
+
+function searchRelevanceTerms(name = "", work = "") {
+  const raw = [name, work]
+    .map((item) => String(item || "").trim().toLowerCase())
+    .filter(Boolean);
+  const split = raw.flatMap((item) => item.split(/[\s·・:：,，/\\|()[\]【】《》"'“”]+/).filter((part) => part.length >= 2));
+  return [...new Set([...raw, ...split])].filter((item) => item.length >= 2);
+}
+
+function isRelevantBingCandidate(candidate, name = "", work = "") {
+  const text = `${candidate.title || ""} ${candidate.desc || ""} ${candidate.pageUrl || ""} ${candidate.url || ""}`.toLowerCase();
+  const trustedAnimeDomains = /(moegirl|fandom|wiki|wikia|myanimelist|anilist|anidb|zerochan|safebooru|danbooru|yande\.re|animecharactersdatabase|pixiv|bilibili|bangumi|萌娘)/i;
+  if (trustedAnimeDomains.test(text)) return true;
+  return searchRelevanceTerms(name, work).some((term) => text.includes(term));
 }
 
 function decodeHtml(text) {
@@ -632,6 +655,8 @@ function formatImageCandidate(item) {
 
   return {
     title: item.title || "候选图",
+    desc: item.desc || "",
+    pageUrl: item.pageUrl || "",
     url: info.url || "",
     thumbUrl: info.thumburl || info.url || "",
     width,
@@ -645,11 +670,38 @@ function formatImageCandidate(item) {
   };
 }
 
+function mergeImageCandidates(groups, limit = 36) {
+  const seen = new Set();
+  return groups
+    .flat()
+    .filter(Boolean)
+    .filter((item) => item.url)
+    .filter((item) => !isBadImageCandidate(item))
+    .filter((item) => {
+      const key = imageUrlKey(item.url);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => {
+      const displayScore = (item) => {
+        const scores = item.scores || {};
+        const sourceBias = item.source === "moegirl" ? 22 : 0;
+        const typeBias = item.best === "standee" ? 140 : item.best === "chibi" ? 120 : 40;
+        return sourceBias + typeBias + Math.max(scores.standee || 0, scores.chibi || 0, scores.avatar || 0);
+      };
+      return displayScore(b) - displayScore(a);
+    })
+    .slice(0, limit);
+}
+
 function bingCandidateQueries(name, work = "") {
   const base = [name, work].filter(Boolean).join(" ");
   return [
     { query: `${base} 角色 立绘 全身 png`, kind: "standee" },
     { query: `${base} anime character render full body png`, kind: "standee" },
+    { query: `${base} official character full body`, kind: "standee" },
+    { query: `${base} wiki character image`, kind: "standee" },
     { query: `${base} 头像 icon portrait`, kind: "avatar" },
     { query: `${base} Q版 chibi SD`, kind: "chibi" }
   ];
@@ -672,23 +724,46 @@ async function fetchBingImageSearch(query, preferredKind = "standee") {
   if (!response.ok) return [];
 
   const html = await response.text();
-  const urls = [];
-  for (const match of html.matchAll(/murl&quot;:&quot;([^&]+)&quot;|"murl":"((?:\\"|[^"])*)"/g)) {
-    const imageUrl = normalizeRemoteImageUrl(match[1] || match[2] || "");
-    if (!imageUrl) continue;
-    if (/(\.svg|logo|sprite|favicon|emoji|banner|wallpaper|background)/i.test(imageUrl)) continue;
-    urls.push(imageUrl);
+  const items = [];
+  for (const match of html.matchAll(/<a[^>]+class="iusc"[^>]+m="([^"]+)"/g)) {
+    try {
+      const meta = JSON.parse(decodeHtml(match[1]));
+      const imageUrl = normalizeRemoteImageUrl(meta.murl || "");
+      if (!imageUrl) continue;
+      items.push({
+        title: decodeHtml(meta.t || meta.desc || "Bing 候选图"),
+        desc: decodeHtml(meta.desc || ""),
+        pageUrl: normalizeRemoteImageUrl(meta.purl || ""),
+        preferredKind,
+        imageinfo: [{
+          url: imageUrl,
+          thumburl: normalizeRemoteImageUrl(meta.turl || "") || imageUrl,
+          width: Number(meta.w || 0),
+          height: Number(meta.h || 0)
+        }]
+      });
+    } catch {
+      // Ignore malformed Bing metadata blocks.
+    }
   }
 
-  return urls.slice(0, 12).map((url, index) => ({
-    title: `${query} ${preferredKind} ${index + 1}`,
-    imageinfo: [{
-      url,
-      thumburl: url,
-      width: 0,
-      height: 0
-    }]
-  }));
+  if (!items.length) {
+    for (const match of html.matchAll(/murl&quot;:&quot;([^&]+)&quot;|"murl":"((?:\\"|[^"])*)"/g)) {
+      const imageUrl = normalizeRemoteImageUrl(match[1] || match[2] || "");
+      if (!imageUrl) continue;
+      items.push({
+        title: "Bing 候选图",
+        desc: "",
+        pageUrl: "",
+        preferredKind,
+        imageinfo: [{ url: imageUrl, thumburl: imageUrl, width: 0, height: 0 }]
+      });
+    }
+  }
+
+  return items
+    .filter((item) => !isBadImageCandidate(item))
+    .slice(0, 18);
 }
 
 async function fetchBingImageCandidates(name, work = "") {
@@ -698,8 +773,10 @@ async function fetchBingImageCandidates(name, work = "") {
   const rawImages = queryResults.flatMap((result) => result.status === "fulfilled" ? result.value : []);
   const seen = new Set();
   return rawImages
-    .map(formatImageCandidate)
+    .map((item) => ({ ...formatImageCandidate(item), source: "bing" }))
     .filter((item) => item.url)
+    .filter((item) => isRelevantBingCandidate(item, name, work))
+    .filter((item) => Math.max(item.scores?.standee || 0, item.scores?.chibi || 0, item.scores?.avatar || 0) >= 18)
     .filter((item) => {
       const key = imageUrlKey(item.url);
       if (seen.has(key)) return false;
@@ -710,9 +787,10 @@ async function fetchBingImageCandidates(name, work = "") {
 
 async function fetchMoegirlImageCandidates(name, work = "") {
   const page = await fetchMoegirlPage(name, work);
-  const [pageImages, htmlImages] = await Promise.allSettled([
+  const [pageImages, htmlImages, bingImages] = await Promise.allSettled([
     fetchMoegirlPageImages(page?.title),
-    fetchMoegirlHtmlImages(page)
+    fetchMoegirlHtmlImages(page),
+    fetchBingImageCandidates(name, work)
   ]);
   const rawImages = [
     ...(pageImages.status === "fulfilled" ? pageImages.value : []),
@@ -720,7 +798,7 @@ async function fetchMoegirlImageCandidates(name, work = "") {
   ];
   const seen = new Set();
   const candidates = rawImages
-    .map(formatImageCandidate)
+    .map((item) => ({ ...formatImageCandidate(item), source: "moegirl" }))
     .filter((item) => item.url)
     .filter((item) => {
       const key = imageUrlKey(item.url);
@@ -731,16 +809,21 @@ async function fetchMoegirlImageCandidates(name, work = "") {
     .sort((a, b) => {
       const displayScore = (item) => {
         const scores = item.scores || {};
+        const sourceBias = item.source === "moegirl" ? 22 : 0;
         const typeBias = item.best === "standee" ? 140 : item.best === "chibi" ? 120 : 40;
-        return typeBias + Math.max(scores.standee || 0, scores.chibi || 0, scores.avatar || 0);
+        return sourceBias + typeBias + Math.max(scores.standee || 0, scores.chibi || 0, scores.avatar || 0);
       };
       return displayScore(b) - displayScore(a);
     });
 
-  const standees = candidates.filter((item) => item.best === "standee").slice(0, 10);
-  const chibis = candidates.filter((item) => item.best === "chibi").slice(0, 4);
-  const avatars = candidates.filter((item) => item.best === "avatar").slice(0, 4);
-  const ordered = [...standees, ...chibis, ...avatars].slice(0, 18);
+  const externalCandidates = [
+    ...(bingImages.status === "fulfilled" ? bingImages.value : [])
+  ];
+
+  const standees = candidates.filter((item) => item.best === "standee").slice(0, 14);
+  const chibis = candidates.filter((item) => item.best === "chibi").slice(0, 6);
+  const avatars = candidates.filter((item) => item.best === "avatar").slice(0, 6);
+  const ordered = mergeImageCandidates([standees, chibis, avatars, externalCandidates], 36);
 
   if (page?.thumbnail?.source) {
     ordered.unshift({
@@ -750,24 +833,14 @@ async function fetchMoegirlImageCandidates(name, work = "") {
       width: 0,
       height: 0,
       best: "avatar",
+      source: "moegirl",
       scores: { avatar: 120, standee: 10, chibi: 0 }
     });
   }
 
-  if (ordered.length < 6) {
-    const fallbackCandidates = await fetchBingImageCandidates(name, work).catch(() => []);
-    for (const item of fallbackCandidates) {
-      if (ordered.length >= 18) break;
-      const key = imageUrlKey(item.url);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      ordered.push(item);
-    }
-  }
-
   return {
     sourceUrl: page?.fullurl || (page?.title ? `https://zh.moegirl.org.cn/${encodeURIComponent(page.title)}` : ""),
-    candidates: ordered
+    candidates: mergeImageCandidates([ordered], 36)
   };
 }
 
@@ -1500,10 +1573,14 @@ async function createCharacter(body) {
     : makeFallbackPortrait(name, body.accent);
   const petSourceUrl = makePet
     ? (petStyle === "chibi"
-      ? (body.petImageUrl || uploadedPetUrl || fetchedChibiUrl || cardSourceUrl || "")
-      : (body.petImageUrl || uploadedPetUrl || cardSourceUrl || ""))
+      ? (uploadedPetUrl || body.petImageUrl || fetchedChibiUrl || cardSourceUrl || "")
+      : (uploadedPetUrl || body.petImageUrl || cardSourceUrl || ""))
     : "";
-  const petImageUrl = petSourceUrl ? await saveStandeeImageAsset(petSourceUrl, `${id}-pet`) : "";
+  const petImageUrl = petSourceUrl
+    ? (uploadedPetUrl && petSourceUrl === uploadedPetUrl
+      ? uploadedPetUrl
+      : await saveStandeeImageAsset(petSourceUrl, `${id}-pet`))
+    : "";
   const suppliedVoiceId = String(body.voiceId || "").trim();
   const suppliedVoiceName = String(body.voiceName || "").trim();
   const voiceCandidates = suppliedVoiceId
@@ -1519,6 +1596,7 @@ async function createCharacter(body) {
     avatarUrl,
     imageUrl: cardImageUrl,
     petImageUrl,
+    petImageSource: uploadedPetUrl && petImageUrl === uploadedPetUrl ? "uploaded" : (petImageUrl ? "processed" : ""),
     petStyle: petStyle === "live2d" ? "live2d" : petStyle === "chibi" && petImageUrl ? "chibi" : "standee",
     live2dModelUrl: petStyle === "live2d" ? live2dModelUrl : "",
     accent: body.accent || pickAccent(name),
@@ -2513,7 +2591,19 @@ async function routeApi(req, res, pathname) {
         return;
       }
       const character = characters[index];
+      if (character.petImageSource === "uploaded") {
+        json(res, 400, { error: "用户上传的桌宠图不做抠图处理" });
+        return;
+      }
       const petLooksProcessed = /-cutout\.png(?:[?#].*)?$/i.test(character.petImageUrl || "");
+      const rawUploadedPet = character.petImageUrl
+        && uploadUrlToFile(character.petImageUrl)
+        && !petLooksProcessed
+        && /-pet-\d+\.(?:png|jpe?g|webp)$/i.test(path.basename(uploadUrlToFile(character.petImageUrl)));
+      if (rawUploadedPet) {
+        json(res, 400, { error: "用户上传的桌宠图不做抠图处理" });
+        return;
+      }
       const preferredSource = petLooksProcessed && character.imageUrl
         ? character.imageUrl
         : character.petImageUrl || character.imageUrl;
@@ -2526,6 +2616,7 @@ async function routeApi(req, res, pathname) {
       const nextCharacter = {
         ...character,
         petImageUrl,
+        petImageSource: "processed",
         petStyle: character.petStyle === "live2d" ? "standee" : (character.petStyle || "standee"),
         updatedAt: new Date().toISOString()
       };
